@@ -1,40 +1,38 @@
-# Git 与 gh 工作流笔记
+# Git 与 gh 工作流速查笔记
 
-## 1. 这次实操的目标
+> 目标：记录本项目如何用 Git 管本地版本，用 gh 管 GitHub 仓库和 PR。
 
-用当前学习项目跑通一次完整代码管理流程：
+---
 
-```text
-本地目录 → git 初始化 → 本地提交 → GitHub 创建远程仓库 → 推送 main
-       → 新建日常开发分支 → 提交笔记 → 推送分支 → 创建 PR → 合并 PR
-```
+## 1. 工具分工
 
-本次远程仓库：
-
-```text
-https://github.com/xgz123-wq/python-backend-study
-```
-
-## 2. git 和 gh 的分工
-
-| 工具 | 负责什么 | 典型操作 |
+| 工具 | 负责什么 | 常用命令 |
 |---|---|---|
-| `git` | 本地版本历史 | `init`、`add`、`commit`、`branch`、`checkout`、`push`、`pull` |
-| `gh` | GitHub 平台协作 | 创建仓库、创建 PR、查看 PR、合并 PR、查看 Issue |
+| `git` | 本地版本管理 | `add` / `commit` / `push` / `pull` / `branch` |
+| `gh` | GitHub 平台操作 | `repo create` / `pr create` / `pr merge` |
 
 一句话：
 
 ```text
-git 管代码版本；gh 管 GitHub 上的仓库和协作流程。
+git 管代码历史，gh 管 GitHub 协作。
 ```
 
-## 3. 本次项目初始化流程
+---
 
-当前项目目录：
+## 2. 本项目当前状态
 
-```text
-D:\AGI大模型\python后端_claude
-```
+| 项目 | 内容 |
+|---|---|
+| 远程仓库 | `https://github.com/xgz123-wq/python-backend-study` |
+| 默认分支 | `main` |
+| 仓库类型 | Public |
+| 当前用途 | Python 后端学习仓库 |
+| 首次提交 | `c09cbad chore: 初始化学习阶段内容` |
+| PR 演示 | `#1 docs: 新增 git 与 gh 全流程实操笔记` |
+
+---
+
+## 3. 第一次初始化流程
 
 ### 3.1 初始化本地仓库
 
@@ -42,33 +40,22 @@ D:\AGI大模型\python后端_claude
 git init -b main
 ```
 
-结果：当前目录生成 `.git/`，项目开始被 git 管理。
+### 3.2 排除本地工具目录
 
-### 3.2 配置本地排除项
-
-本项目里有本地工具目录：
-
-```text
-.codegraph/
-.claude/
-```
-
-这些是本机工具状态，不适合提交到 GitHub。因为当前约束是不修改 `.gitignore`，所以使用本地专用排除文件：
+不改 `.gitignore` 时，可以写入本机专用排除文件：
 
 ```bash
 printf '\n# Local tool state\n.codegraph/\n.claude/\n' >> .git/info/exclude
 ```
 
-区别：
-
-| 文件 | 是否提交 | 作用范围 |
+| 文件 | 是否提交 | 作用 |
 |---|---:|---|
 | `.gitignore` | 会提交 | 团队共享忽略规则 |
-| `.git/info/exclude` | 不会提交 | 只影响当前电脑 |
+| `.git/info/exclude` | 不提交 | 只影响当前电脑 |
 
-## 4. 本次首次提交的范围
+### 3.3 首次提交范围
 
-本次首次提交不是 `git add .`，而是只提交：
+本项目第一次只提交：
 
 ```text
 README.md
@@ -80,7 +67,7 @@ README.md
 阶段6_工程化能力/
 ```
 
-对应命令：
+命令：
 
 ```bash
 git add README.md \
@@ -94,150 +81,117 @@ git add README.md \
 git commit -m "chore: 初始化学习阶段内容"
 ```
 
-本次实际结果：
-
-```text
-首次 commit：c09cbad
-已跟踪文件数：288
-```
-
-首次提交后仍未纳入 git 的文件包括：
-
-```text
-.gitignore
-.vscode/
-AGENTS.md
-CHANGELOG.md
-CLAUDE.md
-CONTRIBUTING.md
-LICENSE
-docs/
-```
-
-说明：
-
-```text
-这些文件不是丢失，只是暂时没有被提交。以后需要时可以单独 add + commit。
-```
-
-## 5. 用 gh 创建 GitHub 远程仓库
-
-执行命令：
+### 3.4 创建 GitHub 仓库并推送
 
 ```bash
 gh repo create python-backend-study --public --source=. --remote=origin --push
 ```
 
-参数含义：
+参数说明：
 
 | 参数 | 含义 |
 |---|---|
-| `python-backend-study` | GitHub 仓库名 |
 | `--public` | 创建公开仓库 |
-| `--source=.` | 当前目录就是本地仓库 |
-| `--remote=origin` | 把远程仓库命名为 `origin` |
-| `--push` | 创建后立刻推送当前分支 |
+| `--source=.` | 当前目录作为本地仓库 |
+| `--remote=origin` | 远程仓库别名叫 `origin` |
+| `--push` | 创建后立刻推送 |
 
-本次实际远程地址：
+---
 
-```text
-https://github.com/xgz123-wq/python-backend-study.git
-```
+## 4. 日常开发流程
 
-执行成功后，`main` 会跟踪远程分支：
+推荐不要直接在 `main` 上改。
 
 ```text
-main → origin/main
+main 拉最新 → 新建分支 → 修改文件 → commit → push → PR → merge
 ```
 
-## 6. 日常开发推荐流程
-
-不要长期直接在 `main` 上开发。推荐流程：
-
-```text
-main 拉最新 → 新建功能分支 → 修改文件 → add → commit → push 分支 → 开 PR → 合并 → 回到 main 拉最新
-```
-
-对应命令模板：
+命令模板：
 
 ```bash
-# 1. 回到 main
 git checkout main
-
-# 2. 拉取远程最新代码
 git pull
 
-# 3. 新建功能分支
-git checkout -b docs/add-git-workflow-notes
+git checkout -b docs/add-new-chapter
 
-# 4. 修改文件后查看状态
+# 修改文件后
 git status
+git add "具体文件路径"
+git commit -m "docs: 新增 XXX 内容"
+git push -u origin docs/add-new-chapter
+```
 
-# 5. 暂存指定文件
-git add "docs/Git与gh工作流笔记.md"
+---
 
-# 6. 本地提交
-git commit -m "docs: 新增 git 与 gh 全流程实操笔记"
+## 5. PR 流程
 
-# 7. 推送分支
-git push -u origin docs/add-git-workflow-notes
+### 5.1 创建 PR
 
-# 8. 创建 PR
+```bash
 gh pr create \
-  --title "docs: 新增 git 与 gh 全流程实操笔记" \
-  --body "跑通 git 初始化、远程创建、推送、分支、PR、合并全流程的实操记录"
+  --title "docs: 新增 XXX 内容" \
+  --body "说明本次改了什么、为什么改、如何验证"
+```
 
-# 9. 合并 PR，并删除远程分支
+### 5.2 查看 PR
+
+```bash
+gh pr list
+gh pr view
+```
+
+### 5.3 合并 PR
+
+```bash
 gh pr merge --squash --delete-branch
+```
 
-# 10. 回到 main 并同步
+含义：
+
+| 参数 | 作用 |
+|---|---|
+| `--squash` | 多个 commit 压成一个再合并 |
+| `--delete-branch` | 合并后删除远程分支 |
+
+### 5.4 合并后同步本地
+
+```bash
 git checkout main
 git pull
 ```
 
-## 7. 常用命令速查
+---
 
-### 7.1 git 常用命令
+## 6. 常用命令
+
+### git
 
 | 命令 | 作用 |
 |---|---|
-| `git status` | 查看当前有哪些文件改动 |
-| `git add <file>` | 把文件加入暂存区 |
-| `git commit -m "message"` | 生成一个本地版本快照 |
-| `git log --oneline` | 查看提交历史 |
-| `git branch` | 查看分支 |
+| `git status` | 看当前改了什么 |
+| `git add <file>` | 暂存指定文件 |
+| `git commit -m "..."` | 本地提交 |
+| `git log --oneline` | 看提交历史 |
+| `git branch` | 看分支 |
 | `git checkout -b <branch>` | 新建并切换分支 |
-| `git checkout main` | 切回 main 分支 |
-| `git push` | 把本地提交推到远程 |
-| `git pull` | 拉取远程最新提交 |
-| `git remote -v` | 查看远程仓库地址 |
+| `git push` | 推送到远程 |
+| `git pull` | 拉取远程更新 |
+| `git remote -v` | 看远程地址 |
 
-### 7.2 gh 常用命令
+### gh
 
 | 命令 | 作用 |
 |---|---|
-| `gh auth status` | 查看 GitHub 登录状态 |
+| `gh auth status` | 查看登录状态 |
 | `gh repo create` | 创建 GitHub 仓库 |
-| `gh repo view --web` | 在浏览器打开当前仓库 |
-| `gh pr create` | 创建 Pull Request |
+| `gh repo view --web` | 浏览器打开仓库 |
+| `gh pr create` | 创建 PR |
 | `gh pr list` | 查看 PR 列表 |
-| `gh pr view` | 查看当前 PR |
 | `gh pr merge` | 合并 PR |
 
-## 8. 关键概念
+---
 
-| 概念 | 操作级定义 |
-|---|---|
-| `main` | 主分支，保存稳定版本 |
-| `origin` | 默认远程仓库别名 |
-| `commit` | 一次本地版本快照 |
-| `push` | 把本地 commit 上传到 GitHub |
-| `pull` | 把 GitHub 上的新 commit 拉到本地 |
-| `branch` | 分支，用于隔离不同任务 |
-| `PR` | Pull Request，请求把一个分支合并进另一个分支 |
-| `squash merge` | 合并 PR 时把多个 commit 压成一个 commit |
-
-## 9. 推荐提交信息格式
+## 7. Commit 信息建议
 
 格式：
 
@@ -245,57 +199,101 @@ git pull
 类型: 简短说明
 ```
 
-常见类型：
+常用类型：
 
-| 类型 | 适用场景 |
+| 类型 | 场景 |
 |---|---|
-| `docs:` | 文档变化 |
-| `feat:` | 新功能 |
-| `fix:` | 修 bug |
-| `chore:` | 项目维护、初始化、配置类任务 |
-| `refactor:` | 重构，不改变功能 |
+| `docs:` | 文档 |
+| `demo:` | Demo 示例 |
+| `fix:` | 修复错误 |
+| `chore:` | 项目维护 |
+| `refactor:` | 重构 |
 
 示例：
 
 ```bash
-git commit -m "docs: 新增 Git 工作流笔记"
-git commit -m "feat: 新增 FastAPI 路由演示"
-git commit -m "fix: 修正 Redis 示例连接参数"
+git commit -m "docs: 完善 README"
+git commit -m "demo: 新增 Redis 缓存示例"
+git commit -m "fix: 修正 MySQL 命令说明"
 ```
+
+---
+
+## 8. 本项目下一步提交建议
+
+当前建议走轻量开源学习仓库方案。
+
+优先提交：
+
+```text
+README.md
+.gitignore
+LICENSE
+docs/Git与gh工作流笔记.md
+```
+
+命令：
+
+```bash
+git add README.md .gitignore LICENSE "docs/Git与gh工作流笔记.md"
+git commit -m "docs: 完善项目 README 与基础说明"
+git push
+```
+
+暂缓提交，先审查：
+
+```text
+AGENTS.md
+CLAUDE.md
+.vscode/
+docs/ai-coding-tutorial/
+docs/项目对照笔记/
+```
+
+可选提交：
+
+```text
+CONTRIBUTING.md
+CHANGELOG.md
+```
+
+如果只是个人学习展示，它们不是必须。
+
+---
+
+## 9. 开源与 MIT 简短说明
+
+MIT 不是流程，只是授权声明。
+
+```text
+别人可以使用、复制、修改、分发、商用；
+但要保留版权和许可证；
+代码出问题，作者默认不负责。
+```
+
+个人学习仓库最小维护：
+
+```text
+README.md + LICENSE + .gitignore
+```
+
+---
 
 ## 10. 避坑清单
 
 | 场景 | 建议 |
 |---|---|
-| 不确定要提交哪些文件 | 先 `git status`，再 `git add 指定文件`，不要无脑 `git add .` |
-| 本地工具目录 | 放进 `.git/info/exclude` 或 `.gitignore` |
-| 敏感信息 | `.env`、密钥、token 不提交 |
-| 主分支开发 | 尽量避免，使用功能分支 + PR |
-| 强制推送 | 不使用 `git push --force`，容易覆盖远程历史 |
-| 大量文件第一次提交 | 先确认范围，再 commit |
+| 不确定提交什么 | 先 `git status` |
+| 文件很多 | 用 `git add 指定文件`，少用 `git add .` |
+| 有 `.env` / token | 不提交 |
+| 有本地工具目录 | 放 `.git/info/exclude` 或 `.gitignore` |
+| 想回退或强推 | 不要随便用 `reset --hard` / `push --force` |
+| 改完文档 | 单独 commit，别混入无关文件 |
 
-## 11. 本项目之后怎么继续
+---
 
-如果继续学习并新增一章，推荐这样做：
+## 11. 一句话工作流
 
-```bash
-git checkout main
-git pull
-git checkout -b docs/add-new-chapter
-
-# 写理论文档和 demo 脚本
-
-git status
-git add "阶段X_目录/具体文件.md" "阶段X_目录/demo/具体脚本.py"
-git commit -m "docs: 新增 XXX 章节学习内容"
-git push -u origin docs/add-new-chapter
-gh pr create --title "docs: 新增 XXX 章节学习内容" --body "说明本次新增的知识点和 demo"
-```
-
-合并后：
-
-```bash
-gh pr merge --squash --delete-branch
-git checkout main
-git pull
+```text
+改文件 → git status → git add 指定文件 → git commit → git push → gh pr create → gh pr merge
 ```

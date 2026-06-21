@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03_RESTful API 设计 | Python 后端学习</title>
+  <style>
+    /* ─── Reset & Variables ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --sidebar-w: 260px;
+      --bg: #f6f8fb;
+      --surface: #fff;
+      --border: #e3e8ef;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --text: #1e293b;
+      --muted: #64748b;
+      --code-bg: #1e293b;
+      --code-text: #e2e8f0;
+      --tag-goal: #16a34a;
+      --tag-concept: #7c3aed;
+      --tag-example: #0284c7;
+      --tag-pitfall: #dc2626;
+      --tag-quiz: #d97706;
+      --radius: 10px;
+      --shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+      transition: background .3s, color .3s;
+    }
+    /* ── Dark Mode ── */
+    body.dark {
+      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e;
+      --code-bg: #0d1117; --accent: #58a6ff;
+      --accent-light: rgba(88,166,255,0.12);
+    }
+    /* ── Theme Toggle ── */
+    .theme-toggle {
+      position: fixed; top: 12px; right: 16px; z-index: 300;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow); transition: transform .15s;
+    }
+    .theme-toggle:hover { transform: scale(1.1); }
+
+    /* ─── Layout ─── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+      transition: transform .25s ease;
+    }
+    .sidebar-header {
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-header .chapter {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sidebar-header h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .sidebar nav { padding: 12px 0 24px; }
+    .nav-topic {
+      display: block;
+      padding: 10px 18px 4px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .03em;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color .15s;
+    }
+    .nav-topic:hover, .nav-topic.active { color: var(--accent); }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 18px;
+      font-size: 13.5px;
+      color: var(--muted);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+    .nav-link:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+    .nav-link.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-link .icon { font-size: 15px; flex-shrink: 0; }
+
+    /* ─── Main Content ─── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 32px 40px 80px;
+      max-width: calc(900px + var(--sidebar-w));
+    }
+    .page-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .page-subtitle {
+      color: var(--muted);
+      margin-bottom: 36px;
+      font-size: 14.5px;
+    }
+
+    /* ─── Topic Cards ─── */
+    .topic {
+      margin-bottom: 56px;
+    }
+    .topic-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--accent);
+    }
+    .topic-num {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .topic-title {
+      font-size: 21px;
+      font-weight: 700;
+    }
+    .topic-desc {
+      font-size: 14px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ─── Section Blocks ─── */
+    .section {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s;
+    }
+    .section-head:hover { background: var(--bg); }
+    .section-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: 2px 9px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .tag-goal    { background: var(--tag-goal); }
+    .tag-concept { background: var(--tag-concept); }
+    .tag-example { background: var(--tag-example); }
+    .tag-pitfall { background: var(--tag-pitfall); }
+    .tag-quiz    { background: var(--tag-quiz); }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 15px;
+      flex: 1;
+    }
+    .section-arrow {
+      color: var(--muted);
+      font-size: 12px;
+      transition: transform .2s;
+    }
+    .section.open .section-arrow { transform: rotate(180deg); }
+    .section-body {
+      display: none;
+      padding: 0 18px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .section.open .section-body { display: block; }
+
+    /* ─── Content Styles ─── */
+    .section-body h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 16px 0 6px;
+      color: var(--accent);
+    }
+    .section-body p { margin: 8px 0; font-size: 14.5px; }
+    .section-body ul, .section-body ol {
+      padding-left: 22px;
+      margin: 8px 0;
+    }
+    .section-body li { font-size: 14.5px; margin: 4px 0; }
+    .section-body strong { color: var(--text); }
+
+    /* Table */
+    .tbl-wrap { overflow-x: auto; margin: 12px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    th {
+      background: var(--bg);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    td {
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--bg); }
+
+    /* Code */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      margin: 12px 0;
+    }
+    code:not(pre code) {
+      background: #e2e8f0;
+      color: #b45309;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+    }
+    /* Simple highlight */
+    .kw { color: #93c5fd; }
+    .cm { color: #6b7280; font-style: italic; }
+    .st { color: #86efac; }
+    .nm { color: #fde68a; }
+    .fn { color: #67e8f9; }
+    .dc { color: #f9a8d4; }
+
+    /* Callout boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-light);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .callout.warn {
+      border-color: var(--tag-pitfall);
+      background: #fff1f2;
+    }
+
+    /* ASCII diagram wrapper */
+    .ascii {
+      background: #0f172a;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 10px 0;
+      white-space: pre;
+    }
+
+    /* ─── Quiz ─── */
+    .quiz-list { list-style: none; padding: 0; }
+    .quiz-item { margin-bottom: 22px; }
+    .quiz-q {
+      font-weight: 600;
+      font-size: 14.5px;
+      margin-bottom: 10px;
+      padding: 10px 14px;
+      background: #fffbeb;
+      border-left: 3px solid var(--tag-quiz);
+      border-radius: 0 6px 6px 0;
+    }
+    .quiz-opts { list-style: none; padding: 0; }
+    .quiz-opts li {
+      margin: 5px 0;
+    }
+    .quiz-opts label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      transition: background .15s;
+    }
+    .quiz-opts label:hover { background: var(--bg); }
+    .quiz-opts input[type="radio"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+    .quiz-result {
+      margin-top: 8px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      display: none;
+    }
+    .quiz-result.correct { background: #dcfce7; color: #166534; }
+    .quiz-result.wrong { background: #fee2e2; color: #991b1b; }
+    .quiz-btn {
+      margin-top: 10px;
+      padding: 6px 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: opacity .15s;
+    }
+    .quiz-btn:hover { opacity: .85; }
+
+    /* ─── Top Nav Bar (mobile) ─── */
+    .topbar {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      z-index: 200;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    .topbar h2 { font-size: 15px; font-weight: 700; flex: 1; }
+    .menu-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 22px;
+      color: var(--text);
+      padding: 4px;
+    }
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 99;
+    }
+    .overlay.show { display: block; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .topbar { display: flex; }
+      .main {
+        margin-left: 0;
+        padding: 72px 16px 60px;
+        max-width: 100%;
+      }
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0,0,0,.15);
+      }
+      .page-title { font-size: 20px; }
+      .topic-title { font-size: 18px; }
+      pre { font-size: 11.5px; }
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--accent);
+      z-index: 999;
+      transition: width .1s linear;
+    }
+
+    /* ─── Back to Top ─── */
+    .back-to-top {
+      position: fixed; bottom: 24px; right: 24px; z-index: 250;
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      background: var(--accent); color: #fff;
+      font-size: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .back-to-top.visible { opacity: 1; pointer-events: auto; }
+    .back-to-top:hover { opacity: .85; }
+
+    /* ─── Reading Time ─── */
+    .reading-time { color: var(--muted); font-size: 13px; margin-bottom: 30px; }
+
+    /* ─── Evidence Trace ─── */
+    .trace-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; margin-top: 48px;
+    }
+    .trace-section h2 { font-size: 18px; margin-bottom: 4px; }
+    .trace-section .trace-desc { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+    .trace-section .tag-pending { display: inline-block; background: #fef3c7; color: #92400e; font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+    body.dark .trace-section .tag-pending { background: #78350f; color: #fde68a; }
+    body.dark code:not(pre code) { background: #30363d; color: #fbbf24; }
+    body.dark .quiz-q { background: #3b2e1a; }
+    body.dark .callout.warn { background: #7f1d1d; }
+    body.dark .quiz-result.correct { background: #14532d; color: #86efac; }
+    body.dark .quiz-result.wrong { background: #7f1d1d; color: #fca5a5; }
+
+    /* ─── Print ─── */
+    @media print {
+      .sidebar, .topbar, .progress-bar, .back-to-top, .theme-toggle, .menu-btn, .overlay, .copy-btn { display: none !important; }
+      .main { margin-left: 0 !important; padding: 0 !important; max-width: 100% !important; }
+      body { background: #fff !important; color: #000 !important; font-size: 13px; }
+      .section { box-shadow: none; break-inside: avoid; border: 1px solid #ddd; }
+      .section-body { display: block !important; }
+      pre, .ascii { background: #f5f5f5 !important; color: #333 !important; border: 1px solid #ddd; }
+      .section-tag { color: #000 !important; border: 1px solid #000; background: none !important; }
+      .trace-section { background: #f9f9f9 !important; }
+      .quiz-result { display: block !important; border: 1px solid #ddd; }
+      .quiz-btn { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .back-to-top { bottom: 16px; right: 12px; width: 36px; height: 36px; }
+      .theme-toggle { top: 10px; right: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Reading progress -->
+<div class="progress-bar" id="progress"></div>
+
+<!-- Theme toggle -->
+<button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换深色模式">🌙</button>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backTop" title="回到顶部" aria-label="回到顶部">↑</button>
+
+<!-- Mobile topbar -->
+<div class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="打开目录">☰</button>
+  <h2>RESTful API 设计</h2>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="chapter">阶段 2 · 后端前置知识</div>
+      <h1>RESTful API 设计</h1>
+    </div>
+    <nav>
+      <div class="nav-topic">导览</div>
+      <a class="nav-link" href="#overview"><span class="icon">🗺️</span>本章概述</a>
+
+      <a class="nav-topic" href="#topic-rest">第一节 · RESTful 设计原则</a>
+      <a class="nav-link" href="#rest-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#rest-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#rest-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#rest-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#rest-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#topic-url">第二节 · URL 命名规范</a>
+      <a class="nav-link" href="#url-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#url-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#url-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#url-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#url-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#topic-resp">第三节 · 统一响应格式</a>
+      <a class="nav-link" href="#resp-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#resp-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#resp-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#resp-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#resp-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#topic-page">第四节 · 分页、过滤与排序</a>
+      <a class="nav-link" href="#page-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#page-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#page-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#page-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#page-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#topic-ver">第五节 · API 版本管理</a>
+      <a class="nav-link" href="#ver-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#ver-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#ver-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#ver-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#ver-quiz"><span class="icon">✏️</span>自测题</a>
+    </nav>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main">
+    <style>
+      .chapter-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); font-size: 13.5px; }
+      .chapter-nav a, .chapter-nav span { flex: 1; color: var(--muted); text-decoration: none; }
+      .chapter-nav a { color: var(--accent); font-weight: 700; }
+      .chapter-nav a:hover { text-decoration: underline; }
+      .chapter-nav .home { text-align: center; }
+      .chapter-nav .next { text-align: right; }
+      @media (max-width: 768px) { .chapter-nav { flex-direction: column; align-items: stretch; } .chapter-nav .home, .chapter-nav .next { text-align: left; } }
+    </style>
+    <nav class="chapter-nav" aria-label="阶段 2 章节导航">
+      <a href="02-http.html">← 上一章：HTTP 协议</a>
+      <a class="home" href="index.html">🏠 返回阶段总目录</a>
+      <a class="next" href="04-auth.html">下一章：认证与授权基础 →</a>
+    </nav>
+    <div class="page-title">🔗 RESTful API 设计</div>
+    <div class="page-subtitle">后端开发必备：设计原则 · URL命名 · 统一响应 · 分页排序 · 版本管理 | 含目标、概念、示例、误区、自测五大区块</div>
+    <div class="reading-time">⏱️ 预估阅读时间：约 25 分钟（含 11 道自测题）</div>
+
+    <!-- ── Overview ── -->
+    <div id="overview" class="section open">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-tag" style="background:#475569">📌 本章</span>
+        <span class="section-title">为什么要学 RESTful API 设计？</span>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>后端开发的核心产出之一就是 API，RESTful 是当今最主流的 API 设计风格。掌握它能让你的接口既专业规范，又易于被前端和第三方调用者理解。</p>
+        <div class="tbl-wrap">
+          <table>
+            <tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+            <tr><td>RESTful 设计原则</td><td>六大约束、资源导向、HTTP 方法语义、CRUD 映射</td><td>⭐⭐⭐</td></tr>
+            <tr><td>URL 命名规范</td><td>七条命名规则、路径参数 vs 查询参数、嵌套资源</td><td>⭐⭐⭐</td></tr>
+            <tr><td>统一响应格式</td><td>统一 JSON 结构、双层状态码、业务错误码设计</td><td>⭐⭐⭐</td></tr>
+            <tr><td>分页过滤排序</td><td>Offset 分页、Cursor 分页、过滤规范、Sort 注入防护</td><td>⭐⭐⭐</td></tr>
+            <tr><td>API 版本管理</td><td>四种版本策略、破坏性变更判断、FastAPI 版本实现</td><td>⭐⭐</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════
+         TOPIC 1 · RESTful 设计原则
+    ════════════════════════════════════════════ -->
+    <div class="topic" id="topic-rest">
+      <div class="topic-header">
+        <div class="topic-num">1</div>
+        <div>
+          <div class="topic-title">RESTful 设计原则</div>
+          <div class="topic-desc">REST 不是规范，是一组约束——用好它，接口自带文档属性。</div>
+        </div>
+      </div>
+
+      <!-- 目标 -->
+      <div class="section open" id="rest-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>理解 REST 六大约束及其实际含义，知道为什么"无状态"对横向扩展重要</li>
+            <li>能将"动作导向"的旧接口改造为"资源导向"的 RESTful 接口</li>
+            <li>掌握 HTTP 方法（GET/POST/PUT/PATCH/DELETE）与 CRUD 的精确映射</li>
+            <li>理解 PUT 和 PATCH 的语义区别，知道何时用哪个</li>
+            <li>能设计嵌套资源 URL，并知道嵌套不超过 2 层的原因</li>
+          </ul>
+          <div class="callout">💡 后端视角：RESTful 不是强制规范，而是业界最广泛认可的约定。遵循它能让你的 API 被前端、移动端、第三方开发者一眼看懂，减少沟通成本。</div>
+        </div>
+      </div>
+
+      <!-- 概念 -->
+      <div class="section open" id="rest-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>REST 六大约束</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>约束</th><th>说明</th><th>实际意义</th></tr>
+              <tr><td><strong>统一接口</strong></td><td>资源通过固定接口暴露，HTTP 方法 + URL 唯一标识操作</td><td>降低学习成本，方便工具集成</td></tr>
+              <tr><td><strong>无状态</strong></td><td>服务端不存储客户端状态，每次请求携带完整信息</td><td>易横向扩展，请求可独立重试</td></tr>
+              <tr><td><strong>缓存</strong></td><td>响应标注是否可缓存，客户端/代理可缓存</td><td>减少重复请求，提升性能</td></tr>
+              <tr><td><strong>客户端-服务端分离</strong></td><td>前端只关心 UI，后端只关心数据，接口解耦</td><td>前后端独立演化</td></tr>
+              <tr><td><strong>分层系统</strong></td><td>客户端不感知中间层（CDN、网关、负载均衡）</td><td>灵活扩展基础设施</td></tr>
+              <tr><td><strong>按需代码</strong>（可选）</td><td>服务端可以下发可执行代码给客户端</td><td>少用，了解即可</td></tr>
+            </table>
+          </div>
+
+          <h3>动作导向 vs 资源导向</h3>
+          <div class="ascii">动作导向（反模式）：              资源导向（RESTful）：
+POST /getUserInfo              GET    /users/{id}
+POST /createNewUser            POST   /users
+POST /deleteUser               DELETE /users/{id}
+POST /updateUserName           PATCH  /users/{id}
+GET  /getAllOrders              GET    /orders
+POST /doPayOrder               POST   /orders/{id}/pay</div>
+          <div class="callout">🔑 转换思路：① 找出操作的核心名词（资源）；② 用 HTTP 方法表达动作；③ 特殊操作用子资源或动名词兜底（如 <code>/orders/{id}/pay</code>）</div>
+
+          <h3>HTTP 方法与 CRUD 映射</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>HTTP 方法</th><th>CRUD</th><th>含义</th><th>幂等？</th><th>示例</th></tr>
+              <tr><td>GET</td><td>Read</td><td>读取资源</td><td>✅ 是</td><td><code>GET /users/1</code></td></tr>
+              <tr><td>POST</td><td>Create</td><td>创建资源</td><td>❌ 否</td><td><code>POST /users</code></td></tr>
+              <tr><td>PUT</td><td>Update</td><td><strong>全量</strong>更新（替换整个资源）</td><td>✅ 是</td><td><code>PUT /users/1</code></td></tr>
+              <tr><td>PATCH</td><td>Update</td><td><strong>部分</strong>更新（只改传入字段）</td><td>⚠️ 通常是</td><td><code>PATCH /users/1</code></td></tr>
+              <tr><td>DELETE</td><td>Delete</td><td>删除资源</td><td>✅ 是</td><td><code>DELETE /users/1</code></td></tr>
+            </table>
+          </div>
+          <div class="callout">❓ PUT vs PATCH：PUT 传入完整对象，未传字段会被清空（覆盖语义）；PATCH 只传需要修改的字段，其余保持不变（部分更新语义）。实战中 <strong>PATCH 更常用</strong>。</div>
+
+          <h3>嵌套资源（层级关系）</h3>
+<pre><span class="cm"># 正确：最多嵌套 2 层</span>
+GET  /users/{userId}/orders           <span class="cm"># 用户的所有订单</span>
+POST /users/{userId}/orders           <span class="cm"># 在该用户下创建订单</span>
+GET  /users/{userId}/orders/{orderId} <span class="cm"># 获取该用户的某个订单</span>
+
+<span class="cm"># 错误：超过 2 层，冗长难维护</span>
+GET /users/{uid}/orders/{oid}/items/{iid}/reviews/{rid}  <span class="cm"># ❌ 太深</span>
+GET /order-items/{itemId}/reviews                         <span class="cm"># ✅ 扁平化更好</span></pre>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="section" id="rest-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例：用户+订单系统 URL 设计</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>FastAPI 完整 RESTful 路由示例</h3>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="cm"># ── 用户集合 ──</span>
+<span class="dc">@app.get</span>(<span class="st">"/users"</span>)
+<span class="kw">def</span> <span class="fn">list_users</span>(): ...           <span class="cm"># 列出所有用户（支持分页/过滤）</span>
+
+<span class="dc">@app.post</span>(<span class="st">"/users"</span>)
+<span class="kw">def</span> <span class="fn">create_user</span>(): ...          <span class="cm"># 创建用户，Body 含用户信息</span>
+
+<span class="cm"># ── 单个用户 ──</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_user</span>(user_id: <span class="fn">int</span>): ...  <span class="cm"># 获取指定用户</span>
+
+<span class="dc">@app.patch</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">update_user</span>(user_id: <span class="fn">int</span>): ... <span class="cm"># 部分更新（只改传入字段）</span>
+
+<span class="dc">@app.delete</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">delete_user</span>(user_id: <span class="fn">int</span>): ... <span class="cm"># 删除用户</span>
+
+<span class="cm"># ── 嵌套资源：用户的订单 ──</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}/orders"</span>)
+<span class="kw">def</span> <span class="fn">list_user_orders</span>(user_id: <span class="fn">int</span>): ...
+
+<span class="cm"># ── 特殊操作：支付订单 ──</span>
+<span class="dc">@app.post</span>(<span class="st">"/orders/{order_id}/pay"</span>)
+<span class="kw">def</span> <span class="fn">pay_order</span>(order_id: <span class="fn">int</span>): ... <span class="cm"># 特殊操作用子路径</span>
+
+<span class="dc">@app.post</span>(<span class="st">"/orders/{order_id}/cancel"</span>)
+<span class="kw">def</span> <span class="fn">cancel_order</span>(order_id: <span class="fn">int</span>): ...</pre>
+
+          <h3>改造前 vs 改造后对比</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>改造前</th><th>改造后</th><th>说明</th></tr>
+              <tr><td><code>POST /getUserInfo</code></td><td><code>GET /users/{id}</code></td><td>动词→方法，名词进路径</td></tr>
+              <tr><td><code>POST /createOrder</code></td><td><code>POST /orders</code></td><td>动词去掉，用方法表达</td></tr>
+              <tr><td><code>POST /getAllUserOrders</code></td><td><code>GET /users/{id}/orders</code></td><td>嵌套资源，方法改 GET</td></tr>
+              <tr><td><code>POST /cancelOrder?id=1</code></td><td><code>POST /orders/1/cancel</code></td><td>特殊操作→子路径</td></tr>
+              <tr><td><code>GET /userDetail?userId=1</code></td><td><code>GET /users/1</code></td><td>detail 多余，ID 进路径</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 误区 -->
+      <div class="section" id="rest-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>URL 里加动词：<code>POST /createUser</code></td>
+                <td>用 HTTP 方法表达动词，URL 只留名词：<code>POST /users</code></td>
+              </tr>
+              <tr>
+                <td>一律用 POST（"POST 万能"）</td>
+                <td>丢失 GET 缓存特性、接口无幂等保证，可读性差；正确映射语义方法。</td>
+              </tr>
+              <tr>
+                <td>嵌套层级超过 2 层</td>
+                <td>超 2 层改用扁平化 + 查询参数：<code>GET /projects?teamId=x&memberId=y</code></td>
+              </tr>
+              <tr>
+                <td>REST 必须 100% 纯粹，否则不算 REST</td>
+                <td>批量删除、复杂搜索等无法纯 CRUD 映射时，实用优先：<code>POST /users/batch-delete</code> 也是可接受的方案。</td>
+              </tr>
+              <tr>
+                <td>用 PUT 做部分更新</td>
+                <td>PUT 是全量替换，未传字段会被清空；部分更新应用 PATCH。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自测 -->
+      <div class="section" id="rest-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（RESTful 设计原则）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q1. REST 中"无状态"约束的主要好处是？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q1" value="a"> A. 减少数据库查询次数</label></li>
+                <li><label><input type="radio" name="q1" value="b"> B. 服务端易横向扩展，请求可独立重试</label></li>
+                <li><label><input type="radio" name="q1" value="c"> C. 让 URL 更简洁好看</label></li>
+                <li><label><input type="radio" name="q1" value="d"> D. 加快响应速度</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q1','b',this)">提交</button>
+              <div class="quiz-result" id="q1-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q2. 以下哪个接口设计符合 RESTful 规范？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q2" value="a"> A. POST /deleteUser?id=1</label></li>
+                <li><label><input type="radio" name="q2" value="b"> B. GET /getUserById?id=1</label></li>
+                <li><label><input type="radio" name="q2" value="c"> C. DELETE /users/1</label></li>
+                <li><label><input type="radio" name="q2" value="d"> D. POST /getUserInfo</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q2','c',this)">提交</button>
+              <div class="quiz-result" id="q2-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q3. PUT 和 PATCH 的本质区别是什么？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q3" value="a"> A. PUT 更安全，PATCH 有风险</label></li>
+                <li><label><input type="radio" name="q3" value="b"> B. PUT 全量替换，PATCH 部分更新；未传字段 PUT 会清空，PATCH 保持不变</label></li>
+                <li><label><input type="radio" name="q3" value="c"> C. PUT 用于创建，PATCH 用于修改</label></li>
+                <li><label><input type="radio" name="q3" value="d"> D. 只是命名不同，功能完全一样</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q3','b',this)">提交</button>
+              <div class="quiz-result" id="q3-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 1 -->
+
+
+    <!-- ═══════════════════════════════════════
+         TOPIC 2 · URL 命名规范
+    ════════════════════════════════════════════ -->
+    <div class="topic" id="topic-url">
+      <div class="topic-header">
+        <div class="topic-num">2</div>
+        <div>
+          <div class="topic-title">URL 命名规范</div>
+          <div class="topic-desc">URL 是接口的"门牌号"，好的命名让接口一看就懂，差的命名是团队协作的噩梦。</div>
+        </div>
+      </div>
+
+      <!-- 目标 -->
+      <div class="section open" id="url-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>掌握 URL 命名七条核心规范：名词复数、小写连字符、层级关系、查询参数用途等</li>
+            <li>理解路径参数和查询参数的本质区别，知道各自适用场景</li>
+            <li>能看懂并分析一个完整 URL 的每个部分（协议、主机、前缀、路径、参数）</li>
+            <li>能将不规范的旧接口改造为符合规范的 URL</li>
+          </ul>
+          <div class="callout">💡 规范的 URL 是自文档化的：光看 <code>GET /users/123/orders?status=pending&amp;page=1</code> 就知道"获取用户 123 的待处理订单第 1 页"。</div>
+        </div>
+      </div>
+
+      <!-- 概念 -->
+      <div class="section open" id="url-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>七条核心命名规范</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>#</th><th>规范</th><th>正确示例</th><th>错误示例</th></tr>
+              <tr><td>1</td><td>用名词，不用动词</td><td><code>GET /users</code></td><td><code>GET /getUsers</code></td></tr>
+              <tr><td>2</td><td>用复数名词表示集合</td><td><code>/users</code>, <code>/orders</code></td><td><code>/user</code>, <code>/userList</code></td></tr>
+              <tr><td>3</td><td>小写 + 连字符（kebab-case）</td><td><code>/product-categories</code></td><td><code>/productCategories</code>, <code>/product_categories</code></td></tr>
+              <tr><td>4</td><td>路径层级表资源关系（最多 2 层）</td><td><code>/users/{id}/orders</code></td><td><code>/getUserOrders?userId=x</code></td></tr>
+              <tr><td>5</td><td>查询参数做过滤/分页/排序</td><td><code>/users?status=active&amp;page=2</code></td><td><code>/users/active</code>（状态作路径）</td></tr>
+              <tr><td>6</td><td>特殊操作用子路径动名词兜底</td><td><code>POST /orders/{id}/pay</code></td><td><code>POST /payOrder</code></td></tr>
+              <tr><td>7</td><td>路径加 <code>/api</code> 前缀</td><td><code>/api/v1/users</code></td><td><code>/users</code>（与前端路由冲突）</td></tr>
+            </table>
+          </div>
+
+          <h3>完整 URL 结构解析</h3>
+          <div class="ascii">https://api.example.com/api/v1/users/123/orders?status=pending&page=1&size=10
+
+├── https://             协议（scheme）
+├── api.example.com      主机名（host）
+├── /api/v1              路径前缀（前缀 + 版本）
+├── /users/123/orders    资源路径（集合/ID/子集合）
+└── ?status=pending&...  查询参数（过滤 + 分页）</div>
+
+          <h3>路径参数 vs 查询参数</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th></th><th>路径参数</th><th>查询参数</th></tr>
+              <tr><td>位置</td><td><code>/users/{id}</code></td><td><code>/users?id=123</code></td></tr>
+              <tr><td>语义</td><td><strong>标识</strong>一个具体资源</td><td><strong>过滤/修饰</strong>资源集合</td></tr>
+              <tr><td>必填性</td><td>通常必填</td><td>通常可选</td></tr>
+              <tr><td>典型用法</td><td>单个资源 CRUD</td><td>搜索、分页、排序</td></tr>
+              <tr><td>示例</td><td><code>GET /users/42</code></td><td><code>GET /users?role=admin</code></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="section" id="url-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例：电商 API 改造前后对比</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>电商系统 URL 改造</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>改造前（不规范）</th><th>改造后（规范）</th><th>说明</th></tr>
+              <tr><td><code>POST /getProduct</code></td><td><code>GET /products/{id}</code></td><td>动词→方法，单数→ID路径</td></tr>
+              <tr><td><code>POST /createOrder</code></td><td><code>POST /orders</code></td><td>动词→方法</td></tr>
+              <tr><td><code>POST /getAllUserOrders</code></td><td><code>GET /users/{id}/orders</code></td><td>嵌套资源</td></tr>
+              <tr><td><code>POST /cancelOrder?id=1</code></td><td><code>POST /orders/1/cancel</code></td><td>特殊操作→子路径</td></tr>
+              <tr><td><code>GET /userDetail?userId=1</code></td><td><code>GET /users/1</code></td><td>detail 多余，ID 进路径</td></tr>
+              <tr><td><code>GET /productCategory</code></td><td><code>GET /product-categories</code></td><td>复数 + kebab-case</td></tr>
+            </table>
+          </div>
+
+          <h3>FastAPI 路径参数与查询参数示例</h3>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> typing <span class="kw">import</span> Optional
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="cm"># 路径参数：标识具体资源</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_user</span>(user_id: <span class="fn">int</span>):
+    <span class="kw">return</span> {<span class="st">"user_id"</span>: user_id}
+
+<span class="cm"># 查询参数：过滤、分页</span>
+<span class="dc">@app.get</span>(<span class="st">"/users"</span>)
+<span class="kw">def</span> <span class="fn">list_users</span>(
+    status: Optional[<span class="fn">str</span>] = <span class="nm">None</span>,     <span class="cm"># 过滤</span>
+    page: <span class="fn">int</span> = <span class="nm">1</span>,                    <span class="cm"># 分页</span>
+    size: <span class="fn">int</span> = <span class="nm">20</span>,
+):
+    <span class="kw">return</span> {<span class="st">"status"</span>: status, <span class="st">"page"</span>: page, <span class="st">"size"</span>: size}
+
+<span class="cm"># 嵌套资源：用户的订单</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}/orders"</span>)
+<span class="kw">def</span> <span class="fn">list_user_orders</span>(user_id: <span class="fn">int</span>, status: Optional[<span class="fn">str</span>] = <span class="nm">None</span>):
+    <span class="kw">return</span> {<span class="st">"user_id"</span>: user_id, <span class="st">"status"</span>: status}</pre>
+        </div>
+      </div>
+
+      <!-- 误区 -->
+      <div class="section" id="url-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>ID 用查询参数传：<code>GET /users?id=123</code></td>
+                <td>ID 是资源唯一标识，属于路径参数：<code>GET /users/123</code></td>
+              </tr>
+              <tr>
+                <td>混用 camelCase 和 kebab-case</td>
+                <td>统一用小写连字符：<code>/product-categories</code>，团队内风格一致最重要</td>
+              </tr>
+              <tr>
+                <td>路径结尾带斜杠：<code>/users/</code></td>
+                <td>去掉尾部斜杠：<code>/users</code>（某些框架会视为不同路由）</td>
+              </tr>
+              <tr>
+                <td>文件扩展名出现在 URL：<code>/users.json</code></td>
+                <td>数据格式通过 <code>Accept: application/json</code> 请求头协商，不放 URL</td>
+              </tr>
+              <tr>
+                <td>把过滤条件放到路径里：<code>/users/active</code></td>
+                <td>过滤是修饰集合，用查询参数：<code>/users?status=active</code></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自测 -->
+      <div class="section" id="url-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（URL 命名规范）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q4. 以下哪个 URL 命名最符合规范？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q4" value="a"> A. /api/getProductList</label></li>
+                <li><label><input type="radio" name="q4" value="b"> B. /api/product_categories</label></li>
+                <li><label><input type="radio" name="q4" value="c"> C. /api/product-categories</label></li>
+                <li><label><input type="radio" name="q4" value="d"> D. /api/ProductCategories</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q4','c',this)">提交</button>
+              <div class="quiz-result" id="q4-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q5. 路径参数和查询参数的根本区别是什么？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q5" value="a"> A. 路径参数必须加密，查询参数不用</label></li>
+                <li><label><input type="radio" name="q5" value="b"> B. 路径参数标识具体资源，查询参数用于过滤/修饰集合</label></li>
+                <li><label><input type="radio" name="q5" value="c"> C. 路径参数在 URL 末尾，查询参数在中间</label></li>
+                <li><label><input type="radio" name="q5" value="d"> D. 两者功能相同，只是写法不同</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q5','b',this)">提交</button>
+              <div class="quiz-result" id="q5-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 2 -->
+
+
+    <!-- ═══════════════════════════════════════
+         TOPIC 3 · 统一响应格式
+    ════════════════════════════════════════════ -->
+    <div class="topic" id="topic-resp">
+      <div class="topic-header">
+        <div class="topic-num">3</div>
+        <div>
+          <div class="topic-title">统一响应格式</div>
+          <div class="topic-desc">让前端能写一个拦截器搞定所有接口的错误处理——统一格式的价值所在。</div>
+        </div>
+      </div>
+
+      <!-- 目标 -->
+      <div class="section open" id="resp-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>理解为什么需要统一响应格式，能解释它对前端和联调的具体好处</li>
+            <li>掌握推荐的响应结构：<code>code + message + data</code> 三字段设计</li>
+            <li>理解 HTTP 状态码 vs 业务 code 的双层设计逻辑，能用表格区分各场景</li>
+            <li>能设计合理的业务错误码编码规则（如 40001、40101、50001）</li>
+            <li>掌握分页响应的完整格式：items + pagination 元数据</li>
+          </ul>
+          <div class="callout">💡 统一格式的最大价值：前端可以写一个全局拦截器处理 Loading 状态、错误弹窗、Token 过期，而不是在每个接口里单独处理。</div>
+        </div>
+      </div>
+
+      <!-- 概念 -->
+      <div class="section open" id="resp-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>推荐响应结构</h3>
+          <div class="ascii">// 成功响应
+{
+  "code": 0,
+  "message": "success",
+  "data": { "id": 1, "name": "Alice" }
+}
+
+// 失败响应
+{
+  "code": 40401,
+  "message": "用户不存在",
+  "data": null
+}</div>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+              <tr><td><code>code</code></td><td>int</td><td>业务状态码：<code>0</code> 代表成功，非 0 代表具体错误</td></tr>
+              <tr><td><code>message</code></td><td>str</td><td>人类可读描述，成功时为 <code>"success"</code>，失败时为错误原因（面向用户）</td></tr>
+              <tr><td><code>data</code></td><td>any</td><td>业务数据，失败时明确返回 <code>null</code></td></tr>
+            </table>
+          </div>
+
+          <h3>HTTP 状态码 vs 业务 code 双层设计（推荐）</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>场景</th><th>HTTP 状态码</th><th>业务 code</th><th>message</th></tr>
+              <tr><td>获取用户成功</td><td>200</td><td>0</td><td>success</td></tr>
+              <tr><td>创建用户成功</td><td>201</td><td>0</td><td>success</td></tr>
+              <tr><td>用户名已存在</td><td>400</td><td>40002</td><td>用户名已被注册</td></tr>
+              <tr><td>Token 过期</td><td>401</td><td>40102</td><td>登录已过期，请重新登录</td></tr>
+              <tr><td>无权限</td><td>403</td><td>40301</td><td>无访问权限</td></tr>
+              <tr><td>用户不存在</td><td>404</td><td>40401</td><td>用户不存在</td></tr>
+              <tr><td>服务器异常</td><td>500</td><td>50001</td><td>服务器内部错误</td></tr>
+            </table>
+          </div>
+          <div class="callout">🔑 双层的价值：HTTP 状态码让网关/监控工具识别失败；业务 code 让前端知道具体原因（如弹不同的错误文案）。</div>
+
+          <h3>业务错误码编码规则</h3>
+          <div class="ascii">XXYYYY 格式：
+XX   → HTTP 状态码前两位（40 = 4xx，50 = 5xx）
+YYYY → 具体业务错误序号
+
+40001 → 请求参数缺失或格式错误
+40002 → 用户名已存在
+40101 → Token 无效
+40102 → Token 已过期
+40401 → 用户不存在
+40402 → 订单不存在
+50001 → 数据库操作失败</div>
+
+          <h3>分页响应格式</h3>
+          <div class="ascii">{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "items": [ {...}, {...} ],
+    "pagination": {
+      "page": 1,
+      "size": 20,
+      "total": 100,       ← 满足过滤条件的总记录数
+      "totalPages": 5,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}</div>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="section" id="resp-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例：FastAPI 统一响应封装</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>通用响应模型（Pydantic）</h3>
+<pre><span class="kw">from</span> typing <span class="kw">import</span> TypeVar, Generic, Optional
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+T = <span class="fn">TypeVar</span>(<span class="st">"T"</span>)
+
+<span class="kw">class</span> <span class="fn">Response</span>(BaseModel, <span class="fn">Generic</span>[T]):
+    code: <span class="fn">int</span> = <span class="nm">0</span>
+    message: <span class="fn">str</span> = <span class="st">"success"</span>
+    data: Optional[T] = <span class="nm">None</span>
+
+    <span class="dc">@classmethod</span>
+    <span class="kw">def</span> <span class="fn">ok</span>(cls, data: T = <span class="nm">None</span>, message: <span class="fn">str</span> = <span class="st">"success"</span>):
+        <span class="kw">return</span> <span class="fn">cls</span>(code=<span class="nm">0</span>, message=message, data=data)
+
+    <span class="dc">@classmethod</span>
+    <span class="kw">def</span> <span class="fn">error</span>(cls, code: <span class="fn">int</span>, message: <span class="fn">str</span>):
+        <span class="kw">return</span> <span class="fn">cls</span>(code=code, message=message, data=<span class="nm">None</span>)
+
+
+<span class="cm"># 在路由中使用</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, HTTPException
+app = <span class="fn">FastAPI</span>()
+
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_user</span>(user_id: <span class="fn">int</span>):
+    user = db.<span class="fn">get</span>(user_id)
+    <span class="kw">if not</span> user:
+        <span class="kw">return</span> Response.<span class="fn">error</span>(code=<span class="nm">40401</span>, message=<span class="st">"用户不存在"</span>)
+    <span class="kw">return</span> Response.<span class="fn">ok</span>(data=user)</pre>
+
+          <h3>分页响应封装</h3>
+<pre><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+<span class="kw">from</span> typing <span class="kw">import</span> List
+
+<span class="kw">class</span> <span class="fn">Pagination</span>(BaseModel):
+    page: <span class="fn">int</span>
+    size: <span class="fn">int</span>
+    total: <span class="fn">int</span>
+    total_pages: <span class="fn">int</span>
+    has_next: <span class="fn">bool</span>
+    has_prev: <span class="fn">bool</span>
+
+<span class="kw">class</span> <span class="fn">PagedData</span>(BaseModel, <span class="fn">Generic</span>[T]):
+    items: List[T]
+    pagination: Pagination
+
+<span class="dc">@app.get</span>(<span class="st">"/users"</span>)
+<span class="kw">def</span> <span class="fn">list_users</span>(page: <span class="fn">int</span> = <span class="nm">1</span>, size: <span class="fn">int</span> = <span class="nm">20</span>):
+    total = db.query(<span class="fn">User</span>).<span class="fn">count</span>()        <span class="cm"># 先查总数</span>
+    items = db.query(<span class="fn">User</span>).<span class="fn">offset</span>((page-<span class="nm">1</span>)*size).<span class="fn">limit</span>(size).<span class="fn">all</span>()
+    paged = <span class="fn">PagedData</span>(
+        items=items,
+        pagination=<span class="fn">Pagination</span>(
+            page=page, size=size, total=total,
+            total_pages=(total + size - <span class="nm">1</span>) // size,
+            has_next=page * size &lt; total,
+            has_prev=page &gt; <span class="nm">1</span>
+        )
+    )
+    <span class="kw">return</span> Response.<span class="fn">ok</span>(data=paged)</pre>
+        </div>
+      </div>
+
+      <!-- 误区 -->
+      <div class="section" id="resp-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>HTTP 200 但 code 是 404：<code>{"code": 404, "msg": "..."}</code></td>
+                <td>HTTP 状态码和业务 code 各司其职：HTTP 404 + 业务 code 40401。混用会让监控误判为成功。</td>
+              </tr>
+              <tr>
+                <td><code>data</code> 字段直接返回数组：<code>[{...}, {...}]</code></td>
+                <td>用对象包裹：<code>{"items": [...], "pagination": {...}}</code>。一旦需要加元数据，不用改所有调用方。</td>
+              </tr>
+              <tr>
+                <td>错误时省略 <code>data</code> 字段</td>
+                <td>明确返回 <code>"data": null</code>，让前端知道字段存在但为空，而不是接口设计遗漏了该字段。</td>
+              </tr>
+              <tr>
+                <td><code>message</code> 暴露技术细节：<code>"NullPointerException at line 42"</code></td>
+                <td><code>message</code> 应面向用户："服务器内部错误"。技术细节写日志，不暴露给客户端。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自测 -->
+      <div class="section" id="resp-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（统一响应格式）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q6. 以下哪种响应格式最推荐？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q6" value="a"> A. HTTP 200 + {"code": 404, "message": "用户不存在"}</label></li>
+                <li><label><input type="radio" name="q6" value="b"> B. HTTP 404 + {"code": 40401, "message": "用户不存在", "data": null}</label></li>
+                <li><label><input type="radio" name="q6" value="c"> C. HTTP 200 + [{"id":1}, {"id":2}]（直接数组）</label></li>
+                <li><label><input type="radio" name="q6" value="d"> D. HTTP 500 + {"error": "NullPointerException at line 42"}</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q6','b',this)">提交</button>
+              <div class="quiz-result" id="q6-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q7. 分页接口的 total 字段应该怎么计算？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q7" value="a"> A. len(当前页数据)——用当前页数量代替</label></li>
+                <li><label><input type="radio" name="q7" value="b"> B. 满足过滤条件的全量 COUNT 查询结果（不含 LIMIT）</label></li>
+                <li><label><input type="radio" name="q7" value="c"> C. 数据库中该表的全部行数</label></li>
+                <li><label><input type="radio" name="q7" value="d"> D. 前端自己算，后端不用返回</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q7','b',this)">提交</button>
+              <div class="quiz-result" id="q7-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 3 -->
+
+
+    <!-- ═══════════════════════════════════════
+         TOPIC 4 · 分页过滤排序
+    ════════════════════════════════════════════ -->
+    <div class="topic" id="topic-page">
+      <div class="topic-header">
+        <div class="topic-num">4</div>
+        <div>
+          <div class="topic-title">分页、过滤与排序</div>
+          <div class="topic-desc">列表接口的三大核心能力——不做分页的接口，数据量大了必挂。</div>
+        </div>
+      </div>
+
+      <!-- 目标 -->
+      <div class="section open" id="page-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>掌握 Offset 分页和 Cursor 分页的原理、SQL 实现、适用场景及各自缺点</li>
+            <li>理解过滤参数的命名规范：等值过滤、范围过滤（_gt/_gte/_lt/_lte）、模糊搜索</li>
+            <li>掌握排序参数设计，并理解为什么 <code>sort</code> 参数必须做白名单校验</li>
+            <li>能看懂并写出带分页+过滤+排序的完整列表接口 URL</li>
+          </ul>
+          <div class="callout warn">🔴 安全提醒：<code>sort</code> 参数若不做白名单校验，直接拼接进 SQL，会有 SQL 注入风险！</div>
+        </div>
+      </div>
+
+      <!-- 概念 -->
+      <div class="section open" id="page-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>两种分页方式对比</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>特性</th><th>页码分页（Offset）</th><th>游标分页（Cursor）</th></tr>
+              <tr><td>可跳页</td><td>✅ 可以</td><td>❌ 不可以</td></tr>
+              <tr><td>大数据量性能</td><td>差（高 OFFSET 慢）</td><td>好（按 ID/时间戳索引）</td></tr>
+              <tr><td>数据一致性</td><td>差（实时变更会漏/重）</td><td>好</td></tr>
+              <tr><td>实现复杂度</td><td>简单</td><td>较复杂</td></tr>
+              <tr><td>适用场景</td><td>搜索结果、数据管理后台</td><td>动态 Feed 流、消息列表</td></tr>
+            </table>
+          </div>
+
+          <h3>Offset 分页 SQL 实现</h3>
+          <div class="ascii">请求：GET /users?page=2&size=20
+
+SQL：
+SELECT * FROM users
+ORDER BY id
+LIMIT 20 OFFSET 20;    -- offset = (page-1) * size = (2-1)*20 = 20</div>
+
+          <h3>Cursor 分页 SQL 实现</h3>
+          <div class="ascii">请求：GET /posts?cursor=eyJpZCI6MTAwfQ&size=20
+      （cursor 是上一页最后一条记录 ID=100 的 Base64 编码）
+
+SQL：
+SELECT * FROM posts
+WHERE id > 100          -- cursor 解码后的 id
+ORDER BY id ASC
+LIMIT 20;</div>
+
+          <h3>过滤参数命名规范</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>写法</th><th>含义</th><th>示例</th></tr>
+              <tr><td><code>field=value</code></td><td>等值匹配</td><td><code>status=active</code></td></tr>
+              <tr><td><code>field_gt=value</code></td><td>field &gt; value</td><td><code>age_gt=18</code></td></tr>
+              <tr><td><code>field_gte=value</code></td><td>field &gt;= value</td><td><code>amount_gte=100</code></td></tr>
+              <tr><td><code>field_lt=value</code></td><td>field &lt; value</td><td><code>age_lt=60</code></td></tr>
+              <tr><td><code>field_lte=value</code></td><td>field &lt;= value</td><td><code>amount_lte=1000</code></td></tr>
+              <tr><td><code>field_from / field_to</code></td><td>日期范围</td><td><code>created_at_from=2024-01-01</code></td></tr>
+              <tr><td><code>q=keyword</code></td><td>全文搜索</td><td><code>q=alice</code></td></tr>
+            </table>
+          </div>
+
+          <h3>综合示例：完整列表接口</h3>
+          <div class="ascii">GET /api/v1/orders?
+    status=pending             ← 过滤：待处理订单
+    &amount_gte=100            ← 过滤：金额 >= 100
+    &created_at_from=2024-01-01 ← 过滤：日期范围
+    &sort=created_at           ← 排序：按创建时间
+    &order=desc                ← 排序：降序
+    &page=1                    ← 分页：第1页
+    &size=20                   ← 分页：每页20条</div>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="section" id="page-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例：带分页过滤排序的 FastAPI 接口</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>Offset 分页实现</h3>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, Query
+<span class="kw">from</span> typing <span class="kw">import</span> Optional
+
+app = <span class="fn">FastAPI</span>()
+
+ALLOWED_SORT_FIELDS = {<span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"created_at"</span>, <span class="st">"updated_at"</span>}
+
+<span class="dc">@app.get</span>(<span class="st">"/api/v1/users"</span>)
+<span class="kw">def</span> <span class="fn">list_users</span>(
+    status: Optional[<span class="fn">str</span>] = <span class="nm">None</span>,
+    age_gt: Optional[<span class="fn">int</span>] = <span class="nm">None</span>,
+    q: Optional[<span class="fn">str</span>] = <span class="nm">None</span>,
+    sort: <span class="fn">str</span> = <span class="st">"id"</span>,
+    order: <span class="fn">str</span> = <span class="st">"asc"</span>,
+    page: <span class="fn">int</span> = <span class="fn">Query</span>(<span class="nm">1</span>, ge=<span class="nm">1</span>),
+    size: <span class="fn">int</span> = <span class="fn">Query</span>(<span class="nm">20</span>, ge=<span class="nm">1</span>, le=<span class="nm">100</span>),
+):
+    <span class="cm"># ⚠️ sort 白名单校验，防止 SQL 注入</span>
+    <span class="kw">if</span> sort <span class="kw">not in</span> ALLOWED_SORT_FIELDS:
+        <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="st">f"不支持按 {sort} 排序"</span>)
+
+    query = db.<span class="fn">query</span>(User)
+    <span class="kw">if</span> status:
+        query = query.<span class="fn">filter</span>(User.status == status)
+    <span class="kw">if</span> age_gt:
+        query = query.<span class="fn">filter</span>(User.age > age_gt)
+    <span class="kw">if</span> q:
+        query = query.<span class="fn">filter</span>(User.name.<span class="fn">contains</span>(q))
+
+    total = query.<span class="fn">count</span>()                                <span class="cm"># 先查总数</span>
+    items = query.<span class="fn">offset</span>((page-<span class="nm">1</span>)*size).<span class="fn">limit</span>(size).<span class="fn">all</span>()
+    <span class="kw">return</span> {<span class="st">"items"</span>: items, <span class="st">"total"</span>: total, <span class="st">"page"</span>: page}</pre>
+
+          <h3>Cursor 分页实现</h3>
+<pre><span class="kw">import</span> base64, json
+
+<span class="kw">def</span> <span class="fn">encode_cursor</span>(last_id: <span class="fn">int</span>) -> <span class="fn">str</span>:
+    <span class="kw">return</span> base64.<span class="fn">b64encode</span>(json.<span class="fn">dumps</span>({<span class="st">"id"</span>: last_id}).<span class="fn">encode</span>()).<span class="fn">decode</span>()
+
+<span class="kw">def</span> <span class="fn">decode_cursor</span>(cursor: <span class="fn">str</span>) -> <span class="fn">int</span>:
+    <span class="kw">return</span> json.<span class="fn">loads</span>(base64.<span class="fn">b64decode</span>(cursor)).<span class="fn">get</span>(<span class="st">"id"</span>, <span class="nm">0</span>)
+
+<span class="dc">@app.get</span>(<span class="st">"/api/v1/posts"</span>)
+<span class="kw">def</span> <span class="fn">list_posts</span>(cursor: Optional[<span class="fn">str</span>] = <span class="nm">None</span>, size: <span class="fn">int</span> = <span class="nm">20</span>):
+    last_id = <span class="fn">decode_cursor</span>(cursor) <span class="kw">if</span> cursor <span class="kw">else</span> <span class="nm">0</span>
+    items = db.<span class="fn">query</span>(Post).<span class="fn">filter</span>(Post.id > last_id).<span class="fn">limit</span>(size + <span class="nm">1</span>).<span class="fn">all</span>()
+    has_next = <span class="fn">len</span>(items) > size
+    items = items[:size]
+    next_cursor = <span class="fn">encode_cursor</span>(items[-<span class="nm">1</span>].id) <span class="kw">if</span> has_next <span class="kw">else</span> <span class="nm">None</span>
+    <span class="kw">return</span> {<span class="st">"items"</span>: items, <span class="st">"nextCursor"</span>: next_cursor, <span class="st">"hasNext"</span>: has_next}</pre>
+        </div>
+      </div>
+
+      <!-- 误区 -->
+      <div class="section" id="page-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>不做分页直接返回全表：<code>db.query(User).all()</code></td>
+                <td>无论数据量多少，列表接口都应有分页上限（不传参数时默认最多返回 100 条）</td>
+              </tr>
+              <tr>
+                <td>过滤条件放路径里：<code>/users/active/admin</code></td>
+                <td>过滤条件是修饰集合的，用查询参数：<code>/users?status=active&amp;role=admin</code></td>
+              </tr>
+              <tr>
+                <td>total 用当前页数量代替：<code>"total": len(items)</code></td>
+                <td>total 是全量 COUNT 查询（不含 LIMIT），需单独执行 <code>query.count()</code></td>
+              </tr>
+              <tr>
+                <td>sort 参数不校验，直接拼接进 SQL</td>
+                <td>必须做白名单校验（<code>ALLOWED_SORT_FIELDS</code>），防止 SQL 注入</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自测 -->
+      <div class="section" id="page-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（分页过滤排序）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q8. 游标分页（Cursor Pagination）相比页码分页的核心优势是？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q8" value="a"> A. 支持跳到任意页</label></li>
+                <li><label><input type="radio" name="q8" value="b"> B. 大数据量下性能稳定，且数据实时变化不影响一致性</label></li>
+                <li><label><input type="radio" name="q8" value="c"> C. 实现更简单，代码更少</label></li>
+                <li><label><input type="radio" name="q8" value="d"> D. 不需要数据库支持</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q8','b',this)">提交</button>
+              <div class="quiz-result" id="q8-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q9. 为什么 sort 参数必须做白名单校验？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q9" value="a"> A. 用户可能传入不存在的字段名，导致 500 错误</label></li>
+                <li><label><input type="radio" name="q9" value="b"> B. 直接将 sort 拼接进 SQL 会有 SQL 注入风险</label></li>
+                <li><label><input type="radio" name="q9" value="c"> C. 减少数据库排序的 CPU 开销</label></li>
+                <li><label><input type="radio" name="q9" value="d"> D. 只是代码规范要求，没有安全风险</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q9','b',this)">提交</button>
+              <div class="quiz-result" id="q9-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 4 -->
+
+
+    <!-- ═══════════════════════════════════════
+         TOPIC 5 · API 版本管理
+    ════════════════════════════════════════════ -->
+    <div class="topic" id="topic-ver">
+      <div class="topic-header">
+        <div class="topic-num">5</div>
+        <div>
+          <div class="topic-title">API 版本管理</div>
+          <div class="topic-desc">破坏性变更时让新旧客户端同时工作——避免"改了接口、所有调用方都炸"的灾难。</div>
+        </div>
+      </div>
+
+      <!-- 目标 -->
+      <div class="section open" id="ver-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>理解什么是"破坏性变更"，能判断哪些改动需要升版本，哪些不需要</li>
+            <li>掌握四种版本管理方式（URL路径/Header/查询参数/子域名）及各自优劣</li>
+            <li>知道推荐方案是 URL 路径版本（<code>/api/v1/</code>），能说出原因</li>
+            <li>了解 FastAPI 中用 APIRouter prefix 实现多版本路由的方式</li>
+            <li>了解旧版本下线前的注意事项（通知策略、弃用头、迁移窗口）</li>
+          </ul>
+          <div class="callout">💡 版本管理不是"API 改了就换版本"，而是"破坏性变更时才换"。非破坏性变更（加字段、加接口）直接改，不需要新版本。</div>
+        </div>
+      </div>
+
+      <!-- 概念 -->
+      <div class="section open" id="ver-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>破坏性变更 vs 非破坏性变更</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>需要新版本（破坏性变更）</th><th>不需要新版本（非破坏性变更）</th></tr>
+              <tr><td>删除字段：响应中去掉 <code>email</code></td><td>新增字段：响应中增加 <code>avatar_url</code></td></tr>
+              <tr><td>修改字段名：<code>user_name</code> → <code>username</code></td><td>新增接口：增加 <code>/users/{id}/followers</code></td></tr>
+              <tr><td>修改字段类型：<code>age</code> 从 int 改为 string</td><td>松化参数限制：必填改为可选</td></tr>
+              <tr><td>删除接口：<code>/users/search</code> 下线</td><td>Bug 修复：不改结构只修正数据</td></tr>
+              <tr><td>修改认证方式：Cookie → Bearer Token</td><td>性能优化：响应内容不变</td></tr>
+            </table>
+          </div>
+
+          <h3>四种版本管理方式对比</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>方案</th><th>示例</th><th>直观性</th><th>实现难度</th><th>推荐度</th></tr>
+              <tr><td><strong>URL 路径</strong>（首选✅）</td><td><code>/api/v1/users</code></td><td>⭐⭐⭐ 高</td><td>简单</td><td>⭐⭐⭐</td></tr>
+              <tr><td>请求头</td><td><code>API-Version: 2</code></td><td>⭐ 低</td><td>中</td><td>⭐⭐ 次选</td></tr>
+              <tr><td>查询参数</td><td><code>/api/users?version=2</code></td><td>⭐⭐ 中</td><td>简单</td><td>⭐ 不推荐</td></tr>
+              <tr><td>子域名</td><td><code>v2.api.example.com</code></td><td>⭐⭐⭐ 高</td><td>复杂</td><td>⭐⭐ 特殊场景</td></tr>
+            </table>
+          </div>
+          <div class="callout">🔑 推荐 URL 路径版本的原因：直观（一眼知道版本）、易调试（浏览器直接访问）、对缓存友好、路由层面隔离实现简单。</div>
+
+          <h3>旧版本下线策略</h3>
+          <div class="ascii">1. 发布 v2 时，v1 继续维护（至少 6-12 个月）
+2. 在 v1 响应头中加弃用警告：
+   Deprecation: true
+   Sunset: Sat, 01 Jan 2025 00:00:00 GMT
+   Link: &lt;https://api.example.com/api/v2/users&gt;; rel="successor-version"
+3. 监控 v1 流量，降至 0 时下线
+4. 下线前发邮件/公告通知老客户端开发者</div>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="section" id="ver-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例：FastAPI 多版本路由</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <h3>方式一：路由前缀（推荐）</h3>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, APIRouter
+
+app = <span class="fn">FastAPI</span>()
+
+v1_router = <span class="fn">APIRouter</span>(prefix=<span class="st">"/api/v1"</span>)
+v2_router = <span class="fn">APIRouter</span>(prefix=<span class="st">"/api/v2"</span>)
+
+<span class="dc">@v1_router.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_user_v1</span>(user_id: <span class="fn">int</span>):
+    <span class="cm"># v1 旧格式</span>
+    <span class="kw">return</span> {<span class="st">"user_name"</span>: <span class="st">"alice"</span>, <span class="st">"user_email"</span>: <span class="st">"alice@x.com"</span>}
+
+<span class="dc">@v2_router.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_user_v2</span>(user_id: <span class="fn">int</span>):
+    <span class="cm"># v2 新格式（字段名变更 = 破坏性变更）</span>
+    <span class="kw">return</span> {
+        <span class="st">"username"</span>: <span class="st">"alice"</span>,
+        <span class="st">"email"</span>: <span class="st">"alice@x.com"</span>,
+        <span class="st">"created_at"</span>: <span class="st">"2024-01-01T00:00:00Z"</span>,
+        <span class="st">"avatar_url"</span>: <span class="nm">None</span>
+    }
+
+app.<span class="fn">include_router</span>(v1_router)
+app.<span class="fn">include_router</span>(v2_router)</pre>
+
+          <h3>方式二：独立应用挂载</h3>
+<pre>app_v1 = <span class="fn">FastAPI</span>(title=<span class="st">"API v1"</span>)
+app_v2 = <span class="fn">FastAPI</span>(title=<span class="st">"API v2"</span>)
+
+<span class="cm"># 各自注册路由...</span>
+
+main_app = <span class="fn">FastAPI</span>()
+main_app.<span class="fn">mount</span>(<span class="st">"/api/v1"</span>, app_v1)
+main_app.<span class="fn">mount</span>(<span class="st">"/api/v2"</span>, app_v2)</pre>
+
+          <h3>v1 → v2 迁移示例</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>字段</th><th>v1（旧）</th><th>v2（新）</th><th>变更类型</th></tr>
+              <tr><td>用户名</td><td><code>user_name</code></td><td><code>username</code></td><td>❌ 破坏性（字段重命名）</td></tr>
+              <tr><td>邮箱</td><td><code>user_email</code></td><td><code>email</code></td><td>❌ 破坏性（字段重命名）</td></tr>
+              <tr><td>创建时间</td><td><code>create_time</code>（无时区）</td><td><code>created_at</code>（ISO 8601）</td><td>❌ 破坏性（格式改变）</td></tr>
+              <tr><td>头像</td><td>—（无此字段）</td><td><code>avatar_url: null</code></td><td>✅ 非破坏性（新增）</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 误区 -->
+      <div class="section" id="ver-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>所有改动都发新版本</td>
+                <td>只有破坏性变更才需要新版本；非破坏性变更（加字段、加接口）直接改，不增加维护负担</td>
+              </tr>
+              <tr>
+                <td>v2 上线立即下线 v1</td>
+                <td>旧版本必须有充足迁移窗口（移动端 App 发版周期可能数月），强行下线直接影响用户</td>
+              </tr>
+              <tr>
+                <td>版本号用语义版本：<code>/api/v1.2.3/</code></td>
+                <td>API 对外版本只需主版本号（v1、v2）；次版本和补丁变更不改 URL</td>
+              </tr>
+              <tr>
+                <td>文档中忘记标注弃用状态</td>
+                <td>旧版本弃用时，必须在 API 文档、Swagger/OpenAPI 中明确标注 <code>deprecated: true</code></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自测 -->
+      <div class="section" id="ver-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（API 版本管理）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q10. 以下哪种 API 变更需要发布新版本？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q10" value="a"> A. 新增了一个 /users/{id}/followers 接口</label></li>
+                <li><label><input type="radio" name="q10" value="b"> B. 响应中新增了一个 avatar_url 字段（可为 null）</label></li>
+                <li><label><input type="radio" name="q10" value="c"> C. 将响应字段 user_name 重命名为 username</label></li>
+                <li><label><input type="radio" name="q10" value="d"> D. 修复了返回数据计算错误的 Bug（结构不变）</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q10','c',this)">提交</button>
+              <div class="quiz-result" id="q10-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q11. 为什么推荐 URL 路径版本（/api/v1/）而不是请求头版本？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q11" value="a"> A. URL 路径版本更符合 REST 纯粹原则</label></li>
+                <li><label><input type="radio" name="q11" value="b"> B. 直观易调试（浏览器直接访问），对缓存友好，路由实现简单</label></li>
+                <li><label><input type="radio" name="q11" value="c"> C. 请求头版本会被防火墙屏蔽</label></li>
+                <li><label><input type="radio" name="q11" value="d"> D. URL 路径版本安全性更高</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q11','b',this)">提交</button>
+              <div class="quiz-result" id="q11-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 5 -->
+
+    <!-- ══════════════════════════════
+         📎 证据追溯区
+    ═══════════════════════════════════ -->
+    <div class="trace-section" id="trace">
+      <h2>📎 证据追溯</h2>
+      <p class="trace-desc">以下列出本页每个核心结论的原始来源，确保可验证。标记 <span class="tag-pending">⚠️ 待确认</span> 的为 AI 基于已有知识推断。</p>
+      <div class="tbl-wrap">
+        <table>
+          <tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr>
+          <tr><td>REST 六大约束及资源导向设计原则</td><td><a href="../03_RESTful_API设计/1.RESTful设计原则.md">1.RESTful设计原则.md</a></td><td>核心概念区</td></tr>
+          <tr><td>URL 命名七条规范（名词复数、kebab-case、嵌套≤2层等）</td><td><a href="../03_RESTful_API设计/2.URL命名规范.md">2.URL命名规范.md</a></td><td>核心概念区</td></tr>
+          <tr><td>统一响应格式 code+message+data 三字段设计</td><td><a href="../03_RESTful_API设计/3.统一响应格式.md">3.统一响应格式.md</a></td><td>核心概念区</td></tr>
+          <tr><td>Offset vs Cursor 分页原理及 SQL 实现</td><td><a href="../03_RESTful_API设计/4.分页过滤排序.md">4.分页过滤排序.md</a></td><td>核心概念区</td></tr>
+          <tr><td>sort 参数白名单校验防 SQL 注入</td><td><a href="../03_RESTful_API设计/4.分页过滤排序.md">4.分页过滤排序.md</a></td><td>常见误区</td></tr>
+          <tr><td>API 版本管理四种方式对比及推荐 URL 路径版本</td><td><a href="../03_RESTful_API设计/5.API版本管理.md">5.API版本管理.md</a></td><td>核心概念区</td></tr>
+          <tr><td>Demo 运行顺序与文件映射关系</td><td><a href="../03_RESTful_API设计/demo/README.md">demo/README.md</a></td><td>学习顺序表格</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+  // ─── Toggle Section (Accordion) ───
+  function toggleSection(head) {
+    const section = head.parentElement;
+    section.classList.toggle('open');
+  }
+
+  // ─── Quiz Check ───
+  const explanations = {
+    q1:  { b: "无状态意味着服务端不存储会话信息，每次请求自包含，任意节点都能处理，天然支持水平扩展和独立重试。" },
+    q2:  { c: "DELETE /users/1 符合规范：用 HTTP 方法（DELETE）表达动作，URL 只含名词（users）和路径参数（1）。" },
+    q3:  { b: "PUT 是全量替换语义，未传字段会被清空；PATCH 是部分更新，只修改传入字段，其余保持不变。实战中 PATCH 更常用。" },
+    q4:  { c: "URL 规范要求小写字母 + 连字符（kebab-case），复数名词，不用驼峰和下划线。" },
+    q5:  { b: "路径参数用于唯一标识具体资源（如 /users/42），查询参数用于过滤/修饰集合（如 ?status=active&page=2）。" },
+    q6:  { b: "双层设计：HTTP 404 告诉监控/网关请求失败，业务 code 40401 告诉前端具体原因。data 明确为 null 而不是省略。" },
+    q7:  { b: "total 必须是满足过滤条件的全量 COUNT（不含 LIMIT/OFFSET），用 len(当前页) 最多等于 size，会让前端以为只有这么多数据。" },
+    q8:  { b: "游标分页基于 ID/时间戳索引，避免了大 OFFSET 扫描；且以游标为锚点，插入/删除数据不会造成翻页时的重复或遗漏。" },
+    q9:  { b: "sort 字段若直接拼进 SQL（如 ORDER BY ${sort}），攻击者可传入 '1; DROP TABLE users;--' 等注入代码。白名单校验是必要的安全措施。" },
+    q10: { c: "字段重命名（user_name → username）是破坏性变更，旧客户端用 user_name 会找不到字段；其他三项都是非破坏性变更。" },
+    q11: { b: "URL 路径版本可以直接用浏览器测试，不需要额外工具；缓存可以按 URL 区分版本；路由直接按前缀分发，实现简单清晰。" },
+  };
+
+  function checkQuiz(name, correct, btn) {
+    const selected = document.querySelector(`input[name="${name}"]:checked`);
+    const resultEl = document.getElementById(`${name}-result`);
+    if (!selected) {
+      resultEl.style.display = 'block';
+      resultEl.className = 'quiz-result wrong';
+      resultEl.textContent = '请先选择一个答案！';
+      return;
+    }
+    const isCorrect = selected.value === correct;
+    const exp = explanations[name] && explanations[name][correct] || '';
+    resultEl.style.display = 'block';
+    resultEl.className = `quiz-result ${isCorrect ? 'correct' : 'wrong'}`;
+    resultEl.textContent = isCorrect
+      ? `✅ 正确！${exp}`
+      : `❌ 错误，正确答案是 ${correct.toUpperCase()}。${exp}`;
+    btn.textContent = '再次作答';
+    btn.onclick = () => resetQuiz(name, correct, btn);
+  }
+
+  function resetQuiz(name, correct, btn) {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false);
+    const resultEl = document.getElementById(`${name}-result`);
+    resultEl.style.display = 'none';
+    btn.textContent = '提交';
+    btn.onclick = () => checkQuiz(name, correct, btn);
+  }
+
+  // ─── Mobile Sidebar ───
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('overlay');
+  const menuBtn  = document.getElementById('menuBtn');
+
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+
+  // Close sidebar on nav link/topic click (mobile)
+  document.querySelectorAll('.nav-link, .nav-topic').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ─── Active nav link on scroll ───
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const allNavTopics = document.querySelectorAll('a.nav-topic');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(l => {
+          l.classList.toggle('active', l.getAttribute('href') === `#${id}`);
+        });
+        // 联动高亮父级节标题
+        allNavTopics.forEach(t => t.classList.remove('active'));
+        const highlighted = document.querySelector('.nav-link.active');
+        if (highlighted) {
+          let prev = highlighted.previousElementSibling;
+          while (prev) {
+            if (prev.tagName === 'A' && prev.classList.contains('nav-topic')) {
+              prev.classList.add('active');
+              break;
+            }
+            prev = prev.previousElementSibling;
+          }
+        }
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // ─── Reading Progress Bar ───
+  const progressBar = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = total > 0 ? (window.scrollY / total) * 100 : 0;
+    progressBar.style.width = pct + '%';
+  });
+
+  // ─── Back to Top ───
+  const backTop = document.getElementById('backTop');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('visible', window.scrollY > 300);
+  });
+  backTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ─── Dark Mode ───
+  const themeToggle = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark');
+    themeToggle.textContent = '☀️';
+  } else if (savedTheme === 'light') {
+    document.body.classList.remove('dark');
+    themeToggle.textContent = '🌙';
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.body.classList.add('dark');
+    themeToggle.textContent = '☀️';
+  }
+  themeToggle.addEventListener('click', () => {
+    const isDark = document.body.classList.toggle('dark');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+</script>
+</body>
+</html>

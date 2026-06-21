@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阶段 2 · 后端前置知识总览</title>
+<style>:root{--bg:#f6f8fb;--surface:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--accent:#2563eb;--accent-light:#dbeafe;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.06);--trace-bg:#f1f5f9;--back-top-bg:#2563eb;--back-top-text:#fff;--table-stripe:#f8fafc;--table-header:#f1f5f9;--card-grad-1:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);--card-grad-2:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);--card-grad-3:linear-gradient(135deg,#cffafe 0%,#a5f3fc 100%);--card-grad-4:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)}body.dark{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);--trace-bg:#161b22;--table-stripe:#161b22;--table-header:#21262d;--shadow:0 1px 4px rgba(0,0,0,.5);--back-top-bg:#58a6ff;--card-grad-1:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.08));--card-grad-2:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(124,58,237,0.08));--card-grad-3:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(6,182,212,0.08));--card-grad-4:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.08))}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;transition:background .3s,color .3s}.progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);z-index:200;transition:width .1s}.theme-toggle{position:fixed;top:12px;right:16px;z-index:300;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .15s}.theme-toggle:hover{transform:scale(1.1)}.layout{max-width:1280px;margin:0 auto;padding:32px 40px 80px}.hero{background:var(--surface);border-radius:20px;padding:48px 48px 40px;margin-bottom:32px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}.hero::before{content:"";position:absolute;top:0;right:0;width:300px;height:300px;background:radial-gradient(circle,rgba(124,58,237,.15),transparent 70%);pointer-events:none}.hero-eyebrow{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:16px}.hero h1{font-size:38px;font-weight:900;line-height:1.2;margin-bottom:14px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 50%,#db2777 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}.hero-subtitle{font-size:16px;color:var(--muted);margin-bottom:24px;max-width:820px}.hero-meta{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin-bottom:8px}.hero-meta span strong{color:var(--text);margin-right:4px}.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:all .15s}.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.25)}.btn-ghost{background:var(--surface);color:var(--text);border-color:var(--border)}.btn-ghost:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}.progress-overview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow)}.progress-bar-wrap{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:12px 0 8px}.progress-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);width:0%;transition:width .3s;border-radius:6px}.progress-label{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--muted)}.section-block{margin-bottom:48px;scroll-margin-top:20px}.section-block h2{font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px}.section-block h2 .num{width:32px;height:32px;background:var(--accent);color:#fff;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}.section-block .section-sub{color:var(--muted);font-size:14px;margin-bottom:20px;margin-left:42px}.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}.card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-decoration:none;color:var(--text);box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;min-height:310px}.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08);border-color:var(--accent)}.card-c1{background:var(--card-grad-1)}.card-c2{background:var(--card-grad-2)}.card-c3{background:var(--card-grad-3)}.card-c4{background:var(--card-grad-4)}.card-icon{font-size:30px;margin-bottom:10px}.card-title{font-size:17px;font-weight:800;margin-bottom:6px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px}.card-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:11px;color:var(--muted);white-space:nowrap}.card-status.done{color:#16a34a;border-color:#16a34a;background:rgba(34,197,94,0.1)}.card-desc{font-size:13.5px;color:var(--muted);margin-bottom:12px;line-height:1.55}.card-list{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:6px;font-size:13px;color:var(--muted)}.card-list li{display:flex;gap:6px}.card-list li::before{content:"•";color:var(--accent);font-weight:900}.card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-top:auto}.card-meta span{display:flex;align-items:center;gap:3px}.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}.info-card h4{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:6px}.info-card p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}.callout{margin:14px 0;padding:12px 16px;border-radius:8px;border-left:4px solid;font-size:14px;line-height:1.65}.callout-tips{background:rgba(34,197,94,0.08);border-color:#16a34a}.callout-tips .callout-label{color:#16a34a}.callout-label{font-weight:700;margin-right:6px}.trace{background:var(--trace-bg);padding:24px 28px;border-radius:10px;border:1px solid var(--border);margin-top:16px}.trace p{color:var(--muted);font-size:13.5px;margin:6px 0 0 42px}.back-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--back-top-bg);color:var(--back-top-text);border:none;cursor:pointer;font-size:20px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:100;display:none;align-items:center;justify-content:center;transition:opacity .2s,transform .15s}.back-top:hover{transform:scale(1.1)}.back-top.show{display:flex}@media print{.back-top,.theme-toggle,.progress-bar{display:none!important}.layout{padding:20px}.card,.hero{break-inside:avoid}}@media (max-width:768px){.layout{padding:16px 16px 60px}.hero{padding:32px 24px}.hero h1{font-size:28px}.cards-grid{grid-template-columns:1fr}.progress-label{flex-direction:column}.section-block .section-sub{margin-left:0}}</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" id="themeToggle" title="切换深浅色">🌙</button>
+
+<div class="layout">
+  <header class="hero">
+    <span class="hero-eyebrow">📚 Python 后端学习 · 阶段 2</span>
+    <h1>后端前置知识统一总览</h1>
+    <p class="hero-subtitle">把网络、HTTP、RESTful API、认证授权四章串成一条后端入门主线：先理解请求如何到达服务，再设计接口，最后处理身份与权限。</p>
+    <div class="hero-meta">
+      <span><strong>📖 4 章</strong> · 17 个知识点小节</span>
+      <span><strong>⏱️ 约 101 分钟</strong> 总阅读</span>
+      <span><strong>🧪 17 个 demo</strong> · 均为独立 Python 脚本</span>
+      <span><strong>🗓️ 核对日期</strong> 2026-06-20</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="01-network.html">🚀 开始学习：计算机网络基础</a>
+      <a class="btn btn-ghost" href="02-http.html">🌍 重点章节：HTTP 协议</a>
+      <a class="btn btn-ghost" href="04-auth.html">🔐 安全入口：认证与授权</a>
+    </div>
+  </header>
+
+  <div class="progress-overview">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <strong style="font-size:15px">📊 阶段 2 学习进度</strong>
+      <span style="font-size:12px;color:var(--muted)">点击章节卡片会自动标记已读，并保存到 localStorage</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="progress-label">
+      <span id="progressText">0 / 4 章已读（0%）</span>
+      <span id="progressHint">💡 建议顺序：网络基础 → HTTP → RESTful API → 认证授权</span>
+    </div>
+  </div>
+
+  <section class="section-block" id="chapters">
+    <h2><span class="num">1</span>阶段 2 章节导航</h2>
+    <p class="section-sub">每张卡片对应一个章节汇总 HTML，章节页内仍保留原有侧栏目录、折叠区块、自测题与证据追溯。</p>
+    <div class="cards-grid">
+      <a class="card card-c1" href="01-network.html" data-file="01-network.html">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">01 计算机网络基础 <span class="card-status" data-status="01-network.html">未读</span></div>
+        <p class="card-desc">建立后端通信底座：数据如何在网络中分层传输、域名如何找到服务器、端口如何定位服务。</p>
+        <ul class="card-list">
+          <li>TCP/IP 协议：分层、封装与传输流程</li>
+          <li>DNS 解析：域名到 IP 的查询链路</li>
+          <li>常见端口与协议：HTTP、HTTPS、数据库端口</li>
+        </ul>
+        <div class="card-meta"><span>📖 ~18 分钟</span><span>3 节</span><span>🧪 3 个 demo</span></div>
+      </a>
+
+      <a class="card card-c2" href="02-http.html" data-file="02-http.html">
+        <div class="card-icon">🌍</div>
+        <div class="card-title">02 HTTP 协议 <span class="card-status" data-status="02-http.html">未读</span></div>
+        <p class="card-desc">后端接口的共同语言：请求、响应、方法、状态码、Header、Cookie、Session、HTTPS 与 CORS。</p>
+        <ul class="card-list">
+          <li>请求与响应结构：起始行、Header、Body</li>
+          <li>HTTP 方法与状态码：语义化表达操作结果</li>
+          <li>Header、Content-Type、Cookie、Session、HTTPS、CORS</li>
+        </ul>
+        <div class="card-meta"><span>📖 ~40 分钟</span><span>5 节</span><span>🧪 5 个 demo</span></div>
+      </a>
+
+      <a class="card card-c3" href="03-restful-api.html" data-file="03-restful-api.html">
+        <div class="card-icon">🔗</div>
+        <div class="card-title">03 RESTful API 设计 <span class="card-status" data-status="03-restful-api.html">未读</span></div>
+        <p class="card-desc">把 HTTP 用成清晰稳定的接口规范：资源建模、URL 命名、统一响应、分页过滤排序与版本管理。</p>
+        <ul class="card-list">
+          <li>RESTful 设计原则：资源、动词与状态转移</li>
+          <li>URL 命名规范与统一响应格式</li>
+          <li>分页过滤排序与 API 版本管理</li>
+        </ul>
+        <div class="card-meta"><span>📖 ~18 分钟</span><span>5 节</span><span>🧪 5 个 demo</span></div>
+      </a>
+
+      <a class="card card-c4" href="04-auth.html" data-file="04-auth.html">
+        <div class="card-icon">🔐</div>
+        <div class="card-title">04 认证与授权基础 <span class="card-status" data-status="04-auth.html">未读</span></div>
+        <p class="card-desc">从"你是谁"到"你能做什么"：理解登录、JWT、密码哈希与 OAuth2.0 授权。</p>
+        <ul class="card-list">
+          <li>认证与授权概念：AuthN 与 AuthZ</li>
+          <li>JWT 详解与密码哈希 bcrypt/argon2</li>
+          <li>OAuth2.0 授权：第三方登录与授权流程</li>
+        </ul>
+        <div class="card-meta"><span>📖 ~25 分钟</span><span>4 节</span><span>🧪 4 个 demo</span></div>
+      </a>
+    </div>
+  </section>
+
+  <section class="section-block" id="path">
+    <h2><span class="num">2</span>学习主线</h2>
+    <p class="section-sub">阶段 2 的内容不是并列碎片，而是一条后端请求链路。</p>
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>① 网络基础</h4>
+        <p>客户端请求先经过 DNS、TCP/IP、端口定位，找到目标服务。</p>
+      </div>
+      <div class="info-card">
+        <h4>② HTTP 协议</h4>
+        <p>请求进入服务后，以 HTTP 方法、Header、Body、状态码表达意图与结果。</p>
+      </div>
+      <div class="info-card">
+        <h4>③ RESTful API</h4>
+        <p>把 HTTP 能力组织成稳定、可维护、可演进的接口设计规范。</p>
+      </div>
+      <div class="info-card">
+        <h4>④ 认证授权</h4>
+        <p>在接口访问前后判断用户身份、权限边界与安全凭证。</p>
+      </div>
+    </div>
+    <div class="callout callout-tips">
+      <span class="callout-label">💡 使用方式</span>
+      <span>本页负责统一导航与进度记录；具体学习仍进入各章节页，按"学习目标 → 核心概念 → 代码示例 → 常见误区 → 自测题"完成。</span>
+    </div>
+  </section>
+
+  <section class="section-block trace" id="trace">
+    <h2><span class="num">📎</span>信息溯源</h2>
+    <p>数据来源：`阶段2_后端前置知识` 下 4 个章节目录中的理论 `.md` 文件、`demo/README.md` 与 `demo/*.py`。</p>
+    <p>本总览页仅做结构化导航与视觉聚合，不改写章节结论；章节页末尾仍保留各自的证据追溯区。</p>
+  </section>
+</div>
+
+<button class="back-top" id="backTop" title="回到顶部">↑</button>
+
+<script>
+/* 主题切换 */
+const themeBtn=document.getElementById('themeToggle'),savedTheme=localStorage.getItem('theme'),prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+if(savedTheme==='dark'||(!savedTheme&&prefersDark)){document.body.classList.add('dark');themeBtn.textContent='☀️'}
+themeBtn.addEventListener('click',()=>{document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');themeBtn.textContent=isDark?'☀️':'🌙';localStorage.setItem('theme',isDark?'dark':'light')});
+
+/* 页面滚动进度 */
+const progressBar=document.getElementById('progressBar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;const max=h.scrollHeight-h.clientHeight;progressBar.style.width=(max? h.scrollTop/max*100:0)+'%'});
+
+/* 回到顶部 */
+const backTop=document.getElementById('backTop');
+window.addEventListener('scroll',()=>backTop.classList.toggle('show',window.scrollY>300));
+backTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+/* 阶段学习进度追踪 */
+const STORAGE_KEY='stage2-backend-overview-progress';
+const CARDS=document.querySelectorAll('.card[data-file]');
+let progress=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+
+function applyProgress(){
+  let done=0;
+  CARDS.forEach(card=>{
+    const file=card.dataset.file;
+    const status=card.querySelector('.card-status');
+    if(progress[file]){
+      card.style.opacity='0.85';
+      status.textContent='✓ 已读';
+      status.classList.add('done');
+      done++;
+    } else {
+      card.style.opacity='1';
+      status.textContent='未读';
+      status.classList.remove('done');
+    }
+  });
+  const total=CARDS.length;
+  const pct=Math.round((done/total)*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${done} / ${total} 章已读（${pct}%）`;
+  document.getElementById('progressHint').textContent=pct===100?'🎉 阶段 2 已全部完成，可以进入下一阶段。':(pct>=50?'🔥 进度过半，开始把接口设计与认证授权串起来。':'💡 建议顺序：网络基础 → HTTP → RESTful API → 认证授权');
+}
+
+CARDS.forEach(card=>{
+  card.addEventListener('click',()=>{
+    const file=card.dataset.file;
+    progress[file]=!progress[file];
+    if(!progress[file]) delete progress[file];
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(progress));
+    applyProgress();
+  });
+});
+applyProgress();
+</script>
+</body>
+</html>

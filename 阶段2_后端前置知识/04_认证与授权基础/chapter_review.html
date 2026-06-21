@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认证与授权基础 — 学习回顾</title>
+<style>
+/* ═══════════════ 基础重置与变量 ═══════════════ */
+:root {
+    --bg: #f6f8fb; --card: #fff; --border: #e3e8ef; --text: #1e293b; --text-secondary: #64748b;
+    --blue: #2563eb; --blue-light: rgba(37,99,235,0.10);
+    --purple: #7c3aed; --purple-light: rgba(124,58,237,0.10);
+    --cyan: #0284c7; --cyan-light: rgba(2,132,199,0.10);
+    --red: #dc2626; --red-light: rgba(220,38,38,0.08);
+    --orange: #d97706; --orange-light: #fffbeb;
+    --green: #16a34a; --green-light: rgba(22,163,74,0.10);
+    --code-bg: #1e293b; --code-text: #e2e8f0;
+    --callout-warn-border: #dc2626;
+    --sidebar-width: 260px;
+    --accent: #2563eb;
+    --accent-light: rgba(37,99,235,0.12);
+    --diagram-bg: #0f172a;
+    --zebra: rgba(0,0,0,0.02);
+    --shadow: 0 1px 4px rgba(0,0,0,.08);
+    --radius: 8px;
+    --nav-topic-size: 12.5px;
+    --nav-link-size: 13.5px;
+    --body-size: 15px;
+    --code-size: 12.5px;
+    --quiz-bg: #fffbeb;
+}
+
+.dark {
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3; --text-secondary: #8b949e;
+    --blue: #58a6ff; --blue-light: rgba(88,166,255,0.12);
+    --purple: #a78bfa; --purple-light: rgba(167,139,250,0.12);
+    --cyan: #79c0ff; --cyan-light: rgba(121,192,255,0.10);
+    --red: #f85149; --red-light: rgba(248,81,73,0.10);
+    --orange: #d29922; --orange-light: rgba(210,153,34,0.08);
+    --green: #3fb950; --green-light: rgba(63,185,80,0.10);
+    --code-bg: #161b22; --code-text: #e6edf3;
+    --callout-warn-border: #f85149;
+    --accent: #58a6ff;
+    --accent-light: rgba(88,166,255,0.12);
+    --diagram-bg: #0d1117;
+    --zebra: rgba(255,255,255,0.02);
+    --shadow: 0 1px 4px rgba(0,0,0,.3);
+    --quiz-bg: rgba(217,119,6,0.1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: var(--body-size); line-height: 1.7; color: var(--text);
+    background: var(--bg); transition: background .3s, color .3s;
+}
+p { margin-bottom: 8px; }
+
+/* ═══════════════ 进度条 ═══════════════ */
+#progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px; background: var(--accent);
+    z-index: 1000; transition: width .15s linear;
+}
+
+/* ═══════════════ 深色模式按钮 ═══════════════ */
+#dark-toggle {
+    position: fixed; top: 16px; right: 24px; z-index: 999;
+    background: var(--card); border: 1px solid var(--border); border-radius: 50%;
+    width: 40px; height: 40px; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow); transition: background .3s;
+}
+#dark-toggle:hover { background: var(--border); }
+
+/* ═══════════════ 侧栏 ═══════════════ */
+#sidebar {
+    position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
+    background: var(--card); border-right: 1px solid var(--border);
+    padding: 24px 16px; overflow-y: auto; z-index: 900;
+    transition: transform .3s, width .3s, padding .3s;
+}
+#sidebar h3 { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: .03em; }
+#sidebar nav { display: flex; flex-direction: column; }
+.nav-topic {
+    display: block; font-size: var(--nav-topic-size); font-weight: 700; color: var(--text);
+    text-decoration: none; padding: 5px 8px; border-radius: 6px; margin-top: 10px;
+    letter-spacing: .03em; transition: background .2s, color .2s;
+}
+.nav-topic:hover, .nav-topic.active { color: var(--accent); background: var(--accent-light); }
+.nav-link {
+    display: block; font-size: var(--nav-link-size); font-weight: 400; color: var(--text-secondary);
+    text-decoration: none; padding: 4px 8px 4px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+.nav-link:hover, .nav-link.active { color: var(--accent); background: var(--accent-light); }
+
+/* ═══════════════ 主内容区（外层铺满 + 内层720px居中） ═══════════════ */
+#main-content {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    padding: 40px 32px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    transition: margin-left .3s, padding .3s;
+    max-width: 100%;
+}
+/* 不再限制主内容区直接子元素宽度，让阅读区随视口自适应 */
+#main-content h1 { font-size: 26px; margin-bottom: 2px; }
+#main-content > .subtitle { color: var(--text-secondary); margin-bottom: 16px; }
+.reading-time {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 14px; font-size: 13px; color: var(--text-secondary);
+    max-width: fit-content;
+}
+
+/* ═══════════════ 知识点 Section ═══════════════ */
+.topic-section { margin-top: 32px; }
+.topic-section h2 {
+    font-size: 20px; padding-bottom: 8px; border-bottom: 2px solid var(--border);
+    margin-bottom: 16px;
+}
+.block { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.block-header {
+    display: flex; align-items: center; gap: 8px; padding: 11px 16px;
+    cursor: pointer; user-select: none; font-size: 14.5px; font-weight: 600;
+    border-radius: 10px 10px 0 0;
+}
+.block-header .tag {
+    font-size: 12px; color: #fff; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+}
+.tag-blue { background: var(--blue); }
+.tag-purple { background: var(--purple); }
+.tag-cyan { background: var(--cyan); }
+.tag-red { background: var(--red); }
+.tag-orange { background: var(--orange); }
+.tag-overview { background: #475569; }
+.topic-desc {
+    color: var(--text-secondary); font-style: italic;
+    font-size: 14.5px; margin: -8px 0 16px; line-height: 1.6;
+    padding-left: 12px; border-left: 3px solid var(--blue);
+}
+.block-toggle { margin-left: auto; color: var(--text-secondary); font-size: 12px; transition: transform .3s; }
+.block.open .block-toggle { transform: rotate(180deg); }
+.block-body { display: none; padding: 0 16px 16px 16px; }
+.block.open .block-body { display: block; }
+
+/* ═══════════════ 学习目标 ═══════════════ */
+.objective-list { padding-left: 20px; }
+.objective-list li { margin-bottom: 4px; }
+.backend-callout {
+    background: var(--blue-light); border-left: 3px solid var(--blue);
+    padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ═══════════════ 核心概念 ═══════════════ */
+.ascii-diagram {
+    background: var(--diagram-bg); color: #e2e8f0;
+    font-family: "Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace;
+    font-size: 11.5px; line-height: 1.5; padding: 14px 16px; border-radius: 8px;
+    margin: 10px 0; overflow-x: auto; white-space: pre;
+}
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0; font-size: 14px; table-layout: fixed; word-break: break-word; }
+.table-wrap { overflow-x: auto; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); word-break: break-word; }
+th { font-weight: 700; background: var(--zebra); }
+tr:nth-child(even) td { background: var(--zebra); }
+table tr:last-child td { border-bottom: none; }
+details { margin: 8px 0; }
+details summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 4px 0; }
+details .details-content { padding: 6px 12px; border-left: 2px solid var(--border); margin-left: 4px; }
+
+/* ═══════════════ 代码示例 ═══════════════ */
+.code-section { margin-bottom: 16px; }
+.code-section h4 { font-size: 14px; color: var(--cyan); margin-bottom: 6px; }
+.code-block {
+    background: var(--code-bg); border-radius: 8px; overflow: hidden; position: relative;
+    margin-bottom: 8px;
+}
+.code-block pre {
+    font-family: "Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace;
+    font-size: var(--code-size); line-height: 1.55; padding: 16px 50px 16px 16px;
+    overflow-x: auto; color: var(--code-text); tab-size: 4; white-space: pre;
+}
+.code-block pre .kw { color: #ff7b72; }
+.code-block pre .str { color: #a5d6ff; }
+.code-block pre .cm { color: #8b949e; font-style: italic; }
+.code-block pre .fn { color: #d2a8ff; }
+.code-block pre .num { color: #79c0ff; }
+.code-block pre .op { color: #ffa657; }
+.code-block pre .highlight { border-left: 3px solid #f59e0b; padding-left: 10px; display: inline-block; width: 100%; }
+.copy-btn {
+    position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1);
+    color: #e2e8f0; border: none; border-radius: 4px; padding: 3px 10px;
+    font-size: 11px; cursor: pointer; transition: background .2s;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.2); }
+.io-table { font-size: 13px; margin-top: 4px; }
+.io-table th:first-child { background: rgba(22,163,74,0.10); }
+.io-table tr:nth-child(even) td:first-child { background: rgba(22,163,74,0.05); }
+
+/* ═══════════════ 常见误区 ═══════════════ */
+.mistake-table th:first-child { color: var(--red); }
+.mistake-table td:first-child { color: var(--red); font-weight: 500; }
+.mistake-table td:last-child { color: var(--green); }
+.security-callout {
+    background: var(--red-light); border: 1px solid var(--callout-warn-border);
+    padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-size: 13.5px;
+}
+
+/* ═══════════════ 自测题 ═══════════════ */
+.quiz { margin-bottom: 16px; }
+.quiz-question {
+    background: var(--quiz-bg); border-left: 3px solid var(--orange);
+    padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 10px;
+    font-weight: 600; font-size: 14.5px;
+}
+.quiz-option { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin: 2px 0; transition: background .15s; }
+.quiz-option:hover { background: rgba(37,99,235,0.06); }
+.quiz-option input[type="radio"] { accent-color: var(--accent); }
+.quiz-feedback { display: none; margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+.quiz-feedback.correct { background: var(--green-light); color: var(--green); display: block; }
+.quiz-feedback.wrong { background: var(--red-light); color: var(--red); display: block; }
+.quiz-actions { margin-top: 10px; display: flex; gap: 8px; }
+.btn {
+    padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
+    transition: background .2s;
+}
+.btn:hover { background: var(--border); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { opacity: 0.85; }
+
+/* ═══════════════ 回到顶部 ═══════════════ */
+#back-to-top {
+    position: fixed; bottom: 32px; right: 32px; width: 44px; height: 44px;
+    border-radius: 50%; background: var(--accent); color: #fff; border: none;
+    font-size: 20px; cursor: pointer; box-shadow: var(--shadow); z-index: 999;
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+    display: flex; align-items: center; justify-content: center;
+}
+#back-to-top.visible { opacity: 1; pointer-events: auto; }
+
+/* ═══════════════ 证据追溯区 ═══════════════ */
+#evidence {
+    margin-top: 48px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; box-shadow: var(--shadow);
+}
+#evidence h3 { font-size: 18px; margin-bottom: 6px; }
+#evidence .ev-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 14px; }
+#evidence table { font-size: 13px; }
+#evidence .pending { color: var(--orange); font-weight: 600; }
+
+/* ═══════════════ 响应式：中等屏 ═══════════════ */
+@media (max-width: 1024px) {
+    :root { --sidebar-width: 220px; }
+    #sidebar { padding: 20px 12px; }
+    .nav-topic { font-size: 11.5px; }
+    .nav-link { font-size: 12.5px; padding: 3px 6px 3px 12px; }
+    #main-content { padding: 32px 24px 24px 24px; }
+    #main-content h1 { font-size: 23px; }
+}
+
+/* ═══════════════ 移动端 ═══════════════ */
+@media (max-width: 768px) {
+    :root { --sidebar-width: 260px; }
+    #sidebar { transform: translateX(-100%); padding: 24px 16px; }
+    #sidebar.open { transform: translateX(0); }
+    .nav-topic { font-size: 12.5px; }
+    .nav-link { font-size: 13.5px; padding: 4px 8px 4px 16px; }
+    #main-content { margin-left: 0; padding: 20px 16px; }
+    #main-content > * { max-width: 100%; }
+    #dark-toggle { top: 10px; right: 12px; width: 40px; height: 40px; font-size: 20px; }
+    #mobile-nav-bar {
+        display: flex; align-items: center; gap: 10px; position: fixed; top: 0; left: 0; right: 0;
+        background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 14px;
+        z-index: 950; height: 48px;
+    }
+    #mobile-nav-bar .hamburger { font-size: 22px; cursor: pointer; background: none; border: none; color: var(--text); }
+    #mobile-nav-bar span { font-weight: 700; font-size: 14px; }
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 899; }
+    #overlay.show { display: block; }
+    .code-block pre { font-size: 11.5px; }
+}
+
+/* ═══════════════ 打印 ═══════════════ */
+@media print {
+    #sidebar, #dark-toggle, #progress-bar, #back-to-top, #mobile-nav-bar, #overlay { display: none !important; }
+    #main-content { margin-left: 0; padding: 0; }
+    #main-content > * { max-width: 100%; }
+    body { background: #fff; color: #000; }
+    .block-body { display: block !important; }
+    .block-toggle { display: none; }
+    .code-block { background: #f5f5f5; color: #000; border: 1px solid #ccc; }
+}
+</style>
+</head>
+<body>
+
+<!-- 进度条 -->
+<div id="progress-bar"></div>
+
+<!-- 深色模式切换 -->
+<button id="dark-toggle" title="切换深色/浅色模式" aria-label="深色模式切换">🌙</button>
+
+<!-- 移动端导航栏 -->
+<div id="mobile-nav-bar" style="display:none">
+    <button class="hamburger" id="hamburger-btn" aria-label="菜单">☰</button>
+    <span>认证与授权基础</span>
+</div>
+
+<!-- 遮罩层 -->
+<div id="overlay"></div>
+
+<!-- ═══════════════ 侧栏 ═══════════════ -->
+<aside id="sidebar">
+    <h3>📑 本章目录</h3>
+    <nav>
+        <a class="nav-topic" href="#s1">第一节 · 认证与授权概念</a>
+        <a class="nav-link" href="#s1-goal">学习目标</a>
+        <a class="nav-link" href="#s1-concept">核心概念</a>
+        <a class="nav-link" href="#s1-code">代码示例</a>
+        <a class="nav-link" href="#s1-caution">常见误区</a>
+        <a class="nav-link" href="#s1-quiz">自测题</a>
+
+        <a class="nav-topic" href="#s2">第二节 · JWT 详解</a>
+        <a class="nav-link" href="#s2-goal">学习目标</a>
+        <a class="nav-link" href="#s2-concept">核心概念</a>
+        <a class="nav-link" href="#s2-code">代码示例</a>
+        <a class="nav-link" href="#s2-caution">常见误区</a>
+        <a class="nav-link" href="#s2-quiz">自测题</a>
+
+        <a class="nav-topic" href="#s3">第三节 · 密码哈希</a>
+        <a class="nav-link" href="#s3-goal">学习目标</a>
+        <a class="nav-link" href="#s3-concept">核心概念</a>
+        <a class="nav-link" href="#s3-code">代码示例</a>
+        <a class="nav-link" href="#s3-caution">常见误区</a>
+        <a class="nav-link" href="#s3-quiz">自测题</a>
+
+        <a class="nav-topic" href="#s4">第四节 · OAuth2.0 授权</a>
+        <a class="nav-link" href="#s4-goal">学习目标</a>
+        <a class="nav-link" href="#s4-concept">核心概念</a>
+        <a class="nav-link" href="#s4-code">代码示例</a>
+        <a class="nav-link" href="#s4-caution">常见误区</a>
+        <a class="nav-link" href="#s4-quiz">自测题</a>
+    </nav>
+</aside>
+
+<!-- ═══════════════ 主内容区 ═══════════════ -->
+<main id="main-content">
+    <style>
+        .chapter-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); box-shadow: var(--shadow); font-size: 13.5px; }
+        .chapter-nav a, .chapter-nav span { flex: 1; color: var(--text-secondary); text-decoration: none; }
+        .chapter-nav a { color: var(--accent); font-weight: 700; }
+        .chapter-nav a:hover { text-decoration: underline; }
+        .chapter-nav .home { text-align: center; }
+        .chapter-nav .next { text-align: right; }
+        @media (max-width: 768px) { .chapter-nav { flex-direction: column; align-items: stretch; } .chapter-nav .home, .chapter-nav .next { text-align: left; } }
+    </style>
+    <nav class="chapter-nav" aria-label="阶段 2 章节导航">
+        <a href="../03_RESTful_API设计/index.html">← 上一章：RESTful API 设计</a>
+        <a class="home" href="../00_阶段总览/index.html">🏠 返回阶段总目录</a>
+        <span class="next">已是最后一章 →</span>
+    </nav>
+    <h1>认证与授权基础</h1>
+    <p class="subtitle">AuthN（你是谁）→ AuthZ（你能干什么）— 后端安全的两道大门</p>
+    <div class="reading-time">⏱️ 预估阅读 25 分钟</div>
+
+    <!-- ═══════════════ 📌 本章 总览 ═══════════════ -->
+    <div class="block open" id="overview" style="margin-top: 24px;">
+        <div class="block-header" onclick="toggleBlock(this)">
+            <span class="tag tag-overview">📌 本章 · 为什么要学认证与授权基础？</span>
+            <span class="block-toggle">▼</span>
+        </div>
+        <div class="block-body">
+            <p>认证（AuthN，你是谁）+ 授权（AuthZ，你能干什么）是后端安全的两道大门——每个 API 接口要先验明用户身份再核对权限范围。读完本章，你能区分 401/403 的真正含义、看懂 JWT 三段式结构、知道密码为什么不能用 MD5 存、理清 OAuth2.0 第三方登录的完整链路，从而搭出可上线的登录与权限系统。</p>
+            <div class="table-wrap">
+            <table>
+                <tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+                <tr><td>认证与授权概念</td><td>AuthN vs AuthZ · Session vs Token · RBAC · 401/403</td><td>⭐⭐⭐</td></tr>
+                <tr><td>JWT 详解</td><td>Header.Payload.Signature · HMAC 签名 · 双 Token 机制 · Base64URL ≠ 加密</td><td>⭐⭐⭐</td></tr>
+                <tr><td>密码哈希 bcrypt 与 argon2</td><td>慢哈希 · 加盐 · cost 指数 · 抗 GPU · passlib 封装</td><td>⭐⭐⭐</td></tr>
+                <tr><td>OAuth2.0 授权</td><td>四角色 · 授权码模式 · state 防 CSRF · scope 最小权限 · client_secret</td><td>⭐⭐⭐</td></tr>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ 第一节 ═══════════════ -->
+    <section class="topic-section" id="s1">
+        <h2>第一节 · 认证与授权概念</h2>
+        <div class="topic-desc">认证（Authentication）= 你是谁？授权（Authorization）= 你能干什么？</div>
+
+        <!-- s1-goal: 学习目标 -->
+        <div class="block open" id="s1-goal">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-blue">🎯 学习目标</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <ul class="objective-list">
+                    <li>区分认证（AuthN）与授权（AuthZ）的核心含义</li>
+                    <li>理解 HTTP 无状态性及 Session/Token 两种解决方案</li>
+                    <li>掌握 RBAC（基于角色的权限控制）模型</li>
+                    <li>正确区分 401（未认证）与 403（未授权）状态码</li>
+                    <li>了解密码安全存储的基本要求</li>
+                </ul>
+                <div class="backend-callout">
+                    <strong>与后端开发的关联：</strong>每个 API 接口都需要先认证用户身份、再校验操作权限。FastAPI 中通过 <code>Depends(get_current_user)</code> 实现认证依赖注入，再通过角色检查实现授权——这是后端安全的两层防线。
+                </div>
+            </div>
+        </div>
+
+        <!-- s1-concept: 核心概念 -->
+        <div class="block open" id="s1-concept">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-purple">📖 核心概念</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <p><strong>认证（AuthN）</strong>验证用户身份（你是谁），<strong>授权（AuthZ）</strong>验证操作权限（你能做什么）。认证是授权的前提。</p>
+
+                <div class="table-wrap">
+                <table>
+                    <tr><th>维度</th><th>认证（AuthN）</th><th>授权（AuthZ）</th></tr>
+                    <tr><td>核心问题</td><td>你是谁？</td><td>你能做什么？</td></tr>
+                    <tr><td>发生时机</td><td>登录时</td><td>每次请求时</td></tr>
+                    <tr><td>常见技术</td><td>密码、JWT、OAuth2</td><td>RBAC、ACL、策略</td></tr>
+                    <tr><td>HTTP 状态码</td><td>401 Unauthorized</td><td>403 Forbidden</td></tr>
+                    <tr><td>类比</td><td>查身份证</td><td>检查通行证</td></tr>
+                </table>
+                </div>
+
+                <p><strong>Session vs Token 对比</strong></p>
+                <div class="table-wrap">
+                <table>
+                    <tr><th>维度</th><th>Session（传统）</th><th>Token/JWT（现代）</th></tr>
+                    <tr><td>存储位置</td><td>服务端（内存/Redis）</td><td>客户端（浏览器/App）</td></tr>
+                    <tr><td>服务器状态</td><td>有状态</td><td>无状态</td></tr>
+                    <tr><td>横向扩展</td><td>难（需共享 Session）</td><td>易（独立验证）</td></tr>
+                    <tr><td>注销方式</td><td>删除服务端 Session</td><td>黑名单机制</td></tr>
+                    <tr><td>移动端支持</td><td>差（Cookie 不友好）</td><td>好（Header 传递）</td></tr>
+                </table>
+                </div>
+
+                <details>
+                    <summary>Session 方案流程（展开查看完整步骤）</summary>
+                    <div class="details-content">
+                        <strong>登录：</strong>用户提交账号密码 → 服务器验证 → 创建 Session 存 Redis → 返回 Session ID（Set-Cookie）<br>
+                        <strong>后续请求：</strong>浏览器自动携带 Cookie → 服务器用 Session ID 查 Redis → 确认身份 → 处理请求<br>
+                        <strong>登出：</strong>服务器删除 Redis 中 Session → Session ID 立即失效<br>
+                        <strong>痛点：</strong>多服务器部署时必须共享 Redis，否则用户被路由到另一台服务器时会"掉线"
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Token/JWT 方案流程（展开查看完整步骤）</summary>
+                    <div class="details-content">
+                        <strong>登录：</strong>用户提交账号密码 → 服务器验证 → 生成 JWT（含用户信息+签名） → 返回 Token<br>
+                        <strong>后续请求：</strong>客户端在 Authorization Header 携带 Token → 服务器解密验证签名和有效期 → 读取用户信息 → 处理请求<br>
+                        <strong>优势：</strong>每台服务器只需知道 secret_key 就能独立验证，无需共享存储，天然支持水平扩展
+                    </div>
+                </details>
+
+                <details>
+                    <summary>RBAC 权限模型原理（展开查看）</summary>
+                    <div class="details-content">
+                        <strong>用户 → 角色 → 权限</strong>：不直接给用户分配权限，而是通过角色间接关联。<br>
+                        示例：用户 Alice 被赋予"普通用户"角色，"普通用户"角色拥有 [read_own_profile, read_public_posts, create_comment] 权限。<br>
+                        当需要修改 Alice 的权限时，只需调整她的角色，或修改角色的权限集合——改动一处即可影响所有同角色用户。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- s1-code: 代码示例 -->
+        <div class="block" id="s1-code">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-cyan">💻 代码示例</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="code-section">
+                    <h4>Part 1：认证方法 — authenticate()</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="cm"># 认证（Authentication）：验证用户身份，失败返回 None → HTTP 401</span>
+<span class="kw">def</span> <span class="fn">authenticate</span>(self, username: str, password: str) -> dict | None:
+    user = self.users.get(username)
+    <span class="kw">if not</span> user:
+        <span class="kw">return</span> None  <span class="cm"># 用户不存在</span>
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    <span class="kw">if</span> password_hash != user[<span class="str">"password_hash"</span>]:
+        <span class="kw">return</span> None  <span class="cm"># 密码错误</span>
+    <span class="kw">return</span> {<span class="str">"username"</span>: username, <span class="str">"role"</span>: user[<span class="str">"role"</span>]}</pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 2：授权方法 — authorize()</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="cm"># 授权（Authorization）：验证用户是否有权执行某操作，失败 → HTTP 403</span>
+<span class="kw">def</span> <span class="fn">authorize</span>(self, user: dict, action: str) -> bool:
+    allowed_actions = self.permissions.get(user[<span class="str">"role"</span>], [])
+    <span class="kw">return</span> action <span class="op">in</span> allowed_actions</pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 3：Session 机制模拟</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">class</span> <span class="fn">SessionStore</span>:
+    <span class="kw">def</span> <span class="fn">create_session</span>(self, user_data: dict, ttl_seconds: int = <span class="num">3600</span>) -> str:
+        session_id = secrets.token_urlsafe(<span class="num">32</span>)  <span class="cm"># 随机安全 ID</span>
+        self._sessions[session_id] = {
+            <span class="str">"user"</span>: user_data,
+            <span class="str">"expires_at"</span>: time.time() + ttl_seconds,
+        }
+        <span class="kw">return</span> session_id  <span class="cm"># 存入 Cookie 返回给客户端</span>
+
+    <span class="kw">def</span> <span class="fn">get_session</span>(self, session_id: str) -> dict | None:
+        session = self._sessions.get(session_id)
+        <span class="kw">if not</span> session <span class="kw">or</span> time.time() > session[<span class="str">"expires_at"</span>]:
+            <span class="kw">return</span> None
+        <span class="kw">return</span> session[<span class="str">"user"</span>]</pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 4：401 vs 403 演示 — API 请求处理</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">def</span> <span class="fn">simulate_api_request</span>(session_id, action, user_session_store):
+    <span class="cm"># Step 1: 认证（你是谁？）</span>
+    <span class="kw">if not</span> session_id:
+        <span class="kw">return</span> <span class="num">401</span>, <span class="str">"未提供认证凭证（请先登录）"</span>
+    current_user = user_session_store.get_session(session_id)
+    <span class="kw">if not</span> current_user:
+        <span class="kw">return</span> <span class="num">401</span>, <span class="str">"Session 无效或已过期"</span>
+
+    <span class="cm"># Step 2: 授权（你能做什么？）</span>
+    <span class="kw">if not</span> auth.authorize(current_user, action):
+        <span class="kw">return</span> <span class="num">403</span>, <span class="str">f"权限不足，{current_user['role']} 角色无法执行 [{action}]"</span>
+
+    <span class="kw">return</span> <span class="num">200</span>, <span class="str">f"操作成功！{current_user['username']} 执行了 [{action}]"</span></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- s1-caution: 常见误区 -->
+        <div class="block" id="s1-caution">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-red">⚠️ 常见误区</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="table-wrap">
+                <table class="mistake-table">
+                    <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+                    <tr><td>"401 和 403 都是权限问题"</td><td>401 = 未认证（没登录/Token 过期），403 = 未授权（登录了但没权限）。两者在 FastAPI 中处理方式不同</td></tr>
+                    <tr><td>"Token 比 Session 一定更安全"</td><td>各有利弊。Token 短时效 + HTTPS 才安全；Session 在服务端可控，注销更直接</td></tr>
+                    <tr><td>"密码用 MD5 加密就安全了"</td><td>MD5 是哈希不是加密，且可被彩虹表攻破。应使用 bcrypt/argon2 加盐哈希</td></tr>
+                    <tr><td>"JWT 可以直接存敏感信息"</td><td>Payload 只是 Base64 编码，任何人可解码读取，切勿存密码、身份证号等敏感信息</td></tr>
+                    <tr><td>"登出就是前端删除 Token"</td><td>Token 在有效期内仍然有效，完整登出需要服务端黑名单机制</td></tr>
+                </table>
+                </div>
+                <div class="security-callout">
+                    🔴 <strong>安全警告：</strong>生产环境中，绝不能明文存储密码，即使"只有内部人员能看到数据库"也不行——数据库泄露（SQL 注入、备份泄露、离职员工）是真实发生的安全事件。
+                </div>
+            </div>
+        </div>
+
+        <!-- s1-quiz: 自测题 -->
+        <div class="block" id="s1-quiz">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-orange">✏️ 自测题</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="quiz" id="quiz-s1a" data-answer="B">
+                    <div class="quiz-question">1. 用户未登录就访问 /api/admin 接口，服务器应返回哪个状态码？</div>
+                    <label class="quiz-option"><input type="radio" name="q1" value="A"> A. 403 Forbidden</label>
+                    <label class="quiz-option"><input type="radio" name="q1" value="B"> B. 401 Unauthorized</label>
+                    <label class="quiz-option"><input type="radio" name="q1" value="C"> C. 404 Not Found</label>
+                    <label class="quiz-option"><input type="radio" name="q1" value="D"> D. 500 Internal Server Error</label>
+                    <div class="quiz-feedback" id="quiz-s1a-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s1b" data-answer="C">
+                    <div class="quiz-question">2. 关于 Session 和 JWT 的对比，哪个说法是正确的？</div>
+                    <label class="quiz-option"><input type="radio" name="q2" value="A"> A. JWT 把用户状态存在服务端，Session 存在客户端</label>
+                    <label class="quiz-option"><input type="radio" name="q2" value="B"> B. Session 天生支持水平扩展，无需共享存储</label>
+                    <label class="quiz-option"><input type="radio" name="q2" value="C"> C. JWT 无状态，每台服务器独立验证，天然支持横向扩展</label>
+                    <label class="quiz-option"><input type="radio" name="q2" value="D"> D. Session 的注销比 JWT 更困难</label>
+                    <div class="quiz-feedback" id="quiz-s1b-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s1c" data-answer="B">
+                    <div class="quiz-question">3. RBAC 权限模型的核心理念是？</div>
+                    <label class="quiz-option"><input type="radio" name="q3" value="A"> A. 每个用户单独配置所有权限</label>
+                    <label class="quiz-option"><input type="radio" name="q3" value="B"> B. 用户 → 角色 → 权限，通过角色间接管理</label>
+                    <label class="quiz-option"><input type="radio" name="q3" value="C"> C. 只依赖 URL 路径判断权限</label>
+                    <label class="quiz-option"><input type="radio" name="q3" value="D"> D. 前端控制所有权限展示</label>
+                    <div class="quiz-feedback" id="quiz-s1c-fb"></div>
+                </div>
+                <div class="quiz-actions">
+                    <button class="btn btn-primary" onclick="submitQuiz('s1')">提交</button>
+                    <button class="btn" onclick="resetQuiz('s1')">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 第二节 ═══════════════ -->
+    <section class="topic-section" id="s2">
+        <h2>第二节 · JWT 详解</h2>
+        <div class="topic-desc">JWT 是现代后端认证的主流方案：服务器不存状态，把用户信息加密签名后交给客户端保管。</div>
+
+        <div class="block open" id="s2-goal">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-blue">🎯 学习目标</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <ul class="objective-list">
+                    <li>掌握 JWT 的三部分结构（Header / Payload / Signature）</li>
+                    <li>理解签名防篡改原理（HMAC 对称签名）</li>
+                    <li>能手动 Base64URL 解码 JWT Payload</li>
+                    <li>掌握 Access Token + Refresh Token 双 Token 机制</li>
+                    <li>记住 JWT 的安全底线（Payload 不是加密）</li>
+                </ul>
+                <div class="backend-callout">
+                    <strong>与后端开发的关联：</strong>JWT 是前后端分离项目的认证标配。FastAPI 中配合 <code>OAuth2PasswordBearer</code> 和 <code>Depends</code> 实现声明式认证：保护任何接口只需一行 <code>current_user = Depends(get_current_user)</code>。
+                </div>
+            </div>
+        </div>
+
+        <div class="block open" id="s2-concept">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-purple">📖 核心概念</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <p><strong>JWT（JSON Web Token）</strong>是一个开放标准（RFC 7519），由三部分用 <code>.</code> 分隔组成：</p>
+
+                <pre class="ascii-diagram">
+┌──────────────────────────────────────────────────────────────────────┐
+│                        JWT 完整结构                                   │
+├──────────────┬─────────────────────────────────┬────────────────────┤
+│   Header     │          Payload                │     Signature      │
+│   (头部)     │          (载荷)                 │      (签名)        │
+│              │                                 │                    │
+│ {            │ {                               │ HMACSHA256(        │
+│  "alg":"HS256",│  "sub":"1234567890",            │  base64(header)+  │
+│  "typ":"JWT" │  "username":"alice",            │  "."+             │
+│ }            │  "role":"admin",                │  base64(payload),  │
+│              │  "exp":1700000000,              │  secret_key        │
+│  → Base64URL │  "iat":1699996400               │ )                  │
+│    编码      │ }                               │                    │
+│              │  → Base64URL 编码（非加密！）    │  → Base64URL 编码   │
+└──────────────┴─────────────────────────────────┴────────────────────┘</pre>
+
+                <p><strong>标准 Payload 字段（Registered Claims）</strong></p>
+                <div class="table-wrap">
+                <table>
+                    <tr><th>字段</th><th>全称</th><th>说明</th></tr>
+                    <tr><td><code>sub</code></td><td>Subject</td><td>用户唯一标识（通常是用户 ID）</td></tr>
+                    <tr><td><code>exp</code></td><td>Expiration Time</td><td>过期时间（Unix 时间戳）— 必须检查！</td></tr>
+                    <tr><td><code>iat</code></td><td>Issued At</td><td>签发时间</td></tr>
+                    <tr><td><code>iss</code></td><td>Issuer</td><td>签发者</td></tr>
+                    <tr><td><code>nbf</code></td><td>Not Before</td><td>生效时间（此时间前不接收）</td></tr>
+                    <tr><td><code>jti</code></td><td>JWT ID</td><td>唯一标识，可用于防重放攻击</td></tr>
+                </table>
+                </div>
+
+                <details>
+                    <summary>双 Token 机制详解（Access + Refresh）</summary>
+                    <div class="details-content">
+                        <strong>问题：</strong>Token 有效期太长不安全（泄露后长时间可用），太短则用户频繁重新登录体验差。<br>
+                        <strong>解决：</strong><br>
+                        · Access Token：有效期短（15分钟~2小时），用于访问 API<br>
+                        · Refresh Token：有效期长（7~30天），仅用于在 Access Token 过期后刷新新的 Access Token<br>
+                        <strong>流程：</strong>Access Token 过期 → 客户端自动用 Refresh Token 请求 <code>/auth/refresh</code> → 服务器验证 Refresh Token → 返回新的 Access Token → 用户无感知
+                    </div>
+                </details>
+
+                <details>
+                    <summary>JWT 安全注意事项（展开查看完整清单）</summary>
+                    <div class="details-content">
+                        1. <strong>Payload 不是加密的</strong>——只是 Base64URL 编码，任何人都能解码，绝不可存敏感信息<br>
+                        2. <strong>必须 HTTPS 传输</strong>——防止中间人窃取完整 Token<br>
+                        3. <strong>短有效期</strong>——Access Token 推荐 15分钟~2小时，降低泄露风险窗口<br>
+                        4. <strong>强密钥</strong>——secret_key 至少 32 位随机字符串，从环境变量读取，不写死在代码中<br>
+                        5. <strong>必须验证签名</strong>——不要只解码 Payload 就用，签名验证是防篡改的唯一屏障
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="block" id="s2-code">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-cyan">💻 代码示例</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="code-section">
+                    <h4>Part 1：手动 Base64URL 解码 Payload（证明 Payload 可被任何人读取）</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">def</span> <span class="fn">b64_decode</span>(data: str) -> dict:
+    padding = <span class="num">4</span> - len(data) % <span class="num">4</span>
+    <span class="kw">if</span> padding != <span class="num">4</span>:
+        data += <span class="str">"="</span> * padding
+    decoded_bytes = base64.urlsafe_b64decode(data)
+    <span class="kw">return</span> json.loads(decoded_bytes)
+
+<span class="cm"># ⚠️ 任何人都能解码 Payload！绝不可放密码等敏感信息</span>
+payload = b64_decode(<span class="str">"eyJzdWIiOiIxMjM0NTYiLCJ1c2VybmFtZSI6ImFsaWNlIn0"</span>)
+<span class="cm"># → {"sub": "123456", "username": "alice"}  一目了然！</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 2：手动实现 HS256 签名（理解防篡改原理）</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">def</span> <span class="fn">create_jwt_manually</span>(payload, secret):
+    header_enc = base64url_encode(json.dumps(<span class="str">{"alg":"HS256","typ":"JWT"}</span>).encode())
+    payload_enc = base64url_encode(json.dumps(payload).encode())
+
+    <span class="cm"># 签名 = HMACSHA256(header.payload, secret_key)</span>
+    signing_input = <span class="str">f"{header_enc}.{payload_enc}"</span>
+    signature = hmac.new(secret.encode(), signing_input.encode(), hashlib.sha256).digest()
+    signature_enc = base64url_encode(signature)
+
+    <span class="kw">return</span> <span class="str">f"{header_enc}.{payload_enc}.{signature_enc}"</span>
+
+<span class="kw">def</span> <span class="fn">verify_jwt_manually</span>(token, secret):
+    parts = token.split(<span class="str">"."</span>)
+    signing_input = <span class="str">f"{parts[0]}.{parts[1]}"</span>
+    expected_sig = base64url_encode(
+        hmac.new(secret.encode(), signing_input.encode(), hashlib.sha256).digest()
+    )
+    <span class="cm"># 防时序攻击的比较方式</span>
+    <span class="kw">if not</span> hmac.compare_digest(expected_sig, parts[<span class="num">2</span>]):
+        <span class="kw">return</span> None  <span class="cm"># 签名不匹配，Token 被篡改！</span>
+    payload = b64_decode(parts[<span class="num">1</span>])
+    <span class="kw">if</span> <span class="str">"exp"</span> <span class="op">in</span> payload <span class="kw">and</span> time.time() > payload[<span class="str">"exp"</span>]:
+        <span class="kw">return</span> None  <span class="cm"># Token 已过期</span>
+    <span class="kw">return</span> payload</pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 3：PyJWT 生产环境用法 — 双 Token 机制</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">import</span> jwt
+
+<span class="kw">def</span> <span class="fn">create_access_token</span>(user_id, username, role):
+    payload = {
+        <span class="str">"sub"</span>: str(user_id), <span class="str">"username"</span>: username,
+        <span class="str">"role"</span>: role, <span class="str">"type"</span>: <span class="str">"access"</span>,
+        <span class="str">"exp"</span>: datetime.now(timezone.utc) + timedelta(<span class="kw">hours</span>=<span class="num">2</span>),
+    }
+    <span class="kw">return</span> jwt.encode(payload, SECRET, algorithm=<span class="str">"HS256"</span>)
+
+<span class="kw">def</span> <span class="fn">verify_token</span>(token, expected_type=<span class="str">"access"</span>):
+    payload = jwt.decode(token, SECRET, algorithms=[<span class="str">"HS256"</span>])
+    <span class="kw">if</span> payload.get(<span class="str">"type"</span>) != expected_type:
+        <span class="kw">raise</span> ValueError(<span class="str">"Token 类型错误"</span>)
+    <span class="kw">return</span> payload</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s2-caution">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-red">⚠️ 常见误区</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="table-wrap">
+                <table class="mistake-table">
+                    <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+                    <tr><td>"JWT 是加密的，Payload 内容安全"</td><td>Payload 只是 Base64URL 编码，不是加密！任何人都能解码读取。只有签名保证完整性（防篡改）</td></tr>
+                    <tr><td>"JWT 登出就是客户端删除 Token"</td><td>在有效期内 Token 仍然可用，真正登出需服务端黑名单（Redis 存已失效 Token，设置 TTL 与原 Token 过期时间一致）</td></tr>
+                    <tr><td>"JWT 越大越安全，Payload 多放信息"</td><td>Payload 越大每次请求携带数据越多，影响性能。只放必要信息（sub/role/exp），业务详情从数据库查</td></tr>
+                    <tr><td>"用对称加密（HS256）就够了"</td><td>多服务场景需共享密钥有泄露风险，可考虑 RS256（非对称：私钥签发、公钥验证）</td></tr>
+                </table>
+                </div>
+                <div class="security-callout">
+                    🔴 <strong>安全警告：</strong>如果 JWT 的 secret_key 设置为 "secret" 或 "123456" 等弱密钥，攻击者可以自己签发任意用户 Token 绕过认证。生产环境务必使用 32+ 位随机字符串。
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s2-quiz">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-orange">✏️ 自测题</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="quiz" id="quiz-s2a" data-answer="C">
+                    <div class="quiz-question">1. JWT 的三部分中，哪一部分是用来防篡改的？</div>
+                    <label class="quiz-option"><input type="radio" name="q2-1" value="A"> A. Header（头部）</label>
+                    <label class="quiz-option"><input type="radio" name="q2-1" value="B"> B. Payload（载荷）</label>
+                    <label class="quiz-option"><input type="radio" name="q2-1" value="C"> C. Signature（签名）</label>
+                    <label class="quiz-option"><input type="radio" name="q2-1" value="D"> D. Base64URL 编码</label>
+                    <div class="quiz-feedback" id="quiz-s2a-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s2b" data-answer="B">
+                    <div class="quiz-question">2. 关于 JWT Payload 的安全描述，正确的是？</div>
+                    <label class="quiz-option"><input type="radio" name="q2-2" value="A"> A. Payload 是加密的，第三方无法读取</label>
+                    <label class="quiz-option"><input type="radio" name="q2-2" value="B"> B. Payload 仅 Base64URL 编码，任何人可解码，不能存敏感信息</label>
+                    <label class="quiz-option"><input type="radio" name="q2-2" value="C"> C. Payload 经过签名后变成加密内容</label>
+                    <label class="quiz-option"><input type="radio" name="q2-2" value="D"> D. Payload 在 HTTPS 下自动加密</label>
+                    <div class="quiz-feedback" id="quiz-s2b-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s2c" data-answer="B">
+                    <div class="quiz-question">3. Access Token 过期后，正确做法是？</div>
+                    <label class="quiz-option"><input type="radio" name="q2-3" value="A"> A. 让用户重新登录</label>
+                    <label class="quiz-option"><input type="radio" name="q2-3" value="B"> B. 用 Refresh Token 无感刷新 Access Token</label>
+                    <label class="quiz-option"><input type="radio" name="q2-3" value="C"> C. 把 Access Token 的有效期改长</label>
+                    <label class="quiz-option"><input type="radio" name="q2-3" value="D"> D. 修改系统时间绕过过期检查</label>
+                    <div class="quiz-feedback" id="quiz-s2c-fb"></div>
+                </div>
+                <div class="quiz-actions">
+                    <button class="btn btn-primary" onclick="submitQuiz('s2')">提交</button>
+                    <button class="btn" onclick="resetQuiz('s2')">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 第三节 ═══════════════ -->
+    <section class="topic-section" id="s3">
+        <h2>第三节 · 密码哈希：bcrypt 与 argon2</h2>
+        <div class="topic-desc">永远不要明文存储密码。密码哈希是用户数据安全的最后防线。</div>
+
+        <div class="block open" id="s3-goal">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-blue">🎯 学习目标</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <ul class="objective-list">
+                    <li>理解为什么 MD5/SHA1 不能用于密码存储</li>
+                    <li>掌握 bcrypt 加盐哈希的工作原理</li>
+                    <li>了解 argon2 相比 bcrypt 的优势</li>
+                    <li>能使用 passlib 统一接口处理密码</li>
+                    <li>理解"哈希慢是优点"的安全逻辑</li>
+                </ul>
+                <div class="backend-callout">
+                    <strong>与后端开发的关联：</strong>用户注册/登录是后端最常见的需求。FastAPI + passlib + bcrypt 是最佳组合：注册时 <code>pwd_context.hash(password)</code>，登录时 <code>pwd_context.verify(password, hash)</code>——两行代码搞定密码安全。
+                </div>
+            </div>
+        </div>
+
+        <div class="block open" id="s3-concept">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-purple">📖 核心概念</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <p><strong>什么是密码哈希？</strong>哈希是单向函数——输入任意数据，输出固定长度摘要，无法反推。密码哈希额外要求：慢 + 加盐。</p>
+
+                <p><strong>彩虹表攻击原理</strong></p>
+                <pre class="ascii-diagram">
+攻击者预先计算常见密码的 MD5：
+  MD5("123456")    → "e10adc3949ba59abbe56e057f20f883e"
+  MD5("password")  → "5f4dcc3b5aa765d61d8327deb882cf99"
+  MD5("qwerty")    → "d8578edf8458ce06fbc5bb76a58c5ca4"
+  ...（预计算数百亿条）
+
+数据库泄露 → 攻击者拿到 MD5 哈希 → 查彩虹表 → 秒出原始密码！
+
+防御方法：每次哈希加入随机盐（Salt），即使相同密码每次结果也不同，
+彩虹表彻底失效——因为要针对每个可能的盐都预计算一次。</pre>
+
+                <p><strong>bcrypt vs argon2 对比</strong></p>
+                <div class="table-wrap">
+                <table>
+                    <tr><th>维度</th><th>bcrypt</th><th>argon2</th></tr>
+                    <tr><td>设计年代</td><td>1999 年</td><td>2015 年（密码哈希竞赛冠军）</td></tr>
+                    <tr><td>内存占用</td><td>固定（很小）</td><td>可配置（推荐高内存，如 64MB）</td></tr>
+                    <tr><td>抗 GPU 攻击</td><td>一般</td><td>强（高内存使 GPU 并行无效）</td></tr>
+                    <tr><td>参数灵活性</td><td>只有 cost（轮次）</td><td>time、memory、parallelism 三维控制</td></tr>
+                    <tr><td>推荐场景</td><td>大多数 Web 应用</td><td>高安全要求、新项目</td></tr>
+                </table>
+                </div>
+
+                <details>
+                    <summary>bcrypt cost factor 详解（展开查看）</summary>
+                    <div class="details-content">
+                        <strong>cost 控制迭代次数 = 2^cost 次</strong>：<br>
+                        cost=10 → 2^10 = 1,024 轮 → ~100ms（最低推荐）<br>
+                        cost=12 → 2^12 = 4,096 轮 → ~300ms（推荐值，安全与性能平衡）<br>
+                        cost=14 → 2^14 = 16,384 轮 → ~1s（高安全要求）<br>
+                        随着 CPU 性能提升，可以逐步调高 cost 值，passlib 的 <code>needs_update()</code> 可自动检测并重新哈希。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="block" id="s3-code">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-cyan">💻 代码示例</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="code-section">
+                    <h4>Part 1：❌ MD5 的危险性（速度对比）</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="cm"># MD5 速度极快：GPU 可达每秒数百亿次！</span>
+count = <span class="num">100_000</span>
+start = time.perf_counter()
+<span class="kw">for</span> i <span class="op">in</span> range(count):
+    hashlib.md5(<span class="str">f"password{i}"</span>.encode()).hexdigest()
+elapsed = time.perf_counter() - start
+rate = count / elapsed
+<span class="cm"># 输出：MD5: 100,000 次哈希耗时 0.05s → ~2,000,000 次/秒（纯 CPU）</span>
+
+<span class="cm"># 对比：普通用户密码范围很小（6-10位字母数字），</span>
+<span class="cm"># 全部组合 ≈ 36^8 = 2.8万亿种，GPU 几分钟就能穷举完</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 2：✅ bcrypt 正确使用</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">import</span> bcrypt
+
+<span class="kw">def</span> <span class="fn">hash_password</span>(plain_password: str, rounds: int = <span class="num">12</span>) -> str:
+    salt = bcrypt.gensalt(rounds=rounds)  <span class="cm"># 生成随机盐</span>
+    hashed = bcrypt.hashpw(plain_password.encode(<span class="str">"utf-8"</span>), salt)
+    <span class="kw">return</span> hashed.decode(<span class="str">"utf-8"</span>)
+
+<span class="kw">def</span> <span class="fn">verify_password</span>(plain_password: str, hashed_password: str) -> bool:
+    <span class="kw">return</span> bcrypt.checkpw(
+        plain_password.encode(<span class="str">"utf-8"</span>),
+        hashed_password.encode(<span class="str">"utf-8"</span>)
+    )
+
+<span class="cm"># 演示：相同密码，每次哈希结果不同（因为盐是随机的！）</span>
+hash1 = hash_password(<span class="str">"my_secret"</span>)  <span class="cm"># $2b$12$R4xC...（盐=R4xC）</span>
+hash2 = hash_password(<span class="str">"my_secret"</span>)  <span class="cm"># $2b$12$Z9qA...（盐=Z9qA）</span>
+<span class="cm"># hash1 ≠ hash2，彩虹表彻底失效！</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 3：passlib 统一接口（生产环境推荐）</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">from</span> passlib.context <span class="kw">import</span> CryptContext
+
+pwd_context = CryptContext(schemes=[<span class="str">"bcrypt"</span>], deprecated=<span class="str">"auto"</span>)
+
+<span class="cm"># 注册：哈希密码存入数据库</span>
+hashed = pwd_context.hash(<span class="str">"user_password_123"</span>)
+
+<span class="cm"># 登录：验证密码（自动从哈希中提取盐）</span>
+is_valid = pwd_context.verify(<span class="str">"user_password_123"</span>, hashed)  <span class="cm"># True</span>
+
+<span class="cm"># 升级：检查是否需要重新哈希（cost 参数升级后自动迁移）</span>
+<span class="kw">if</span> pwd_context.needs_update(hashed):
+    new_hash = pwd_context.hash(plain_password)  <span class="cm"># 用新参数重新哈希</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 4：argon2 使用（新项目推荐）</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">from</span> argon2 <span class="kw">import</span> PasswordHasher
+<span class="kw">from</span> argon2.exceptions <span class="kw">import</span> VerifyMismatchError
+
+ph = PasswordHasher(
+    time_cost=<span class="num">2</span>,         <span class="cm"># 迭代次数（时间成本）</span>
+    memory_cost=<span class="num">65536</span>,   <span class="cm"># 64MB 内存（抗 GPU 关键！）</span>
+    parallelism=<span class="num">2</span>,       <span class="cm"># 并行度</span>
+)
+
+hashed = ph.hash(<span class="str">"my_password"</span>)
+<span class="cm"># → "$argon2id$v=19$m=65536,t=2,p=2$..."</span>
+
+<span class="kw">try</span>:
+    ph.verify(hashed, <span class="str">"my_password"</span>)  <span class="cm"># 正确 → 不抛异常</span>
+<span class="kw">except</span> VerifyMismatchError:
+    print(<span class="str">"密码错误"</span>)</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s3-caution">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-red">⚠️ 常见误区</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="table-wrap">
+                <table class="mistake-table">
+                    <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+                    <tr><td>"MD5 加个固定盐就安全了"</td><td>手动加固定盐的 MD5 依然很快，GPU 可暴力破解。必须用专门的慢哈希算法（bcrypt/argon2）</td></tr>
+                    <tr><td>"SHA256 比 MD5 更安全，所以可以存密码"</td><td>对密码存储而言，SHA256 和 MD5 面临同样问题——都太快了。安全在于"慢"而非"长"</td></tr>
+                    <tr><td>"bcrypt cost=12 表示 12 次迭代"</td><td>错！cost 是指数：cost=12 实际是 2^12 = 4,096 次迭代</td></tr>
+                    <tr><td>"每次登录都重新哈希太慢了"</td><td>设计如此：每次验证几百毫秒用户无感，但攻击者暴力破解代价极高——这正是安全目标</td></tr>
+                    <tr><td>"可以把原始密码打印到日志调试"</td><td>绝对不行！日志可能被多人查看、存储、备份。禁止在任何日志中记录明文密码</td></tr>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s3-quiz">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-orange">✏️ 自测题</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="quiz" id="quiz-s3a" data-answer="B">
+                    <div class="quiz-question">1. 为什么 MD5 不适合存储密码？</div>
+                    <label class="quiz-option"><input type="radio" name="q3-1" value="A"> A. MD5 已经被破解，可以反向解密</label>
+                    <label class="quiz-option"><input type="radio" name="q3-1" value="B"> B. MD5 是确定性函数，速度极快，可被彩虹表/暴力破解</label>
+                    <label class="quiz-option"><input type="radio" name="q3-1" value="C"> C. MD5 的输出太短，不够安全</label>
+                    <label class="quiz-option"><input type="radio" name="q3-1" value="D"> D. MD5 不支持加盐</label>
+                    <div class="quiz-feedback" id="quiz-s3a-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s3b" data-answer="B">
+                    <div class="quiz-question">2. bcrypt 的 cost=12 表示什么？</div>
+                    <label class="quiz-option"><input type="radio" name="q3-2" value="A"> A. 哈希计算 12 次</label>
+                    <label class="quiz-option"><input type="radio" name="q3-2" value="B"> B. 哈希计算 2^12 = 4,096 轮迭代</label>
+                    <label class="quiz-option"><input type="radio" name="q3-2" value="C"> C. 盐的长度为 12 字节</label>
+                    <label class="quiz-option"><input type="radio" name="q3-2" value="D"> D. 密码最小长度为 12 位</label>
+                    <div class="quiz-feedback" id="quiz-s3b-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s3c" data-answer="C">
+                    <div class="quiz-question">3. argon2 相比 bcrypt 最主要的优势是？</div>
+                    <label class="quiz-option"><input type="radio" name="q3-3" value="A"> A. 哈希速度更快</label>
+                    <label class="quiz-option"><input type="radio" name="q3-3" value="B"> B. 输出哈希更短</label>
+                    <label class="quiz-option"><input type="radio" name="q3-3" value="C"> C. 可配置高内存占用，有效抵御 GPU 并行暴力破解</label>
+                    <label class="quiz-option"><input type="radio" name="q3-3" value="D"> D. 不需要盐值</label>
+                    <div class="quiz-feedback" id="quiz-s3c-fb"></div>
+                </div>
+                <div class="quiz-actions">
+                    <button class="btn btn-primary" onclick="submitQuiz('s3')">提交</button>
+                    <button class="btn" onclick="resetQuiz('s3')">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 第四节 ═══════════════ -->
+    <section class="topic-section" id="s4">
+        <h2>第四节 · OAuth2.0 授权</h2>
+        <div class="topic-desc">OAuth2.0 解决的问题：如何让第三方应用访问你的数据，而不需要把密码给它。</div>
+
+        <div class="block open" id="s4-goal">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-blue">🎯 学习目标</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <ul class="objective-list">
+                    <li>理解 OAuth2.0 解决的核心问题（第三方授权）</li>
+                    <li>掌握四个角色及其职责</li>
+                    <li>能画出授权码模式的完整流程</li>
+                    <li>理解 state 防 CSRF 的原理</li>
+                    <li>区分 OAuth2（授权框架）与 JWT（Token 格式）</li>
+                </ul>
+                <div class="backend-callout">
+                    <strong>与后端开发的关联：</strong>实现"用 GitHub/微信登录"是后端高频需求。FastAPI 内置 <code>OAuth2PasswordBearer</code> 支持密码模式，第三方登录则走授权码模式——理解流程才能正确实现回调、换 Token、创建本地用户、颁发自己 JWT 的完整链路。
+                </div>
+            </div>
+        </div>
+
+        <div class="block open" id="s4-concept">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-purple">📖 核心概念</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <p><strong>OAuth2.0</strong> 是授权框架，解决"如何让第三方应用访问你的数据，而不需要把密码给它"。</p>
+
+                <p><strong>四个角色</strong></p>
+                <div class="table-wrap">
+                <table>
+                    <tr><th>角色</th><th>说明</th><th>举例</th></tr>
+                    <tr><td>Resource Owner</td><td>资源所有者（用户）</td><td>你（GitHub 用户）</td></tr>
+                    <tr><td>Client</td><td>请求访问的第三方应用</td><td>某个 IDE 插件</td></tr>
+                    <tr><td>Authorization Server</td><td>负责认证用户、颁发 Token</td><td>GitHub 认证系统</td></tr>
+                    <tr><td>Resource Server</td><td>存放受保护资源</td><td>GitHub API</td></tr>
+                </table>
+                </div>
+
+                <p><strong>授权码模式完整流程</strong></p>
+                <pre class="ascii-diagram">
+ 用户 → [1.点击登录] → 客户端 → [2.重定向到 GitHub]
+                                    ↓
+ 用户 → [3.跳转 GitHub 登录并同意授权] → 授权服务器
+                                    ↓
+ 授权服务器 → [4.重定向回客户端 + authorization_code]
+                                    ↓
+ 客户端 → [5.用 code + client_secret 换 access_token] → 授权服务器
+                                    ↓
+ 客户端 → [6.用 access_token 获取用户信息] → 资源服务器
+                                    ↓
+ 客户端 ← [7.拿到用户信息，创建本地用户，颁发自己的 JWT]
+
+关键设计：code 通过浏览器 URL 传递（可被记录），是一次性且短期的；
+access_token 的换取需要 client_secret（只有服务端知道），多加一道安全验证。</pre>
+
+                <p><strong>四种授权模式</strong></p>
+                <div class="table-wrap">
+                <table>
+                    <tr><th>模式</th><th>适用场景</th><th>安全性</th></tr>
+                    <tr><td><strong>授权码模式</strong></td><td>有服务端的 Web 应用（最常用）</td><td>⭐⭐⭐⭐⭐</td></tr>
+                    <tr><td>简化模式（Implicit）</td><td>纯前端应用（已不推荐）</td><td>⭐⭐</td></tr>
+                    <tr><td>密码模式</td><td>高度信任的第一方应用</td><td>⭐⭐⭐</td></tr>
+                    <tr><td>客户端凭证模式</td><td>机器对机器，无用户参与</td><td>⭐⭐⭐⭐</td></tr>
+                </table>
+                </div>
+
+                <details>
+                    <summary>为什么授权码要通过浏览器 URL 传递，而 access_token 不这样？（展开）</summary>
+                    <div class="details-content">
+                        <strong>授权码（authorization_code）</strong>通过浏览器 URL 传递，可能被浏览器历史记录、服务器日志、Referer 头等泄露。但它是一次性的（用完即失效）且有效期极短（通常 10 分钟），即使泄露也无法重复使用。<br><br>
+                        <strong>Access Token</strong>是长期有效的凭证，如果通过 URL 传递风险太大。所以设计为两步：先用 URL 传低风险的一次性 code，再用 code + client_secret（只有服务端有）在服务端之间交换高风险的 access_token——用户和浏览器全程看不到 access_token 的换取过程。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="block" id="s4-code">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-cyan">💻 代码示例</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="code-section">
+                    <h4>Part 1：构建授权 URL + state 防 CSRF</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">def</span> <span class="fn">step1_build_authorization_url</span>(self, scope, auth_server_url):
+    state = secrets.token_urlsafe(<span class="num">32</span>)  <span class="cm"># 随机 state，防 CSRF</span>
+    self._state_store[state] = {<span class="str">"created_at"</span>: time.time(), <span class="str">"scope"</span>: scope}
+
+    params = {
+        <span class="str">"client_id"</span>: self.client_id,
+        <span class="str">"redirect_uri"</span>: self.redirect_uri,
+        <span class="str">"scope"</span>: <span class="str">" "</span>.join(scope),
+        <span class="str">"state"</span>: state,           <span class="cm"># 携带到授权服务器</span>
+        <span class="str">"response_type"</span>: <span class="str">"code"</span>,
+    }
+    <span class="kw">return</span> <span class="str">f"{auth_server_url}/oauth/authorize?{urlencode(params)}"</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 2：回调处理 — 验证 state + 用 code 换 Token</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="kw">def</span> <span class="fn">step3_handle_callback</span>(self, callback_url, auth_server):
+    params = parse_qs(urlparse(callback_url).query)
+    code = params.get(<span class="str">"code"</span>, [None])[<span class="num">0</span>]
+    state = params.get(<span class="str">"state"</span>, [None])[<span class="num">0</span>]
+
+    <span class="cm"># 关键：验证 state 防 CSRF 攻击！</span>
+    <span class="kw">if</span> state <span class="op">not in</span> self._state_store:
+        <span class="kw">raise</span> ValueError(<span class="str">"❌ state 不匹配，可能是 CSRF 攻击！拒绝处理！"</span>)
+    <span class="kw">del</span> self._state_store[state]  <span class="cm"># 使用后删除，防重放</span>
+
+    <span class="cm"># 用 code + client_secret 换取 access_token（服务端操作）</span>
+    token_data = auth_server.exchange_code_for_token(
+        code=code, client_id=self.client_id,
+        client_secret=self.client_secret,  <span class="cm"># 只在服务端！绝不暴露！</span>
+        redirect_uri=self.redirect_uri,
+    )
+
+    <span class="cm"># 用 access_token 获取用户信息</span>
+    user_info = auth_server.get_user_info(token_data[<span class="str">"access_token"</span>], <span class="str">"read:user"</span>)
+    <span class="kw">return</span> {<span class="str">"token_data"</span>: token_data, <span class="str">"user_info"</span>: user_info}</pre>
+                    </div>
+                </div>
+
+                <div class="code-section">
+                    <h4>Part 3：Scope 权限控制 — 最小权限原则</h4>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+<pre><span class="cm"># ❌ 坏做法：申请过多权限（用户不信任，拒绝授权）</span>
+scope = [<span class="str">"admin:org"</span>, <span class="str">"repo"</span>, <span class="str">"delete_repo"</span>]
+
+<span class="cm"># ✅ 好做法：只申请需要的权限（最小权限原则）</span>
+scope = [<span class="str">"read:user"</span>, <span class="str">"user:email"</span>]  <span class="cm"># 用 GitHub 登录只需这些</span>
+
+<span class="cm"># 服务端验证 scope</span>
+<span class="kw">def</span> <span class="fn">get_user_info</span>(access_token, required_scope):
+    token_data = self._access_tokens.get(access_token)
+    <span class="kw">if</span> required_scope <span class="op">not in</span> token_data[<span class="str">"scope"</span>]:
+        <span class="kw">raise</span> PermissionError(<span class="str">f"token 没有 {required_scope} 权限"</span>)</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s4-caution">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-red">⚠️ 常见误区</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="table-wrap">
+                <table class="mistake-table">
+                    <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+                    <tr><td>"OAuth2 是认证协议"</td><td>OAuth2 是<strong>授权</strong>框架，不是认证协议。认证是 OpenID Connect（基于 OAuth2 之上构建的身份层）</td></tr>
+                    <tr><td>"client_secret 可以放在前端代码"</td><td>绝对不行！前端代码所有人可见。client_secret 必须只在服务端使用</td></tr>
+                    <tr><td>"authorization_code 可以重复使用"</td><td>授权码是一次性的，使用后立即失效，且有效期很短（通常 10 分钟）</td></tr>
+                    <tr><td>"scope 多多益善"</td><td>最小权限原则：只申请实际需要的权限。过多 scope 增加安全风险，用户也更不愿意授权</td></tr>
+                </table>
+                </div>
+                <div class="security-callout">
+                    🔴 <strong>安全警告：</strong>如果 state 参数不验证或设为固定值，攻击者可以构造恶意链接诱导用户点击，将自己的第三方账号绑定到受害者的本地账号上——这叫 CSRF 登录劫持。每次 OAuth 授权都必须生成随机 state 并验证！
+                </div>
+            </div>
+        </div>
+
+        <div class="block" id="s4-quiz">
+            <div class="block-header" onclick="toggleBlock(this)">
+                <span class="tag tag-orange">✏️ 自测题</span>
+                <span class="block-toggle">▼</span>
+            </div>
+            <div class="block-body">
+                <div class="quiz" id="quiz-s4a" data-answer="B">
+                    <div class="quiz-question">1. OAuth2.0 解决的核心问题是什么？</div>
+                    <label class="quiz-option"><input type="radio" name="q4-1" value="A"> A. 如何让服务器记住用户的登录状态</label>
+                    <label class="quiz-option"><input type="radio" name="q4-1" value="B"> B. 如何让第三方应用访问用户数据而不需要用户给出密码</label>
+                    <label class="quiz-option"><input type="radio" name="q4-1" value="C"> C. 如何加密用户密码</label>
+                    <label class="quiz-option"><input type="radio" name="q4-1" value="D"> D. 如何生成 JWT Token</label>
+                    <div class="quiz-feedback" id="quiz-s4a-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s4b" data-answer="B">
+                    <div class="quiz-question">2. state 参数在 OAuth2.0 中的作用是？</div>
+                    <label class="quiz-option"><input type="radio" name="q4-2" value="A"> A. 标记用户的登录状态</label>
+                    <label class="quiz-option"><input type="radio" name="q4-2" value="B"> B. 防止 CSRF 攻击，验证回调请求是合法的</label>
+                    <label class="quiz-option"><input type="radio" name="q4-2" value="C"> C. 记录用户选择的 scope</label>
+                    <label class="quiz-option"><input type="radio" name="q4-2" value="D"> D. 传递用户 ID 给授权服务器</label>
+                    <div class="quiz-feedback" id="quiz-s4b-fb"></div>
+                </div>
+                <div class="quiz" id="quiz-s4c" data-answer="B">
+                    <div class="quiz-question">3. 授权码模式中，authorization_code 和 access_token 的正确获取方式是？</div>
+                    <label class="quiz-option"><input type="radio" name="q4-3" value="A"> A. 两个都通过浏览器 URL 传递</label>
+                    <label class="quiz-option"><input type="radio" name="q4-3" value="B"> B. authorization_code 通过 URL 回调，access_token 在服务端用 code + client_secret 换取</label>
+                    <label class="quiz-option"><input type="radio" name="q4-3" value="C"> C. 两个都在服务端直接生成和传递</label>
+                    <label class="quiz-option"><input type="radio" name="q4-3" value="D"> D. 用户登录后直接获得 access_token</label>
+                    <div class="quiz-feedback" id="quiz-s4c-fb"></div>
+                </div>
+                <div class="quiz-actions">
+                    <button class="btn btn-primary" onclick="submitQuiz('s4')">提交</button>
+                    <button class="btn" onclick="resetQuiz('s4')">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 证据追溯区 ═══════════════ -->
+    <section id="evidence">
+        <h3>📎 证据追溯</h3>
+        <p class="ev-desc">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+        <div class="table-wrap">
+        <table>
+            <tr><th>结论摘要</th><th>来源文件</th><th>位置（章节 / 行号）</th></tr>
+            <tr><td>认证（AuthN）≠ 授权（AuthZ），AuthN 失败返回 401，AuthZ 失败返回 403</td><td>1.认证与授权概念.md</td><td>第一章 · 两者的关键区别表；第三章 · HTTP 状态码</td></tr>
+            <tr><td>Session 有状态（服务端存），JWT 无状态（客户端存）</td><td>1.认证与授权概念.md</td><td>第三章 · Session vs Token 对比表</td></tr>
+            <tr><td>RBAC 模型 = 用户 → 角色 → 权限，通过角色间接管理</td><td>1.认证与授权概念.md</td><td>第一章 · 常见授权方式</td></tr>
+            <tr><td>JWT = Header.Payload.Signature，三部分用 . 分隔，Base64URL 编码</td><td>2.JWT详解.md</td><td>第一章 · JWT 的结构</td></tr>
+            <tr><td>JWT Payload 不是加密，任何人都能 Base64URL 解码读取</td><td>2.JWT详解.md</td><td>第三章 · JWT 的安全注意事项；五、常见误区</td></tr>
+            <tr><td>Access Token（短期）+ Refresh Token（长期）双 Token 机制</td><td>2.JWT详解.md</td><td>第三章 · 双 Token 机制</td></tr>
+            <tr><td>MD5/SHA1 不适合密码存储：太快 + 确定性哈希 → 彩虹表攻击</td><td>3.密码哈希bcrypt与argon2.md</td><td>第一章 · 为什么普通 MD5/SHA1 不够</td></tr>
+            <tr><td>bcrypt cost=12 表示 2^12=4096 轮迭代，不是 12 次</td><td>3.密码哈希bcrypt与argon2.md</td><td>第二章 · cost factor 表；五、常见误区</td></tr>
+            <tr><td>argon2 通过高内存配置（如 64MB）抗 GPU 并行破解</td><td>3.密码哈希bcrypt与argon2.md</td><td>第三章 · argon2 vs bcrypt 表</td></tr>
+            <tr><td>passlib 是 Python 密码哈希的最佳实践封装（统一 bcrypt/argon2 接口）</td><td>3.密码哈希bcrypt与argon2.md</td><td>第四章 · passlib 统一接口</td></tr>
+            <tr><td>OAuth2.0 是授权框架，不是认证协议；认证是 OpenID Connect 的职责</td><td>4.OAuth2.0授权.md</td><td>第三章 · OAuth2 vs JWT 的关系；五、常见误区</td></tr>
+            <tr><td>授权码模式：code 通过 URL 传递（一次性短期），access_token 在服务端换取</td><td>4.OAuth2.0授权.md</td><td>第三章 · 授权码模式流程</td></tr>
+            <tr><td>state 参数防 CSRF：发起授权前生成随机 state 存 session，回调时比对</td><td>4.OAuth2.0授权.md</td><td>第三章 · state 参数的安全作用</td></tr>
+            <tr><td>范围控制：最小权限原则，只申请必要的 scope</td><td>4.OAuth2.0授权.md</td><td>第三章 · Scope 权限范围</td></tr>
+            <tr><td>client_secret 只在服务端使用，绝不暴露给前端</td><td>4.OAuth2.0授权.md</td><td>第三章 · 关键参数说明；五、常见误区</td></tr>
+            <tr><td>HMAC 签名验证时使用 compare_digest 防时序攻击</td><td>demo/2_jwt_demo.py</td><td>Part 2 · 第 127 行</td></tr>
+            <tr><td>bcrypt.checkpw() 自动从哈希值中提取盐，对明文同样处理后比对</td><td>demo/3_password_hash.py</td><td>Part 2 · 第 75-78 行</td></tr>
+            <tr><td>客户端凭证模式：无用户参与，服务间用 ID+Secret 换 Token</td><td>demo/4_oauth2_demo.py</td><td>Part 4 · ClientCredentialsFlow 类</td></tr>
+        </table>
+        </div>
+    </section>
+</main>
+
+<!-- 回到顶部 -->
+<button id="back-to-top" title="回到顶部" aria-label="回到顶部">↑</button>
+
+<script>
+// ═══════════════ 折叠/展开 ═══════════════
+function toggleBlock(header) {
+    header.parentElement.classList.toggle('open');
+}
+
+// ═══════════════ 进度条 ═══════════════
+const progressBar = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+});
+
+// ═══════════════ 侧栏高亮（适配 sN-xxx ID 体系） ═══════════════
+const navLinks = document.querySelectorAll('.nav-link');
+const navTopics = document.querySelectorAll('.nav-topic');
+const sidebar = document.getElementById('sidebar');
+
+function clearActive() {
+    navLinks.forEach(l => l.classList.remove('active'));
+    navTopics.forEach(t => t.classList.remove('active'));
+}
+
+const observeTargets = document.querySelectorAll('.topic-section, .block[id]');
+const observer = new IntersectionObserver((entries) => {
+    let closest = null;
+    let minTop = Infinity;
+    entries.forEach(e => {
+        if (e.isIntersecting && e.boundingClientRect.top < minTop) {
+            minTop = e.boundingClientRect.top;
+            closest = e.target;
+        }
+    });
+    if (!closest) return;
+
+    clearActive();
+    const id = closest.id;
+
+    // 从 id 提取节号：s1 / s1-goal / s1-concept / ...
+    const match = id.match(/^s(\d+)(?:-(.+))?$/);
+    if (!match) return;
+
+    const sectionNum = match[1];
+    const blockType = match[2];
+
+    if (!blockType) {
+        // 是 topic-section（如 s1），高亮第一个 nav-link（s1-goal）
+        const firstLink = document.querySelector(`.nav-link[href="#s${sectionNum}-goal"]`);
+        if (firstLink) firstLink.classList.add('active');
+    } else {
+        // 是 block（如 s1-goal）
+        const link = document.querySelector(`.nav-link[href="#${id}"]`);
+        if (link) link.classList.add('active');
+    }
+
+    // 联动高亮父级 nav-topic
+    const topicLink = document.querySelector(`.nav-topic[href="#s${sectionNum}"]`);
+    if (topicLink) topicLink.classList.add('active');
+}, { rootMargin: '-80px 0px -70% 0px', threshold: 0 });
+
+observeTargets.forEach(t => observer.observe(t));
+
+// ═══════════════ 复制代码 ═══════════════
+function copyCode(btn) {
+    const pre = btn.parentElement.querySelector('pre');
+    const text = pre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✅ 已复制';
+        setTimeout(() => { btn.textContent = '📋 复制'; }, 1500);
+    }).catch(() => {
+        btn.textContent = '❌ 失败';
+        setTimeout(() => { btn.textContent = '📋 复制'; }, 1500);
+    });
+}
+
+// ═══════════════ 深色模式 ═══════════════
+const darkToggle = document.getElementById('dark-toggle');
+const html = document.documentElement;
+
+function setDarkMode(isDark) {
+    if (isDark) {
+        html.classList.add('dark');
+        darkToggle.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        html.classList.remove('dark');
+        darkToggle.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    setDarkMode(true);
+} else if (savedTheme === 'light') {
+    setDarkMode(false);
+} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    setDarkMode(true);
+}
+
+darkToggle.addEventListener('click', () => {
+    setDarkMode(!html.classList.contains('dark'));
+});
+
+// ═══════════════ 回到顶部 ═══════════════
+const backToTop = document.getElementById('back-to-top');
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+        backToTop.classList.add('visible');
+    } else {
+        backToTop.classList.remove('visible');
+    }
+});
+backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ═══════════════ 移动端汉堡菜单 ═══════════════
+const hamburger = document.getElementById('hamburger-btn');
+const overlay = document.getElementById('overlay');
+
+function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+hamburger.addEventListener('click', openSidebar);
+overlay.addEventListener('click', closeSidebar);
+
+sidebar.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+    });
+});
+
+function handleResize() {
+    const mobileBar = document.getElementById('mobile-nav-bar');
+    if (window.innerWidth <= 768) {
+        mobileBar.style.display = 'flex';
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    } else {
+        mobileBar.style.display = 'none';
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+// ═══════════════ 自测题（从 data-answer 属性读取答案） ═══════════════
+const quizExplains = {
+    's1a': '正确答案 B。用户未登录（未认证）就访问任何需要认证的接口，应返回 <b>401 Unauthorized</b>。403 是已登录但权限不足。',
+    's1b': '正确答案 C。JWT 是无状态的，服务器不存储 Token，只需验证签名即可——这正是它天然支持横向扩展的原因。A 说反了，B 错误（Session 需要共享存储），D 错误（Session 注销更直接）。',
+    's1c': '正确答案 B。RBAC = Role-Based Access Control，核心理念是<b>用户 → 角色 → 权限</b>，通过角色间接管理权限，不直接给用户分配。',
+    's2a': '正确答案 C。<b>Signature（签名）</b>通过 HMACSHA256(Header.Payload, secret_key) 计算得出，是防篡改的唯一屏障。Base64URL 编码不提供任何安全性。',
+    's2b': '正确答案 B。JWT Payload 只是 Base64URL <b>编码</b>，不是加密——任何人都可以解码读取。只有签名保证完整性（防篡改），不保证机密性。',
+    's2c': '正确答案 B。双 Token 机制的核心就是：Access Token 过期后用 Refresh Token 无感刷新，用户不需要重新登录。Refresh Token 过期后才需要重新登录。',
+    's3a': '正确答案 B。MD5 的两个致命问题：①<b>确定性</b>——相同输入必相同输出，可被彩虹表反查；②<b>速度极快</b>——GPU 每秒数百亿次，暴力破解门槛极低。MD5 不是加密算法，不能被"反向解密"（A 错），这是概念混淆。',
+    's3b': '正确答案 B。bcrypt 的 cost 是<b>指数</b>含义：cost=12 表示 2^12 = <b>4,096 轮迭代</b>（不是 12 次）。这是常见面试误区。',
+    's3c': '正确答案 C。argon2 的核心优势是<b>可配置高内存占用</b>（如 64MB）。GPU 有很多计算核心但内存有限——argon2 占用大量内存使得 GPU 无法高效并行破解，这是 bcrypt（内存固定且很小）做不到的。',
+    's4a': '正确答案 B。OAuth2.0 解决的核心问题是<b>安全代理授权</b>：让第三方在不知道用户密码的情况下，获得用户数据的有范围、有期限的访问权限。',
+    's4b': '正确答案 B。state 是<b>随机字符串</b>：发起授权前生成并存入 session，回调时比对 URL 中的 state 和 session 中的 state——不匹配则拒绝，有效防止 CSRF 攻击者伪造回调。',
+    's4c': '正确答案 B。授权码通过浏览器 URL 回调传递（一次性的，泄露风险低），然后<b>在服务端</b>用 code + client_secret 换取 access_token——用户看不到 access_token 的换取过程，多加一道安全验证。',
+};
+
+function submitQuiz(section) {
+    // 匹配 id="quiz-{section}{a|b|c}" 格式
+    const quizzes = document.querySelectorAll(`.quiz[id^="quiz-${section}"]`);
+    if (quizzes.length === 0) return;
+    let allCorrect = true;
+
+    quizzes.forEach(q => {
+        const qId = q.id.replace('quiz-', '');
+        const correctAnswer = q.getAttribute('data-answer');
+        const explain = quizExplains[qId];
+        const selected = q.querySelector('input[type="radio"]:checked');
+        const fb = document.getElementById(`quiz-${qId}-fb`);
+
+        if (!selected) {
+            if (fb) { fb.className = 'quiz-feedback wrong'; fb.innerHTML = '⚠️ 请选择一个选项'; }
+            allCorrect = false;
+            return;
+        }
+
+        const isCorrect = selected.value === correctAnswer;
+        if (isCorrect) {
+            if (fb) { fb.className = 'quiz-feedback correct'; fb.innerHTML = '✅ 正确！' + (explain || ''); }
+        } else {
+            if (fb) { fb.className = 'quiz-feedback wrong'; fb.innerHTML = '❌ 错误。' + (explain || `正确答案是 ${correctAnswer}`); }
+            allCorrect = false;
+        }
+    });
+}
+
+function resetQuiz(section) {
+    const quizzes = document.querySelectorAll(`.quiz[id^="quiz-${section}"]`);
+    quizzes.forEach(q => {
+        const radios = q.querySelectorAll('input[type="radio"]');
+        radios.forEach(r => r.checked = false);
+        const qId = q.id.replace('quiz-', '');
+        const fb = document.getElementById(`quiz-${qId}-fb`);
+        if (fb) { fb.className = 'quiz-feedback'; fb.innerHTML = ''; }
+    });
+}
+</script>
+</body>
+</html>

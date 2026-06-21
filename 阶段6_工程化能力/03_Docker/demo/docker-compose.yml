@@ -1,0 +1,112 @@
+# ========================================
+# docker-compose.yml
+# FastAPI + MySQL + Redis 完整编排示例
+# ========================================
+# 使用方式：
+#   docker compose up -d --build    # 构建并启动所有服务
+#   docker compose down             # 停止并删除容器
+#   docker compose logs -f web      # 查看 Web 服务日志
+# ========================================
+
+version: "3.9"
+
+services:
+  # ============================================
+  # MySQL 8.0 数据库
+  # ============================================
+  db:
+    image: mysql:8.0
+    container_name: demo-db
+    restart: unless-stopped
+    # MySQL 必需的环境变量
+    environment:
+      MYSQL_ROOT_PASSWORD: root123        # root 用户密码
+      MYSQL_DATABASE: demo_db             # 自动创建的数据库名
+      MYSQL_USER: appuser                 # 应用专用用户
+      MYSQL_PASSWORD: apppass123          # 应用用户密码
+    ports:
+      - "3306:3306"                       # 宿主机端口:容器端口
+    volumes:
+      - mysql-data:/var/lib/mysql         # 持久化数据库文件
+    networks:
+      - app-network
+    # 健康检查：用 mysqladmin ping 检测 MySQL 是否就绪
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s                   # MySQL 初始化较慢，给 30 秒宽限期
+
+  # ============================================
+  # Redis 7.2 缓存
+  # ============================================
+  redis:
+    image: redis:7.2-alpine               # alpine 版本，体积更小
+    container_name: demo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data                  # 持久化 Redis 数据
+    networks:
+      - app-network
+    # 健康检查：用 redis-cli ping 检测 Redis 是否就绪
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # FastAPI Web 应用
+  # ============================================
+  web:
+    # 从当前目录的 Dockerfile 构建镜像
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: demo-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"                       # 访问 http://localhost:8000
+    volumes:
+      - .:/app                            # 绑定挂载：代码修改后容器内实时更新
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=mysql+aiomysql://appuser:apppass123@db:3306/demo_db
+      - REDIS_URL=redis://redis:6379/0
+    # 依赖关系：等 db 和 redis 健康后再启动 web
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    # 健康检查：请求 /health 端点
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# ============================================
+# 命名卷 — 数据持久化
+# ============================================
+volumes:
+  mysql-data:
+    driver: local                         # 使用本地存储驱动
+  redis-data:
+    driver: local
+
+# ============================================
+# 自定义网络 — 服务间通信
+# ============================================
+networks:
+  app-network:
+    driver: bridge                        # 桥接模式（默认）
+    # 同一网络下的容器可以用服务名互相访问：
+    #   web 容器可以通过 "db" 访问 MySQL
+    #   web 容器可以通过 "redis" 访问 Redis

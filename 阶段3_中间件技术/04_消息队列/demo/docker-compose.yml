@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  # Redis：作为 Celery Broker + Backend
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_celery
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # RabbitMQ：可选，演示 RabbitMQ 作为 Broker
+  # 默认注释，需要时取消注释
+  # rabbitmq:
+  #   image: rabbitmq:3.12-management-alpine
+  #   container_name: rabbitmq_celery
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: admin
+  #     RABBITMQ_DEFAULT_PASS: "123456"
+  #   ports:
+  #     - "5672:5672"    # AMQP 端口（Celery 连接）
+  #     - "15672:15672"  # Web 管理界面（访问 http://localhost:15672）
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+volumes:
+  redis_data:
+  # rabbitmq_data:

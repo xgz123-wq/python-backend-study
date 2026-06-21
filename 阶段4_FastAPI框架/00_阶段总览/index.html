@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阶段 4 · FastAPI 框架总览</title>
+<style>
+:root{
+  --bg:#f6f8fb;--surface:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;
+  --accent:#2563eb;--accent-light:#dbeafe;
+  --radius:12px;--shadow:0 2px 8px rgba(0,0,0,.06);
+  --back-top-bg:#2563eb;--back-top-text:#fff;
+  --table-stripe:#f8fafc;--table-header:#f1f5f9;
+  --trace-bg:#f1f5f9;
+  --card-grad-1:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);
+  --card-grad-2:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);
+  --card-grad-3:linear-gradient(135deg,#cffafe 0%,#a5f3fc 100%);
+  --card-grad-4:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);
+  --card-grad-5:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);
+  --card-grad-6:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);
+  --card-grad-7:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%);
+  --card-grad-8:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%);
+}
+body.dark{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);
+  --shadow:0 1px 4px rgba(0,0,0,.5);
+  --back-top-bg:#58a6ff;
+  --table-stripe:#161b22;--table-header:#21262d;
+  --trace-bg:#161b22;
+  --card-grad-1:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.08));
+  --card-grad-2:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(124,58,237,0.08));
+  --card-grad-3:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(6,182,212,0.08));
+  --card-grad-4:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.08));
+  --card-grad-5:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(22,163,74,0.08));
+  --card-grad-6:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(219,39,119,0.08));
+  --card-grad-7:linear-gradient(135deg,rgba(248,113,113,0.15),rgba(239,68,68,0.08));
+  --card-grad-8:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(79,70,229,0.08));
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;transition:background .3s,color .3s;margin:0;padding:0}
+.progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);z-index:200;transition:width .1s}
+.theme-toggle{position:fixed;top:12px;right:16px;z-index:300;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .15s}
+.theme-toggle:hover{transform:scale(1.1)}
+.layout{max-width:1280px;margin:0 auto;padding:32px 40px 80px}
+.hero{background:var(--surface);border-radius:20px;padding:48px 48px 40px;margin-bottom:32px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;top:0;right:0;width:300px;height:300px;background:radial-gradient(circle,rgba(124,58,237,.15),transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:16px}
+.hero h1{font-size:38px;font-weight:900;line-height:1.2;margin-bottom:14px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 50%,#db2777 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.hero-subtitle{font-size:16px;color:var(--muted);margin-bottom:24px;max-width:780px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.hero-meta span strong{color:var(--text);margin-right:4px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.btn-ghost{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-ghost:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.section-block{margin-bottom:48px;scroll-margin-top:20px}
+.section-block h2{font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.section-block h2 .num{width:32px;height:32px;background:var(--accent);color:#fff;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.section-block .section-sub{color:var(--muted);font-size:14px;margin-bottom:20px;margin-left:42px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}
+.card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-decoration:none;color:var(--text);box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08);border-color:var(--accent)}
+.card-c1{background:var(--card-grad-1)}
+.card-c2{background:var(--card-grad-2)}
+.card-c3{background:var(--card-grad-3)}
+.card-c4{background:var(--card-grad-4)}
+.card-c5{background:var(--card-grad-5)}
+.card-c6{background:var(--card-grad-6)}
+.card-icon{font-size:28px;margin-bottom:10px}
+.card-title{font-size:17px;font-weight:700;margin-bottom:6px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface);color:var(--muted);border:1px solid var(--border);letter-spacing:.05em;flex-shrink:0;margin-left:6px}
+.card-status.done{color:#16a34a;border-color:#16a34a;background:rgba(34,197,94,0.1)}
+.card-desc{font-size:13.5px;color:var(--muted);margin-bottom:12px;line-height:1.55}
+.card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-top:auto}
+.card-meta span{display:flex;align-items:center;gap:3px}
+.progress-overview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow)}
+.progress-bar-wrap{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:12px 0 8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);width:0%;transition:width .3s;border-radius:6px}
+.progress-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.info-card h4{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.info-card p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
+.table-wrap{overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border)}
+.table-wrap table{width:100%;border-collapse:collapse;margin:0;font-size:13.5px;table-layout:fixed;word-break:break-word}
+.table-wrap th{background:var(--table-header);font-weight:700;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text)}
+.table-wrap td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.table-wrap tr:nth-child(even) td{background:var(--table-stripe)}
+.table-wrap tr:last-child td{border-bottom:none}
+.table-wrap a{color:var(--accent);text-decoration:none}
+.table-wrap a:hover{text-decoration:underline}
+.path-diagram{background:#0f172a;color:#e2e8f0;padding:18px 22px;border-radius:8px;font-size:12.5px;line-height:1.7;white-space:pre;overflow-x:auto;font-family:"Cascadia Code","Fira Code",Consolas,monospace;margin-top:8px}
+body.dark .path-diagram{background:#010409;color:#c9d1d9}
+.callout{margin:14px 0;padding:12px 16px;border-radius:8px;border-left:4px solid;font-size:14px;line-height:1.65}
+.callout-tips{background:rgba(34,197,94,0.08);border-color:#16a34a}
+.callout-tips .callout-label{color:#16a34a}
+.callout-warn{background:rgba(245,158,11,0.08);border-color:#d97706}
+.callout-warn .callout-label{color:#d97706}
+.callout-label{font-weight:700;margin-right:6px}
+.callout p{margin:4px 0}
+.back-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--back-top-bg);color:var(--back-top-text);border:none;cursor:pointer;font-size:20px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:100;display:none;align-items:center;justify-content:center;transition:opacity .2s,transform .15s}
+.back-top:hover{transform:scale(1.1)}
+.back-top.show{display:flex}
+@media print{.back-top,.theme-toggle,.progress-bar{display:none!important}.layout{padding:20px}.card,.hero{break-inside:avoid}}
+@media (max-width:768px){.layout{padding:16px 16px 60px}.hero{padding:32px 24px}.hero h1{font-size:28px}.cards-grid{grid-template-columns:1fr}.section-block .section-sub{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" id="themeToggle" title="切换深浅色">🌙</button>
+
+<div class="layout">
+
+  <header class="hero">
+    <span class="hero-eyebrow">🐍 Python 后端学习 · 阶段 4</span>
+    <h1>FastAPI 框架统一总览</h1>
+    <p class="hero-subtitle">从路由、Pydantic 验证、依赖注入、异步，到 SQLAlchemy ORM 与中间件，构建现代 Python 后端服务的核心能力。6 个核心知识点串成一个可运行的累积式 Demo。</p>
+    <div class="hero-meta">
+      <span><strong>📚 6 大节</strong> · 路由 / Pydantic / Depends / async / ORM / 中间件</span>
+      <span><strong>⏱️ 约 60 分钟</strong> 总阅读</span>
+      <span><strong>🧪 1 个累积式 demo</strong> · app/ 6 文件完整项目</span>
+      <span><strong>✏️ 24 道自测题</strong> · 每节 4 题</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="01-routing.html">🚀 立即开始：第 1 节 · 路由与请求参数</a>
+      <a class="btn btn-ghost" href="04-async.html">⚡ 重点章节：async 异步</a>
+      <a class="btn btn-ghost" href="../../docs/01_后端学习路线.md">📋 后端学习路线</a>
+    </div>
+  </header>
+
+  <div class="progress-overview">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <strong style="font-size:15px">📊 我的学习进度</strong>
+      <span style="font-size:12px;color:var(--muted)">点击卡片切换"已读/未读"，自动保存到 localStorage</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="progress-label">
+      <span id="progressText">0 / 6 节已读（0%）</span>
+      <span id="progressHint">💡 建议：按 1→2→3→{4,5}→6 顺序学，每节都在前一节基础上加新能力</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="cards">
+    <h2><span class="num">1</span>章节目录（01 · FastAPI 核心）</h2>
+    <p class="section-sub">6 个核心知识点，串成一个可运行的累积式 Demo。从路由到中间件，把现代 Python 后端的标准装配打扎实。</p>
+    <div class="cards-grid">
+
+      <a class="card card-c1" href="01-routing.html" data-file="01-routing.html">
+        <div class="card-icon">🛣️</div>
+        <div class="card-title">01 路由与请求参数 <span class="card-status" data-status="01-routing.html">未读</span></div>
+        <p class="card-desc">URL + HTTP 方法 + 处理函数的三要素，定义接口契约的起点。路径/查询/请求体三种参数位置。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~8 分钟</span></div>
+      </a>
+
+      <a class="card card-c2" href="02-pydantic.html" data-file="02-pydantic.html">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">02 Pydantic 数据验证 <span class="card-status" data-status="02-pydantic.html">未读</span></div>
+        <p class="card-desc">Python 类型注解驱动的验证库，422 自动响应，敏感字段自动过滤。Create/Update/Response 三件套。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~7 分钟</span></div>
+      </a>
+
+      <a class="card card-c3" href="03-depends.html" data-file="03-depends.html">
+        <div class="card-icon">🔌</div>
+        <div class="card-title">03 依赖注入 Depends <span class="card-status" data-status="03-depends.html">未读</span></div>
+        <p class="card-desc">把 db / JWT 等公共逻辑抽成函数，路由自动装配，告别复制粘贴。yield 依赖与依赖链。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~7 分钟</span></div>
+      </a>
+
+      <a class="card card-c4" href="04-async.html" data-file="04-async.html">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">04 async 异步 <span class="card-status" data-status="04-async.html">未读</span></div>
+        <p class="card-desc">await 让 IO 等待不阻塞，FastAPI 高并发的底层机制。识别异步路由 + 同步驱动的致命组合。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~6 分钟</span></div>
+      </a>
+
+      <a class="card card-c5" href="05-sqlalchemy.html" data-file="05-sqlalchemy.html">
+        <div class="card-icon">🗄️</div>
+        <div class="card-title">05 SQLAlchemy 异步集成 <span class="card-status" data-status="05-sqlalchemy.html">未读</span></div>
+        <p class="card-desc">AsyncSession + 异步驱动让 ORM 非阻塞，2.0 新语法简化模型声明。expire_on_commit / lifespan 建表。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~8 分钟</span></div>
+      </a>
+
+      <a class="card card-c6" href="06-middleware.html" data-file="06-middleware.html">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">06 中间件与异常处理 <span class="card-status" data-status="06-middleware.html">未读</span></div>
+        <p class="card-desc">洋葱模型拦截每个请求，统一异常格式，不把 500 堆栈露给前端。CORS / 自定义中间件。</p>
+        <div class="card-meta"><span>📖 1 节</span><span>✏️ 4 题</span><span>⏱️ ~7 分钟</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="section-block" id="path">
+    <h2><span class="num">2</span>知识依赖关系</h2>
+    <p class="section-sub">下图展示了 6 个知识点之间的依赖关系；按数字顺序学 = 按依赖顺序学</p>
+    <div class="path-diagram">                  ┌─ 4. async/await ─┐
+                  │   （异步基础）    │
+                  ▼                  ▼
+1. 路由 ──→ 2. Pydantic ──→ 3. Depends ──→ 5. SQLAlchemy 异步
+（入口）   （数据契约）    （依赖装配）     （数据持久化）
+                                    │
+                                    ▼
+                            6. 中间件与异常处理
+                            （横切：日志 / CORS / 错误格式）</div>
+    <div class="callout callout-tips">
+      <span class="callout-label">💡 学习约定</span>
+      <p>每节遵循统一格式：左侧固定目录 + 右侧主内容 + 顶部进度条 + 4 类彩色 callout（💡 提示 / ⚠️ 注意 / ⛔ 避坑 / ✅ 验证）+ 表格斑马纹 + 代码块一键复制。配套 <code>demo/app/</code> 是累积式项目——6 节学完时就是一份完整可运行的 FastAPI 后端模板。</p>
+    </div>
+  </div>
+
+  <div class="section-block" id="readpath">
+    <h2><span class="num">3</span>推荐学习路径</h2>
+    <p class="section-sub">根据你的目标选择最合适的阅读顺序</p>
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>🟢 零基础新手</h4>
+        <p>1 → 2 → 3 → 4 → 5 → 6。完整顺序，6 节约 50 分钟，学完可独立搭一个异步 FastAPI 服务</p>
+      </div>
+      <div class="info-card">
+        <h4>🟡 会 Flask/Django</h4>
+        <p>1（路由）→ 4（async）→ 5（ORM）→ 6（中间件）。对比学，关注与同步框架的差异点</p>
+      </div>
+      <div class="info-card">
+        <h4>🔵 做项目的人</h4>
+        <p>2（Pydantic）→ 3（Depends）→ 5（SQLAlchemy）→ 6（中间件）。核心工程能力优先</p>
+      </div>
+      <div class="info-card">
+        <h4>🟠 面试突击</h4>
+        <p>重点看 4（async）和 6（CORS 顺序坑、异常处理）</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-block" id="env">
+    <h2><span class="num">4</span>环境准备（3 步启动 demo）</h2>
+    <p class="section-sub">Python 3.10+ 即可，无需 MySQL——demo 默认用 SQLite</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>步骤</th><th>命令</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td>1. 装依赖</td><td><code>cd 01_FastAPI核心/demo &amp;&amp; pip install -r requirements.txt</code></td><td>fastapi / uvicorn / sqlalchemy / aiosqlite 等</td></tr>
+          <tr><td>2. 启服务</td><td><code>uvicorn app.main:app --reload</code></td><td>启动 FastAPI（带热重载）</td></tr>
+          <tr><td>3. 打开文档</td><td><code>http://localhost:8000/docs</code></td><td>浏览器看自动生成的 Swagger UI</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-warn">
+      <span class="callout-label">⚠️ 启动注意</span>
+      <p>必须在 <code>demo/</code> 目录下运行 uvicorn，否则 <code>ModuleNotFoundError: No module named 'app'</code>。换 MySQL 只需改 <code>database.py</code> 里的 <code>DATABASE_URL</code> 为 <code>mysql+aiomysql://...</code>。</p>
+    </div>
+  </div>
+
+  <div class="section-block" id="trace" style="background:var(--trace-bg);padding:24px 28px;border-radius:10px;border:1px solid var(--border);margin-top:16px">
+    <h2><span class="num">📎</span>章节信息溯源</h2>
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:14px;margin-left:42px">本总览页所列 6 大知识点、demo 项目结构、技术依赖均直接来自 <a href="../01_FastAPI核心/demo/README.md" style="color:var(--accent)">demo/README.md</a> 和 <a href="../01_FastAPI核心/cheatsheet.md" style="color:var(--accent)">cheatsheet.md</a>。每节末尾的"📎 证据追溯"区列出了该节每条结论的源 MD 行号。</p>
+    <p style="color:var(--muted);font-size:13.5px;margin-left:42px">阶段 4 当前进度：已完成 <code>01_FastAPI核心</code>（6 节）。后续章节（进阶 / 项目实战 / 部署）规划中。</p>
+  </div>
+
+</div>
+
+<button class="back-top" id="backTop" title="回到顶部">↑</button>
+
+<script>
+const themeBtn=document.getElementById('themeToggle'),savedTheme=localStorage.getItem('theme-stage4'),prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+if(savedTheme==='dark'||(!savedTheme&&prefersDark)){document.body.classList.add('dark');themeBtn.textContent='☀️'}
+themeBtn.addEventListener('click',()=>{document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');themeBtn.textContent=isDark?'☀️':'🌙';localStorage.setItem('theme-stage4',isDark?'dark':'light')});
+
+const progressBar=document.getElementById('progressBar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;progressBar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%'});
+
+const backTop=document.getElementById('backTop');
+window.addEventListener('scroll',()=>backTop.classList.toggle('show',window.scrollY>300));
+backTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+const STORAGE_KEY='stage4-progress';
+const CARDS=document.querySelectorAll('.card[data-file]');
+let progress=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+
+function applyProgress(){
+  let done=0;
+  CARDS.forEach(card=>{
+    const file=card.dataset.file;
+    const status=card.querySelector('.card-status');
+    if(progress[file]){
+      card.style.opacity='0.85';
+      status.textContent='✓ 已读';
+      status.classList.add('done');
+      done++;
+    } else {
+      card.style.opacity='1';
+      status.textContent='未读';
+      status.classList.remove('done');
+    }
+  });
+  const total=CARDS.length;
+  const pct=Math.round((done/total)*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${done} / ${total} 节已读（${pct}%）`;
+  document.getElementById('progressHint').textContent=pct===100?'🎉 恭喜！全部 6 节都学完了！':(pct>=50?'🔥 进度过半，继续加油！':'💡 建议：按 1→2→3→{4,5}→6 顺序学，每节都在前一节基础上加新能力');
+}
+
+CARDS.forEach(card=>{
+  card.addEventListener('click',()=>{
+    const file=card.dataset.file;
+    progress[file]=!progress[file];
+    if(!progress[file]) delete progress[file];
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(progress));
+    applyProgress();
+  });
+});
+applyProgress();
+</script>
+</body>
+</html>

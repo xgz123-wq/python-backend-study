@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第一节 · 路由与请求参数 · FastAPI 核心</title>
+<style>
+:root{
+  --sidebar-width:260px;
+  --bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--quiz-bg:#fffbeb;
+  --accent:#2563eb;--concept:#7c3aed;--code:#0284c7;--warn:#dc2626;--quiz:#d97706;--ok:#16a34a;
+  --code-bg:#1e293b;--code-key:#c084fc;--code-str:#86efac;--code-fn:#93c5fd;--code-num:#fcd34d;--code-com:#64748b;--code-var:#e6edf3;--code-key2:#f472b6;
+  --diagram-bg:#0f172a;--diagram-text:#e2e8f0;--highlight:#f59e0b;--callout-bg:#eff6ff;--callout-border:#3b82f6;
+}
+.dark{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--quiz-bg:rgba(217,119,6,0.1);
+  --accent:#58a6ff;--concept:#a78bfa;--code:#38bdf8;--warn:#f87171;--quiz:#fbbf24;--ok:#4ade80;
+  --code-bg:#0d1117;--code-key:#d8b4fe;--code-str:#7ee787;--code-fn:#79c0ff;--code-num:#ffa657;--code-com:#8b949e;--code-var:#e6edf3;--code-key2:#ff7b72;
+  --diagram-bg:#010409;--diagram-text:#c9d1d9;--callout-bg:rgba(56,139,253,0.15);--callout-border:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;margin:0;transition:background .25s,color .25s}
+code,pre{font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* 进度条 */
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:1000;transition:width .1s}
+
+/* 顶栏（移动端） */
+#mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:99;align-items:center;padding:0 16px;gap:12px}
+#hamburger{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px}
+#mobile-title{font-weight:600;font-size:15px;flex:1}
+
+/* 侧栏 */
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-width);background:var(--card);border-right:1px solid var(--border);padding:24px 16px;overflow-y:auto;z-index:90}
+#sidebar .brand{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--accent)}
+#sidebar .brand-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.nav-topic{display:block;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--text);padding:14px 8px 4px;border-top:1px solid var(--border);margin-top:6px}
+.nav-topic:first-child{border-top:none;margin-top:0}
+.nav-link{display:block;font-size:13.5px;font-weight:400;color:var(--muted);padding:5px 8px 5px 18px;border-left:2px solid transparent;border-radius:0 4px 4px 0;transition:all .15s}
+.nav-link:hover{background:rgba(37,99,235,.08);color:var(--text);text-decoration:none}
+.nav-link.active{color:var(--accent);border-left-color:var(--accent);background:rgba(37,99,235,.08);font-weight:600}
+.nav-topic.active{color:var(--accent)}
+
+/* 主内容区 */
+#main-content{margin-left:var(--sidebar-width);padding:48px 56px 80px;min-height:100vh;max-width:none}
+#main-content h1{font-size:32px;margin-bottom:8px;line-height:1.3}
+.subtitle{color:var(--muted);font-size:16px;margin-bottom:8px}
+.reading-time{display:inline-block;font-size:13px;color:var(--muted);margin-bottom:32px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
+.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:8px 0 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+
+/* chapter-nav */
+.chapter-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:32px;font-size:14px}
+.chapter-nav a,.chapter-nav span{padding:6px 12px;border-radius:6px;transition:background .15s}
+.chapter-nav a{color:var(--accent)}
+.chapter-nav a:hover{background:rgba(37,99,235,.08);text-decoration:none}
+.chapter-nav .home{font-weight:600}
+.chapter-nav span{color:var(--muted);cursor:default}
+
+/* topic-section */
+.topic-section{margin-bottom:48px;scroll-margin-top:24px}
+.topic-section>h2{font-size:24px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);color:var(--text)}
+.topic-section h3{font-size:18px;margin:24px 0 10px;color:var(--text)}
+
+/* section（折叠卡片） */
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;background:var(--card);transition:background .15s}
+.section-head:hover{background:rgba(0,0,0,.02)}
+.dark .section-head:hover{background:rgba(255,255,255,.03)}
+.section-head .toggle{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:auto}
+.section.open .section-head .toggle{transform:rotate(90deg)}
+.section-body{padding:0 18px 18px;display:none}
+.section.open .section-body{display:block}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;color:#fff;flex-shrink:0}
+.tag-goal{background:var(--accent)}.tag-concept{background:var(--concept)}.tag-code{background:var(--code)}.tag-caution{background:var(--warn)}.tag-quiz{background:var(--quiz)}
+.section-title-text{font-size:15px;font-weight:600}
+
+/* 学习目标列表 */
+.goal-list{list-style:none;padding:0}
+.goal-list li{padding:6px 0 6px 22px;position:relative;color:var(--text)}
+.goal-list li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.callout{background:var(--callout-bg);border-left:3px solid var(--callout-border);padding:12px 16px;border-radius:6px;margin-top:12px;font-size:14px;color:var(--text)}
+.callout strong{color:var(--accent)}
+
+/* 概念区 */
+.definition{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:10px 0;border-left:3px solid var(--concept)}
+.definition strong{color:var(--concept);font-size:14px;display:block;margin-bottom:4px}
+.ascii-diagram{background:var(--diagram-bg);color:var(--diagram-text);padding:16px 20px;border-radius:8px;font-size:12.5px;line-height:1.5;overflow-x:auto;margin:12px 0;white-space:pre;font-family:"Cascadia Code","Fira Code",Consolas,monospace}
+
+/* 表格 */
+.table-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);word-break:break-word;vertical-align:top}
+th{background:rgba(0,0,0,.04);font-weight:700;font-size:14px}
+.dark th{background:rgba(255,255,255,.04)}
+tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
+.dark tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+td{font-size:14px}
+
+/* 代码块 */
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden;border:1px solid #334155}
+.code-block pre{margin:0;padding:14px 16px 14px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;white-space:pre;color:var(--code-var)}
+.code-block pre .key{color:var(--code-key)}
+.code-block pre .str{color:var(--code-str)}
+.code-block pre .fn{color:var(--code-fn)}
+.code-block pre .num{color:var(--code-num)}
+.code-block pre .com{color:var(--code-com);font-style:italic}
+.code-block pre .key2{color:var(--code-key2)}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);color:#e6edf3;border:none;padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;transition:background .15s}
+.copy-btn:hover{background:rgba(255,255,255,.16)}
+.code-block .highlight-line{border-left:3px solid var(--highlight);padding-left:11px;display:block;background:rgba(245,158,11,.05);margin:0 -14px 0 -14px;padding-right:14px;padding-top:1px;padding-bottom:1px}
+
+/* 误区表格 */
+.misconception-table td:first-child{color:var(--warn);font-weight:600}
+.misconception-table td:nth-child(2){color:var(--ok);font-weight:600}
+.misconception-table td:nth-child(1)::first-letter,.misconception-table td:nth-child(2)::first-letter{font-size:1.1em}
+.warn-callout{background:rgba(220,38,38,.08);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;margin:10px 0;font-size:14px;color:var(--text)}
+.warn-callout strong{color:var(--warn)}
+
+/* 自测题 */
+.quiz-card{background:var(--quiz-bg);border-radius:8px;padding:14px 18px;margin:12px 0;border-left:3px solid var(--quiz)}
+.quiz-card .q-title{font-weight:600;margin-bottom:10px;color:var(--text);font-size:14px;line-height:1.6}
+.quiz-options{list-style:none;padding:0;margin:10px 0}
+.quiz-options li{padding:6px 10px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px;font-size:14px}
+.quiz-options li:hover{background:rgba(37,99,235,.08)}
+.quiz-options input[type=radio]{cursor:pointer;accent-color:var(--accent)}
+.quiz-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:6px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-submit{background:var(--accent);color:#fff}
+.btn-submit:hover{background:#1d4ed8}
+.btn-reset{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-reset:hover{background:rgba(0,0,0,.04)}
+.dark .btn-reset:hover{background:rgba(255,255,255,.04)}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:14px;display:none;line-height:1.6}
+.quiz-feedback.correct{background:rgba(22,163,74,.12);border-left:3px solid var(--ok);color:var(--text)}
+.quiz-feedback.wrong{background:rgba(220,38,38,.10);border-left:3px solid var(--warn);color:var(--text)}
+.quiz-feedback strong{color:var(--ok)}
+.quiz-feedback.wrong strong{color:var(--warn)}
+
+/* 回到顶部 */
+#to-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:80;transition:transform .2s}
+#to-top:hover{transform:translateY(-2px)}
+#to-top.show{display:flex}
+
+/* 深色模式按钮 */
+#dark-toggle{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--border);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;z-index:101;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#dark-toggle:hover{transform:scale(1.06)}
+
+/* 证据追溯区 */
+.evidence{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-top:48px}
+.evidence h2{font-size:20px;margin-bottom:8px}
+.evidence .desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+.evidence table{font-size:13px}
+
+/* 响应式 */
+@media (max-width:1024px){
+  :root{--sidebar-width:220px}
+  #main-content{padding:32px 24px}
+}
+@media (max-width:768px){
+  #mobile-topbar{display:flex}
+  #sidebar{transform:translateX(-100%);transition:transform .25s;width:260px;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  #sidebar.open{transform:translateX(0)}
+  #main-content{margin-left:0;padding:20px 16px 80px;padding-top:68px}
+  #dark-toggle{top:5px;right:8px}
+  #main-content h1{font-size:24px}
+  .topic-section>h2{font-size:20px}
+  .chapter-nav{font-size:13px;padding:10px 12px}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:89;display:none}
+  #overlay.show{display:block}
+}
+@media print{
+  #progress-bar,#mobile-topbar,#sidebar,#dark-toggle,#to-top,.chapter-nav{display:none!important}
+  #main-content{margin-left:0;padding:0;max-width:none}
+  body{background:#fff;color:#000}
+  .section-body{display:block!important}
+  .section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">🌙</button>
+
+<header id="mobile-topbar">
+  <button id="hamburger" aria-label="打开目录">☰</button>
+  <span id="mobile-title">路由与请求参数</span>
+</header>
+<div id="overlay"></div>
+
+<nav id="sidebar">
+  <div class="brand">FastAPI 核心</div>
+  <div class="brand-sub">阶段4 · 01_FastAPI核心<br>第一节 · 路由与请求参数</div>
+  <a href="#s1" class="nav-topic">第一节 · 路由与请求参数</a>
+  <a href="#s1-goal" class="nav-link">学习目标</a>
+  <a href="#s1-concept" class="nav-link">核心概念</a>
+  <a href="#s1-code" class="nav-link">代码示例</a>
+  <a href="#s1-caution" class="nav-link">常见误区</a>
+  <a href="#s1-quiz" class="nav-link">自测题</a>
+</nav>
+
+<main id="main-content">
+
+<nav class="chapter-nav" aria-label="阶段章节导航">
+  <span>← 已是第一章</span>
+  <a class="home" href="index.html">🏠 返回章节总览</a>
+  <a class="next" href="02-pydantic.html">下一章：Pydantic 数据验证 →</a>
+</nav>
+
+<h1>第一节 · 路由与请求参数</h1>
+<p class="subtitle">FastAPI 核心第一讲：URL 与 HTTP 方法的映射规则，三种参数类型的差异与陷阱。</p>
+<div class="topic-desc">学会用一行装饰器，把 URL 映射到处理函数，顺手拿到参数校验。</div>
+<div class="reading-time">⏱️ 预估阅读 8 分钟</div>
+
+<section class="topic-section" id="s1">
+
+  <!-- 🎯 学习目标 -->
+  <div class="section open" id="s1-goal">
+    <div class="section-head">
+      <span class="tag tag-goal">🎯 学习目标</span>
+      <span class="section-title-text">本节你要带走什么</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <ul class="goal-list">
+        <li>理解「路由 = URL + HTTP 方法 + 处理函数」三要素</li>
+        <li>区分路径参数、查询参数、请求体三种入参位置</li>
+        <li>掌握装饰器 6 个 HTTP 方法的语义与选择</li>
+        <li>能用一行装饰器声明类型校验和默认值</li>
+        <li>理解路径匹配顺序冲突是常见 bug 来源</li>
+      </ul>
+      <div class="callout">
+        <strong>与后端开发的关联：</strong>路由是 REST API 的"门牌号"。理解参数传递位置是设计接口契约（contract）的第一步——前端对接、后端校验、文档自动生成（<code>/docs</code>）都依赖这套规则。
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 核心概念 -->
+  <div class="section open" id="s1-concept">
+    <div class="section-head">
+      <span class="tag tag-concept">📖 核心概念</span>
+      <span class="section-title-text">三种参数 + 路由装饰器</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="definition">
+        <strong>核心定义</strong>
+        路由 = URL 路径 + HTTP 方法 + 处理函数；三者拼成一条「<code>method path → handler</code>」的映射规则。请求参数是 handler 接收的入参，按位置分三种。
+      </div>
+
+      <h3>1. 三种参数类型对比</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>类型</th><th>位置</th><th>URL 示例</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td>路径参数</td><td>URL 段</td><td><code>GET /items/42</code></td><td>唯一资源定位</td></tr>
+          <tr><td>查询参数</td><td><code>?k=v&amp;k2=v2</code></td><td><code>GET /items/?limit=10</code></td><td>过滤 / 分页 / 可选参数</td></tr>
+          <tr><td>请求体</td><td>JSON body</td><td><code>POST /items/</code></td><td>创建 / 更新资源</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>2. 路由装饰器 → HTTP 方法</h3>
+      <pre class="ascii-diagram">@app.get("/items/")          # 查询列表     → 幂等
+@app.get("/items/{id}")      # 查询单个     → 幂等
+@app.post("/items/")         # 创建         → 非幂等
+@app.put("/items/{id}")      # 全量更新     → 幂等
+@app.patch("/items/{id}")    # 部分更新     → 非幂等
+@app.delete("/items/{id}")   # 删除         → 幂等</pre>
+
+      <h3>3. 类型注解 = 自动校验</h3>
+      <p>FastAPI 看 Python 类型注解自动做数据校验，类型不对就返回 422。默认值 = 该参数可选。</p>
+
+<pre class="ascii-diagram">路径参数  item_id: int                     # 必须传整数
+查询参数  skip: int = 0, limit: int = 10  # 可选，默认值
+请求体    item: ItemCreate                 # Pydantic 验证</pre>
+
+    </div>
+  </div>
+
+  <!-- 💻 代码示例 -->
+  <div class="section" id="s1-code">
+    <div class="section-head">
+      <span class="tag tag-code">💻 代码示例</span>
+      <span class="section-title-text">从 demo/app/main.py 与 routers/items.py 摘录</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <h3>① 最小三参数演示（来自 1.路由与请求参数.md）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> FastAPI
+<span class="key">from</span> pydantic <span class="key">import</span> BaseModel
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="com"># 路径参数：从 URL 里取</span>
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/items/{item_id}"</span>)
+<span class="key">async def</span> <span class="fn">get_item</span>(item_id: <span class="key">int</span>):
+    <span class="key">return</span> {<span class="str">"id"</span>: item_id}
+
+<span class="com"># 查询参数：URL ?key=value</span>
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/items/"</span>)
+<span class="key">async def</span> <span class="fn">list_items</span>(skip: <span class="key">int</span> = <span class="num">0</span>, limit: <span class="key">int</span> = <span class="num">10</span>):
+    <span class="key">return</span> {<span class="str">"skip"</span>: skip, <span class="str">"limit"</span>: limit}
+
+<span class="com"># 请求体：JSON body，用 Pydantic 接收</span>
+<span class="key">class</span> <span class="fn">ItemCreate</span>(BaseModel):
+    name: <span class="key">str</span>
+    price: <span class="key">float</span>
+
+<span class="key2">@app</span>.<span class="fn">post</span>(<span class="str">"/items/"</span>)
+<span class="key">async def</span> <span class="fn">create_item</span>(item: ItemCreate):
+    <span class="key">return</span> item</pre>
+      </div>
+
+      <h3>② 真实项目：商品 CRUD 路由（来自 routers/items.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> APIRouter, Depends, HTTPException
+<span class="key">from</span> sqlalchemy.ext.asyncio <span class="key">import</span> AsyncSession
+<span class="key">from</span> sqlalchemy <span class="key">import</span> select
+
+<span class="key">from</span> app.deps <span class="key">import</span> get_db
+<span class="key">from</span> app.models.item <span class="key">import</span> Item
+<span class="key">from</span> app.schemas <span class="key">import</span> ItemCreate, ItemUpdate, ItemResponse
+
+router = <span class="fn">APIRouter</span>(prefix=<span class="str">"/items"</span>, tags=[<span class="str">"商品"</span>])
+
+<span class="com"># 查询列表：路径 + 查询参数（skip/limit）</span>
+<span class="key2">@router</span>.<span class="fn">get</span>(<span class="str">"/"</span>, response_model=<span class="key">list</span>[ItemResponse])
+<span class="key">async def</span> <span class="fn">list_items</span>(
+    skip: <span class="key">int</span> = <span class="num">0</span>,
+    limit: <span class="key">int</span> = <span class="num">10</span>,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    result = <span class="key">await</span> db.<span class="fn">execute</span>(<span class="fn">select</span>(Item).<span class="fn">offset</span>(skip).<span class="fn">limit</span>(limit))
+    <span class="key">return</span> result.<span class="fn">scalars</span>().<span class="fn">all</span>()
+
+<span class="com"># 查询单个：路径参数 item_id</span>
+<span class="key2">@router</span>.<span class="fn">get</span>(<span class="str">"/{item_id}"</span>, response_model=ItemResponse)
+<span class="key">async def</span> <span class="fn">get_item</span>(item_id: <span class="key">int</span>, db: AsyncSession = <span class="fn">Depends</span>(get_db)):
+    item = <span class="key">await</span> db.<span class="fn">get</span>(Item, item_id)
+    <span class="key">if not</span> item:
+        <span class="key">raise</span> <span class="fn">HTTPException</span>(status_code=<span class="num">404</span>, detail=<span class="str">f"Item {item_id} not found"</span>)
+    <span class="key">return</span> item
+
+<span class="com"># 创建：请求体 Pydantic</span>
+<span class="key2">@router</span>.<span class="fn">post</span>(<span class="str">"/"</span>, response_model=ItemResponse, status_code=<span class="num">201</span>)
+<span class="key">async def</span> <span class="fn">create_item</span>(
+    data: ItemCreate,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    db_item = <span class="fn">Item</span>(**data.<span class="fn">model_dump</span>())
+    db.<span class="fn">add</span>(db_item)
+    <span class="key">await</span> db.<span class="fn">commit</span>()
+    <span class="key">await</span> db.<span class="fn">refresh</span>(db_item)
+    <span class="key">return</span> db_item</pre>
+      </div>
+
+      <h3>③ 启动入口（来自 main.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> FastAPI
+<span class="key">from</span> app.routers.items <span class="key">import</span> router <span class="key">as</span> items_router
+
+app = <span class="fn">FastAPI</span>(title=<span class="str">"FastAPI 学习 Demo"</span>, version=<span class="str">"1.0.0"</span>)
+app.<span class="fn">include_router</span>(items_router)
+
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/"</span>, tags=[<span class="str">"health"</span>])
+<span class="key">async def</span> <span class="fn">health_check</span>():
+    <span class="key">return</span> {<span class="str">"status"</span>: <span class="str">"ok"</span>, <span class="str">"docs"</span>: <span class="str">"/docs"</span>}</pre>
+      </div>
+
+      <h3>④ 启动 + 访问文档</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="com"># 终端：进入 demo 目录启动服务</span>
+cd demo
+uvicorn app.main:app --reload
+
+<span class="com"># 浏览器打开：</span>
+<span class="com">#   http://localhost:8000/docs  → 自动生成的 Swagger 文档</span>
+<span class="com">#   http://localhost:8000/redoc → ReDoc 风格的接口文档</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ⚠️ 常见误区 -->
+  <div class="section" id="s1-caution">
+    <div class="section-head">
+      <span class="tag tag-caution">⚠️ 常见误区</span>
+      <span class="section-title-text">最常踩的坑</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <div class="table-wrap">
+      <table class="misconception-table">
+        <thead><tr><th>❌ 误区</th><th>✅ 正确做法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>路径参数顺序写反：<br><code>/items/{id}</code> 写在 <code>/items/me</code> 前面，<code>me</code> 被当作 <code>id</code> 匹配，永远进不到 <code>get_me</code></td>
+            <td>固定路径（<code>/items/me</code>）必须写在动态路径（<code>/items/{id}</code>）之前</td>
+          </tr>
+          <tr>
+            <td>查询参数忘了给默认值，导致它是必填：<br><code>async def list(limit: int)</code> 不传 <code>limit</code> 就报 422</td>
+            <td>可选项必须给默认值：<br><code>async def list(skip: int = 0, limit: int = 10)</code></td>
+          </tr>
+          <tr>
+            <td>把敏感数据放在路径里：<br><code>GET /users/123/password/abc</code> 密码会进 URL 日志</td>
+            <td>敏感数据走请求体（POST/PUT），不要进 URL</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="warn-callout">
+        <strong>路径匹配顺序：</strong>FastAPI 按注册顺序匹配路由，更具体的路径必须先注册。生产里 <code>/items/me</code> 这类"特殊"路径应单独放在 router 文件最前面。
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ 自测题 -->
+  <div class="section" id="s1-quiz">
+    <div class="section-head">
+      <span class="tag tag-quiz">✏️ 自测题</span>
+      <span class="section-title-text">4 道单选 · 检验理解</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="quiz-card" data-answer="B">
+        <div class="q-title">1. FastAPI 中「路径参数」和「查询参数」的关键区别是？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q1" value="A"> A. 路径参数必须是字符串，查询参数可以是任意类型</label></li>
+          <li><label><input type="radio" name="q1" value="B"> B. 路径参数出现在 URL 路径段里（<code>/items/42</code>），查询参数出现在 <code>?</code> 之后（<code>/items/?limit=10</code>）</label></li>
+          <li><label><input type="radio" name="q1" value="C"> C. 路径参数是 POST，查询参数是 GET</label></li>
+          <li><label><input type="radio" name="q1" value="D"> D. 路径参数会自动加密，查询参数不会</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="A">
+        <div class="q-title">2. 路由 <code>@app.post("/items/")</code> 收到的 JSON body 应该如何接收？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q2" value="A"> A. 用 Pydantic 的 BaseModel 子类作为参数类型（<code>item: ItemCreate</code>）</label></li>
+          <li><label><input type="radio" name="q2" value="B"> B. 用 <code>request.json()</code> 手动解析</label></li>
+          <li><label><input type="radio" name="q2" value="C"> C. 只能接收查询参数，不能接收 body</label></li>
+          <li><label><input type="radio" name="q2" value="D"> D. 必须用 <code>@app.json()</code> 装饰器</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="C">
+        <div class="q-title">3. 现有两个路由：<code>@app.get("/items/me")</code> 和 <code>@app.get("/items/{item_id}")</code>。请求 <code>GET /items/me</code> 会发生什么？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q3" value="A"> A. 总是命中 <code>get_me</code>，因为路径完全匹配优先级最高</label></li>
+          <li><label><input type="radio" name="q3" value="B"> B. 报 422，因为 <code>item_id</code> 是 int 类型但 <code>me</code> 不是数字</label></li>
+          <li><label><input type="radio" name="q3" value="C"> C. 取决于注册顺序：如果 <code>/items/{item_id}</code> 写在前面，<code>me</code> 会被当成 id 进 <code>get_item</code>，报 422</label></li>
+          <li><label><input type="radio" name="q3" value="D"> D. 报 404，因为没有匹配的资源</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="D">
+        <div class="q-title">4. 哪个 HTTP 方法适合「修改商品价格」这种部分字段更新？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q4" value="A"> A. <code>GET</code>，GET 是万能的</label></li>
+          <li><label><input type="radio" name="q4" value="B"> B. <code>PUT</code>，PUT 适合所有更新</label></li>
+          <li><label><input type="radio" name="q4" value="C"> C. <code>POST</code>，POST 是更新专用</label></li>
+          <li><label><input type="radio" name="q4" value="D"> D. <code>PATCH</code>，只改传入的字段（部分更新）</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- 证据追溯 -->
+<section class="evidence">
+  <h2>📎 证据追溯</h2>
+  <p class="desc">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+    <tbody>
+      <tr><td>路由 = URL + HTTP 方法；三种参数位置定义</td><td><a href="../01_FastAPI核心/1.路由与请求参数.md">1.路由与请求参数.md</a></td><td>L3 / L33-39</td></tr>
+      <tr><td>路径参数顺序冲突（me vs {id}）</td><td><a href="../01_FastAPI核心/1.路由与请求参数.md">1.路由与请求参数.md</a></td><td>L41-52</td></tr>
+      <tr><td>APIRouter + 6 个 HTTP 方法的实战用法</td><td><a href="../01_FastAPI核心/demo/app/routers/items.py">demo/app/routers/items.py</a></td><td>L19 / L23-32 / L36-41</td></tr>
+      <tr><td>FastAPI 应用入口与 include_router</td><td><a href="../01_FastAPI核心/demo/app/main.py">demo/app/main.py</a></td><td>L32-37 / L66-72</td></tr>
+      <tr><td>启动命令与 Swagger 文档地址</td><td><a href="../01_FastAPI核心/cheatsheet.md">cheatsheet.md</a></td><td>L181-188</td></tr>
+      <tr><td>知识点 1 对应文件映射</td><td><a href="../01_FastAPI核心/demo/README.md">demo/README.md</a></td><td>L24-32</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<button id="to-top" title="回到顶部">↑</button>
+
+<script>
+// 进度条
+const bar=document.getElementById('progress-bar');
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
+  bar.style.width=pct+'%';
+});
+
+// 回到顶部
+const topBtn=document.getElementById('to-top');
+window.addEventListener('scroll',()=>{
+  topBtn.classList.toggle('show',window.scrollY>300);
+});
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// 深色模式
+const toggle=document.getElementById('dark-toggle');
+const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+const savedMode=localStorage.getItem('theme');
+function applyMode(m){document.documentElement.classList.toggle('dark',m==='dark');toggle.textContent=m==='dark'?'☀️':'🌙'}
+if(savedMode){applyMode(savedMode)}else if(prefersDark){applyMode('dark')}else{applyMode('light')}
+toggle.addEventListener('click',()=>{
+  const isDark=document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme',isDark?'dark':'light');
+  toggle.textContent=isDark?'☀️':'🌙';
+});
+
+// 移动端侧栏
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('overlay');
+const hamburger=document.getElementById('hamburger');
+function closeSidebar(){sidebar.classList.remove('open');overlay.classList.remove('show');document.body.style.overflow=''}
+hamburger.addEventListener('click',()=>{
+  const open=sidebar.classList.toggle('open');
+  overlay.classList.toggle('show',open);
+  document.body.style.overflow=open?'hidden':'';
+});
+overlay.addEventListener('click',closeSidebar);
+sidebar.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeSidebar));
+window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar()});
+
+// 折叠交互
+document.querySelectorAll('.section-head').forEach(h=>{
+  h.addEventListener('click',()=>h.parentElement.classList.toggle('open'));
+});
+
+// 复制按钮
+document.querySelectorAll('.copy-btn').forEach(btn=>{
+  btn.addEventListener('click',async e=>{
+    e.stopPropagation();
+    const code=btn.parentElement.querySelector('pre code')||btn.parentElement.querySelector('pre');
+    if(!code)return;
+    try{await navigator.clipboard.writeText(code.innerText);btn.textContent='✅ 已复制';setTimeout(()=>btn.textContent='📋 复制',1500)}catch{btn.textContent='复制失败';setTimeout(()=>btn.textContent='📋 复制',1500)}
+  });
+});
+
+// 侧栏高亮（IntersectionObserver）
+const sections=document.querySelectorAll('.section[id],.topic-section[id]');
+const linkMap=new Map();
+document.querySelectorAll('.sidebar a, #sidebar a').forEach(a=>{
+  if(a.getAttribute('href')&&a.getAttribute('href').startsWith('#')){
+    linkMap.set(a.getAttribute('href').slice(1),a);
+  }
+});
+const navLinks=document.querySelectorAll('#sidebar .nav-link');
+const navTopics=document.querySelectorAll('#sidebar .nav-topic');
+function setActive(id){
+  navLinks.forEach(l=>l.classList.remove('active'));
+  navTopics.forEach(t=>t.classList.remove('active'));
+  const link=linkMap.get(id);
+  if(link&&link.classList.contains('nav-link')){
+    link.classList.add('active');
+    let prev=link.previousElementSibling;
+    while(prev&&!prev.classList.contains('nav-topic'))prev=prev.previousElementSibling;
+    if(prev)prev.classList.add('active');
+  }else if(link&&link.classList.contains('nav-topic')){
+    link.classList.add('active');
+  }
+}
+const obs=new IntersectionObserver(entries=>{
+  const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);
+  if(visible[0])setActive(visible[0].target.id);
+},{rootMargin:'-20% 0px -60% 0px',threshold:[0,.25,.5,.75,1]});
+sections.forEach(s=>obs.observe(s));
+
+// 自测题交互
+const EXPLANATIONS={
+  q1:'路径参数出现在 URL 路径段（<code>/items/42</code>），查询参数在 <code>?</code> 之后（<code>/items/?limit=10</code>）。类型都可以注解，区别在 URL 位置。',
+  q2:'FastAPI 用 Pydantic 验证请求体：定义一个 <code>BaseModel</code> 子类，handler 参数类型用这个类即可。校验失败自动 422。',
+  q3:'FastAPI 按注册顺序匹配，先注册先生效。<code>/items/{item_id}</code> 写在前面时，<code>me</code> 会被路径参数 <code>item_id</code> 吞掉；因为 <code>item_id: int</code>，校验失败返回 422。',
+  q4:'<code>PATCH</code> 适合部分更新（只改传入的字段，配合 <code>model_dump(exclude_unset=True)</code>）；<code>PUT</code> 是全量替换。'
+};
+document.querySelectorAll('.quiz-card').forEach(card=>{
+  const submit=card.querySelector('.btn-submit');
+  const reset=card.querySelector('.btn-reset');
+  const fb=card.querySelector('.quiz-feedback');
+  submit.addEventListener('click',()=>{
+    const name=card.querySelector('input[type=radio]').name;
+    const checked=card.querySelector('input[type=radio]:checked');
+    if(!checked){fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>未作答</strong> 请先选择一个选项。';return}
+    const correct=card.dataset.answer;
+    if(checked.value===correct){
+      fb.className='quiz-feedback correct';fb.style.display='block';
+      fb.innerHTML='<strong>✅ 回答正确！</strong> '+EXPLANATIONS[name];
+    }else{
+      fb.className='quiz-feedback wrong';fb.style.display='block';
+      fb.innerHTML='<strong>❌ 回答错误。</strong>正确答案 '+correct+'。'+EXPLANATIONS[name];
+    }
+  });
+  reset.addEventListener('click',()=>{
+    card.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);
+    fb.style.display='none';fb.className='quiz-feedback';
+  });
+});
+</script>
+</body>
+</html>

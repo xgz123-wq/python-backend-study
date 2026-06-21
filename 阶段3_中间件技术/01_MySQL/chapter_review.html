@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 MySQL - 学习页面</title>
+<style>
+:root{--accent:#2563eb;--accent-light:rgba(37,99,235,0.1);--purple:#7c3aed;--cyan:#0284c7;--red:#dc2626;--orange:#d97706;--green:#16a34a;--bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--text-muted:#64748b;--code-bg:#1e293b;--sidebar-width:260px;--callout-warn-border:#dc2626;--quiz-bg:#fffbeb}
+.dark{--accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--code-bg:#0d1117;--callout-warn-border:#f85149;--quiz-bg:rgba(217,119,6,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg)}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0%;z-index:1000;transition:width .1s}
+#dark-toggle{position:fixed;top:16px;right:16px;z-index:500;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#dark-toggle:hover{background:var(--border)}
+.layout{display:flex;max-width:1100px;margin:0 auto;min-height:100vh}
+#sidebar{width:var(--sidebar-width);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-right:1px solid var(--border);background:var(--card)}
+#sidebar nav{display:flex;flex-direction:column;gap:4px}
+#sidebar .nav-topic{font-size:12.5px;font-weight:bold;color:var(--text-muted);padding:6px 8px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-topic:hover,#sidebar .nav-topic.active{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link{font-size:13.5px;color:var(--text);padding:4px 8px 4px 20px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-link:hover{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link.active{color:var(--accent);font-weight:600}
+main{flex:1;padding:32px 40px;max-width:800px;margin:0 auto}
+.article-title{font-size:28px;font-weight:800;margin-bottom:8px;color:var(--text)}
+.read-time{color:var(--text-muted);font-size:13px;margin-bottom:32px;display:flex;align-items:center;gap:6px}
+.topic{margin-bottom:56px;scroll-margin-top:24px}
+.topic-header{margin-bottom:20px}
+.topic-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.topic-divider{height:1px;background:var(--border);margin-top:12px}
+.section{margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)}
+.section-header{display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;user-select:none;transition:background .15s}
+.section-header:hover{background:var(--accent-light)}
+.section-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;color:#fff;flex-shrink:0}
+.badge-goal{background:var(--accent)}.badge-concept{background:var(--purple)}.badge-code{background:var(--cyan)}.badge-caution{background:var(--red)}.badge-quiz{background:var(--orange)}
+.badge-overview{background:#475569}
+.topic-desc{color:var(--text-muted);font-style:italic;font-size:14.5px;margin:-8px 0 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+.section-arrow{margin-left:auto;font-size:12px;transition:transform .2s;color:var(--text-muted)}
+.section.open .section-arrow{transform:rotate(180deg)}
+.section-body{display:none;padding:16px 20px}
+.section.open .section-body{display:block}
+.section-content ul{margin:8px 0 8px 20px}
+.section-content li{margin-bottom:6px}
+.section-content p{margin-bottom:10px}
+.section-content h4{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--text)}
+.callout{padding:10px 14px;border-radius:6px;margin:12px 0;font-size:13.5px;border-left:3px solid}
+.callout-blue{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.callout-red{background:rgba(220,38,38,0.08);border-color:var(--red);color:var(--red)}
+.callout-warn{background:rgba(220,38,38,0.08);border-color:var(--callout-warn-border);color:var(--callout-warn-border)}
+.section-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+.section-content th,.section-content td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+.section-content th{background:var(--bg);font-weight:600}
+.section-content tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark .section-content tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden}
+.code-block pre{padding:16px;overflow-x:auto;font-size:12.5px;line-height:1.6;color:#e2e8f0;font-family:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace}
+.code-block .copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#e2e8f0;border:none;border-radius:4px;cursor:pointer;transition:background .2s}
+.code-block .copy-btn:hover{background:rgba(255,255,255,0.2)}
+.code-block .copy-btn.copied{color:#4ade80}
+.key-line{border-left:3px solid #f59e0b!important;margin-left:-3px}
+.comparison-table{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:12px 0;font-size:13.5px}
+.comparison-table .left,.comparison-table .right{padding:10px 14px}
+.comparison-table .left{background:rgba(220,38,38,0.06);color:var(--red)}
+.comparison-table .right{background:rgba(22,163,74,0.06);color:var(--green)}
+.quiz-question{margin-bottom:16px}
+.quiz-question h4{font-size:14px;margin-bottom:8px;background:var(--quiz-bg);padding:8px 12px;border-left:3px solid var(--orange);border-radius:4px}
+.quiz-options{display:flex;flex-direction:column;gap:6px}
+.quiz-option{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:background .15s}
+.quiz-option:hover{background:var(--accent-light)}
+.quiz-option input{accent-color:var(--accent)}
+.quiz-submit{margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer}
+.quiz-submit:hover{opacity:.9}
+.quiz-result{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:13.5px;display:none}
+.quiz-result.correct{background:rgba(22,163,74,0.1);color:var(--green);border:1px solid var(--green)}
+.quiz-result.incorrect{background:rgba(220,38,38,0.1);color:var(--red);border:1px solid var(--red)}
+.quiz-reset{margin-top:8px;padding:6px 14px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-size:13px;cursor:pointer}
+#evidence{margin-top:64px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+#evidence h2{font-size:16px;margin-bottom:16px}
+#evidence table{width:100%;border-collapse:collapse;font-size:13px}
+#evidence th,#evidence td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+#evidence th{background:var(--bg);font-weight:600}
+#evidence tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark #evidence tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+#back-to-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:opacity .2s}
+#back-to-top.show{display:flex}
+#mobile-nav{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:400;padding:0 16px;align-items:center;gap:12px}
+#mobile-nav .nav-title{flex:1;font-weight:600;font-size:15px}
+#hamburger{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450}
+@media(max-width:768px){
+#sidebar{position:fixed;left:-280px;top:0;height:100vh;z-index:500;width:280px;transition:left .3s}
+#sidebar.open{left:0}
+#sidebar-overlay.show{display:block}
+#mobile-nav{display:flex}
+main{padding:60px 20px 20px}
+}
+@media print{
+#sidebar,#dark-toggle,#progress-bar,#back-to-top,#mobile-nav{display:none!important}
+.layout{display:block}
+main{max-width:100%;padding:0}
+.section .section-body{display:block!important}
+}
+.ascii-diagram{background:var(--code-bg);padding:14px;border-radius:6px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12px;line-height:1.55;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:12px 0}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle">☀️</button>
+<div class="layout">
+<aside id="sidebar">
+  <nav>
+    <a href="#s0" class="nav-topic">第 0 节 · MySQL 环境与基础操作</a>
+    <a href="#s0-goal" class="nav-link">学习目标</a>
+    <a href="#s0-concept" class="nav-link">核心概念</a>
+    <a href="#s0-code" class="nav-link">代码示例</a>
+    <a href="#s0-pitfall" class="nav-link">常见误区</a>
+    <a href="#s0-quiz" class="nav-link">自测题</a>
+    
+    <a href="#s1" class="nav-topic">第 1 节 · SQL 基础与 CRUD</a>
+    <a href="#s1-goal" class="nav-link">学习目标</a>
+    <a href="#s1-concept" class="nav-link">核心概念</a>
+    <a href="#s1-code" class="nav-link">代码示例</a>
+    <a href="#s1-pitfall" class="nav-link">常见误区</a>
+    <a href="#s1-quiz" class="nav-link">自测题</a>
+
+    <a href="#s2" class="nav-topic">第 2 节 · 多表联查与子查询</a>
+    <a href="#s2-goal" class="nav-link">学习目标</a>
+    <a href="#s2-concept" class="nav-link">核心概念</a>
+    <a href="#s2-code" class="nav-link">代码示例</a>
+    <a href="#s2-pitfall" class="nav-link">常见误区</a>
+    <a href="#s2-quiz" class="nav-link">自测题</a>
+
+    <a href="#s3" class="nav-topic">第 3 节 · 索引原理与优化</a>
+    <a href="#s3-goal" class="nav-link">学习目标</a>
+    <a href="#s3-concept" class="nav-link">核心概念</a>
+    <a href="#s3-code" class="nav-link">代码示例</a>
+    <a href="#s3-pitfall" class="nav-link">常见误区</a>
+    <a href="#s3-quiz" class="nav-link">自测题</a>
+
+    <a href="#s4" class="nav-topic">第 4 节 · 事务与隔离级别</a>
+    <a href="#s4-goal" class="nav-link">学习目标</a>
+    <a href="#s4-concept" class="nav-link">核心概念</a>
+    <a href="#s4-code" class="nav-link">代码示例</a>
+    <a href="#s4-pitfall" class="nav-link">常见误区</a>
+    <a href="#s4-quiz" class="nav-link">自测题</a>
+
+    <a href="#s5" class="nav-topic">第 5 节 · 表设计与慢查询优化</a>
+    <a href="#s5-goal" class="nav-link">学习目标</a>
+    <a href="#s5-concept" class="nav-link">核心概念</a>
+    <a href="#s5-code" class="nav-link">代码示例</a>
+    <a href="#s5-pitfall" class="nav-link">常见误区</a>
+    <a href="#s5-quiz" class="nav-link">自测题</a>
+  </nav>
+</aside>
+<main>
+  <h1 class="article-title">MySQL 核心技术</h1>
+  <div class="read-time">⏱️ 预估阅读 45 分钟</div>
+
+  <!-- 📌 本章总览 -->
+  <div class="section open" id="overview">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-overview">📌 本章</span>
+      <span>为什么要学 MySQL？</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p>MySQL 是后端最常打交道的关系型数据库——从 CRUD 到 JOIN、从索引到事务，每个业务接口背后都是它在干活。读完本章，你能在 Linux 上把 MySQL 跑起来、写出不被全表扫描拖死的 SQL、看懂事务和隔离级别在做什么。</p>
+      <table>
+        <thead><tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr></thead>
+        <tbody>
+          <tr><td>MySQL 环境与基础操作</td><td>Docker · 字符集 utf8mb4 · SHOW/USE/DESC</td><td>⭐⭐⭐</td></tr>
+          <tr><td>SQL 基础与 CRUD</td><td>INSERT/SELECT/UPDATE/DELETE · 数据类型 · NULL</td><td>⭐⭐⭐</td></tr>
+          <tr><td>多表联查与子查询</td><td>INNER/LEFT JOIN · GROUP BY · 子查询 · 执行顺序</td><td>⭐⭐⭐</td></tr>
+          <tr><td>索引原理与优化</td><td>B+ 树 · 聚簇/二级索引 · 覆盖索引 · 最左前缀</td><td>⭐⭐⭐</td></tr>
+          <tr><td>事务与隔离级别</td><td>ACID · 脏读/不可重复读/幻读 · RR 默认级别</td><td>⭐⭐⭐</td></tr>
+          <tr><td>表设计与慢查询优化</td><td>三大范式 · 反范式化 · EXPLAIN · type=ALL</td><td>⭐⭐⭐</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+<!-- 第 0 节 · MySQL 环境与基础操作 -->
+<div class="topic" id="s0">
+  <div class="topic-header">
+    <h2 class="topic-title">第 0 节 · MySQL 环境与基础操作</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">入门预备课：在学 SQL 语法之前，先把 Linux 下操控 MySQL 的基本功打牢。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s0-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>掌握基于 Docker 的 MySQL 容器启动、停止与状态查看</li>
+        <li>熟练使用 docker exec 连接并进入 MySQL</li>
+        <li>掌握基础的数据库与表操作语句（SHOW、USE、DESC）</li>
+        <li>理解 utf8mb4 字符集的重要性</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>排查线上数据问题、本地初始化开发环境，命令行操作 MySQL 都是每天必备的技能。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s0-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>MySQL</strong> 是最流行的开源关系型数据库，广泛用于 Web 后端。使用 Linux 终端操作 MySQL 是后端工程师的基本功。</p>
+      
+      <h4>字符集对比</h4>
+      <table>
+        <thead>
+          <tr><th>字符集</th><th>最大字节/字符</th><th>能否存 Emoji</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>utf8（MySQL专有）</td><td>3 字节</td><td>❌ 不支持（Emoji 需要 4 字节）</td></tr>
+          <tr><td>utf8mb4</td><td>4 字节</td><td>✅ 完整支持</td></tr>
+        </tbody>
+      </table>
+      <p><strong>结论：</strong>新项目一律使用 <code>utf8mb4</code> + <code>utf8mb4_unicode_ci</code>（大小写不敏感）。</p>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s0-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. Docker 容器管理</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code># 查看所有运行中的容器
+docker ps
+
+# 启动、停止、重启 mysql-study 容器
+docker start mysql-study
+docker stop mysql-study
+docker restart mysql-study</code></pre>
+      </div>
+
+      <h4>2. 连接 MySQL 与执行 SQL 文件</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line"># 交互式连接并直接选中 mysql_study 数据库</div>
+docker exec -it mysql-study mysql -u root -p123456 mysql_study
+
+<div class="key-line"># 非交互式导入 SQL 文件</div>
+docker exec -i mysql-study mysql -u root -p123456 mysql_study < init.sql</code></pre>
+      </div>
+
+      <h4>3. MySQL 命令行基础操作</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code>-- 查看所有数据库并切换
+SHOW DATABASES;
+USE mysql_study;
+
+-- 查看表结构与统计信息
+SHOW TABLES;
+DESC users;
+SHOW CREATE TABLE users\G
+
+-- 快捷命令
+SELECT VERSION();
+SELECT NOW();
+EXIT;</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s0-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          建库时使用默认的 <code>utf8</code> 字符集。<br><br>
+          命令行中明文输入密码连接生产库 <code>mysql -u root -pPassword</code>。
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          必须使用 <code>utf8mb4</code>，否则无法存储 Emoji 表情。<br><br>
+          使用 <code>mysql -u root -p</code>，回车后隐式输入，防止密码记录到 Shell history。
+        </div>
+      </div>
+      <div class="callout callout-warn">
+        <strong>安全警告：</strong> 生产环境下严禁在命令行明文传递密码。此外，<code>DROP DATABASE</code> 操作不可逆，生产环境应禁用或严格控制此权限。
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s0-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="B">
+        <h4>1. 以下哪个命令可以在不进入 MySQL 终端的情况下，批量执行一个本地的 <code>init.sql</code> 文件？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q0_1" value="A"> A. docker exec -it mysql-study mysql &lt; init.sql</label>
+          <label class="quiz-option"><input type="radio" name="q0_1" value="B"> B. docker exec -i mysql-study mysql -u root -p123456 mysql_study &lt; init.sql</label>
+          <label class="quiz-option"><input type="radio" name="q0_1" value="C"> C. docker exec -t mysql-study mysql source init.sql</label>
+          <label class="quiz-option"><input type="radio" name="q0_1" value="D"> D. docker cp init.sql mysql-study</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="C">
+        <h4>2. 为什么在 MySQL 8.0 之前，我们要刻意指定 <code>utf8mb4</code> 而不是 <code>utf8</code>？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q0_2" value="A"> A. utf8mb4 查询速度更快</label>
+          <label class="quiz-option"><input type="radio" name="q0_2" value="B"> B. utf8mb4 占用空间更小</label>
+          <label class="quiz-option"><input type="radio" name="q0_2" value="C"> C. utf8 实际上是 utf8mb3，无法存储占用 4 个字节的 Emoji</label>
+          <label class="quiz-option"><input type="radio" name="q0_2" value="D"> D. utf8 无法存储中文字符</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+<!-- 第 1 节 · SQL 基础与 CRUD -->
+<div class="topic" id="s1">
+  <div class="topic-header">
+    <h2 class="topic-title">第 1 节 · SQL 基础与 CRUD</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">掌握 SQL 最核心的四种操作：增（INSERT）、查（SELECT）、改（UPDATE）、删（DELETE）。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s1-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>掌握创建表的基本语法及常用数据类型选择（特别是 DECIMAL）</li>
+        <li>熟练编写增删改查（CRUD）操作语句</li>
+        <li>掌握 WHERE 条件过滤、ORDER BY 排序与 LIMIT 分页</li>
+        <li>理解并正确处理数据库中的 NULL 值</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>任何应用的数据持久化核心都是 CRUD。电商系统中，商品列表展示对应 SELECT 分页，购买结算对应 INSERT 和 UPDATE。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s1-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>CRUD</strong> 是数据库操作的四个基本动作，对应 SQL 的四条核心语句：</p>
+      <table>
+        <thead>
+          <tr><th>操作</th><th>SQL 语句</th><th>HTTP 方法对比</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>增（Create）</td><td><code>INSERT</code></td><td>POST</td></tr>
+          <tr><td>查（Read）</td><td><code>SELECT</code></td><td>GET</td></tr>
+          <tr><td>改（Update）</td><td><code>UPDATE</code></td><td>PUT / PATCH</td></tr>
+          <tr><td>删（Delete）</td><td><code>DELETE</code></td><td>DELETE</td></tr>
+        </tbody>
+      </table>
+      
+      <h4>常用数据类型避坑指南</h4>
+      <ul>
+        <li><strong>整数：</strong>通常使用 <code>INT</code>；对于高并发系统生成的雪花 ID 需要使用 <code>BIGINT</code>（8 字节）。</li>
+        <li><strong>金额：</strong>必须使用 <code>DECIMAL(10,2)</code>，严禁使用 <code>FLOAT</code>，否则会导致进度丢失（0.1 + 0.2 = 0.30000000000000004）。</li>
+        <li><strong>空值（NULL）：</strong>不能用 <code>= NULL</code> 进行判断，必须使用 <code>IS NULL</code> 或 <code>IS NOT NULL</code>。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s1-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. 建表与数据类型</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code>CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    <div class="key-line">    balance DECIMAL(10,2) DEFAULT 0.00,  -- 金额必用 DECIMAL</div>
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;</code></pre>
+      </div>
+
+      <h4>2. SELECT 基础查询、排序与分页</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 查询分页商品列表（第 2 页，每页 5 条）</div>
+SELECT id, title, price, stock, status
+FROM products
+WHERE status = 'on_sale' AND price BETWEEN 100 AND 1000
+ORDER BY price DESC
+LIMIT 5 OFFSET 5;  -- 跳过前 5 条，取 5 条
+
+<div class="key-line">-- 模糊查询与 NULL 判断</div>
+SELECT id, title, price
+FROM products
+WHERE title LIKE '%手机%' AND description IS NOT NULL;</code></pre>
+      </div>
+
+      <h4>3. INSERT / UPDATE / DELETE 数据更新</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 插入多行并明确指定列名（推荐）</div>
+INSERT INTO users (username, balance) VALUES
+('小红', 100.00), ('小蓝', 50.00);
+
+<div class="key-line">-- 基于原值计算修改（给用户充值）</div>
+UPDATE users SET balance = balance + 50.00 WHERE id = 1;
+
+<div class="key-line">-- 删除指定数据</div>
+DELETE FROM orders WHERE status = 'cancelled';</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s1-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          使用 <code>FLOAT</code> 类型存储用户账户余额。<br><br>
+          判断 description 为空时使用：<code>WHERE description = NULL</code>。<br><br>
+          <code>INSERT INTO users VALUES (NULL, 'name', ...);</code>
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          使用 <code>DECIMAL(10,2)</code> 保证精度。<br><br>
+          判断 NULL 必须使用：<code>WHERE description IS NULL</code>。<br><br>
+          推荐明确写出字段名：<code>INSERT INTO users (username, ...) VALUES ('name', ...);</code>
+        </div>
+      </div>
+      <div class="callout callout-warn">
+        <strong>安全警告：</strong> 执行 <code>UPDATE</code> 和 <code>DELETE</code> 操作如果不加 <code>WHERE</code> 条件，会导致全表数据被修改或清空！生产环境务必谨慎，建议先 <code>SELECT</code> 确认影响范围。
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s1-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="D">
+        <h4>1. 有关 MySQL 常用数据类型，以下说法正确的是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q1_1" value="A"> A. 存储大段日志信息推荐使用 VARCHAR(255)</label>
+          <label class="quiz-option"><input type="radio" name="q1_1" value="B"> B. NULL 值可以用 <code>= NULL</code> 来匹配查询</label>
+          <label class="quiz-option"><input type="radio" name="q1_1" value="C"> C. 为节省空间，商品价格应该使用 FLOAT 而不是 DECIMAL</label>
+          <label class="quiz-option"><input type="radio" name="q1_1" value="D"> D. DECIMAL 可以避免浮点数精度丢失问题，是金融金额字段的首选类型</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="C">
+        <h4>2. 当需要查询第 3 页的数据（每页 10 条）时，正确的 LIMIT 语法是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q1_2" value="A"> A. LIMIT 3, 10</label>
+          <label class="quiz-option"><input type="radio" name="q1_2" value="B"> B. LIMIT 10 OFFSET 3</label>
+          <label class="quiz-option"><input type="radio" name="q1_2" value="C"> C. LIMIT 10 OFFSET 20</label>
+          <label class="quiz-option"><input type="radio" name="q1_2" value="D"> D. LIMIT 20, 30</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+<!-- 第 2 节 · 多表联查与子查询 -->
+<div class="topic" id="s2">
+  <div class="topic-header">
+    <h2 class="topic-title">第 2 节 · 多表联查与子查询</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">现实业务数据都分散在多张表中，JOIN 是连接它们的桥梁。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s2-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>理解并熟练使用 INNER JOIN、LEFT JOIN 解决多表数据关联</li>
+        <li>掌握使用 GROUP BY 与聚合函数进行数据统计</li>
+        <li>区分 WHERE 与 HAVING 的执行时机和适用场景</li>
+        <li>理解子查询（WHERE / IN / FROM）的用法</li>
+        <li>牢记 SQL 的真实执行顺序</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>现实业务数据往往分布在多个表中，报表统计和复杂列表查询必须依赖多表联查与聚合分析。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s2-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>多表联查（JOIN）</strong>：将多张表按某个关联字段合并成一张临时结果表再查询。</p>
+      <p><strong>子查询（Subquery）</strong>：将一个 SELECT 语句嵌套在另一个 SQL 语句中，先执行内层查询，再将结果传给外层。</p>
+      
+      <h4>JOIN 类型对比</h4>
+      <table>
+        <thead>
+          <tr><th>类型</th><th>关键字</th><th>结果</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>内连接</td><td><code>INNER JOIN</code></td><td>只保留两表都有匹配的行</td></tr>
+          <tr><td>左连接</td><td><code>LEFT JOIN</code></td><td>保留左表所有行，右表无匹配显示 NULL</td></tr>
+          <tr><td>右连接</td><td><code>RIGHT JOIN</code></td><td>保留右表所有行，左表无匹配显示 NULL</td></tr>
+        </tbody>
+      </table>
+
+      <h4>SQL 执行顺序</h4>
+      <pre class="ascii-diagram">FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</pre>
+      <details>
+        <summary>为什么 SELECT 别名不能在 WHERE 中使用？</summary>
+        <p>根据 SQL 执行顺序，<code>WHERE</code> 在第 2 步执行（行级过滤），而 <code>SELECT</code> 及其别名定义在第 5 步才执行。因此在 <code>WHERE</code> 中使用未定义的别名会直接报错。如果需要对计算结果过滤，应使用 <code>HAVING</code>，因为它在 <code>SELECT</code> 和 <code>GROUP BY</code> 之后执行。</p>
+      </details>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s2-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. 多表 JOIN</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 查询所有用户及其订单数（包含没有下过单的用户用 LEFT JOIN）</div>
+SELECT
+    u.id, u.username, COUNT(o.id) AS 订单数
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+GROUP BY u.id, u.username;
+
+<div class="key-line">-- 找出从未下过单的用户（右表匹配为 NULL）</div>
+SELECT u.id, u.username
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE o.id IS NULL;</code></pre>
+      </div>
+
+      <h4>2. GROUP BY 与 HAVING</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 统计消费超 500 的用户</div>
+SELECT
+    u.username,
+    SUM(o.total_amount) AS 消费总额
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE o.status = 'paid'          -- 分组前过滤
+GROUP BY u.id, u.username
+HAVING SUM(o.total_amount) > 500 -- 分组后过滤
+ORDER BY 消费总额 DESC;</code></pre>
+      </div>
+
+      <h4>3. 子查询</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 查询有未支付订单的用户信息</div>
+SELECT id, username, balance
+FROM users
+WHERE id IN (
+    SELECT DISTINCT user_id FROM orders WHERE status = 'unpaid'
+);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s2-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          把 SELECT 中定义的别名直接放在 WHERE 中过滤。<br><br>
+          在 LEFT JOIN 中，把右表的过滤条件放在 WHERE 里（如 <code>WHERE o.status='paid'</code>）。
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          WHERE 比 SELECT 先执行，必须把别名过滤换成 HAVING 或者重复表达式。<br><br>
+          WHERE 中的过滤会剔除没有右表的行，导致 LEFT JOIN 变成 INNER JOIN，应当将右表条件放入 <code>ON</code> 中。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s2-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="B">
+        <h4>1. 关于 WHERE 和 HAVING 的区别，以下说法正确的是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q2_1" value="A"> A. WHERE 可以使用聚合函数，HAVING 不能</label>
+          <label class="quiz-option"><input type="radio" name="q2_1" value="B"> B. WHERE 在 GROUP BY 之前执行，HAVING 在 GROUP BY 之后执行</label>
+          <label class="quiz-option"><input type="radio" name="q2_1" value="C"> C. 两者作用完全一样，只是语法不同</label>
+          <label class="quiz-option"><input type="radio" name="q2_1" value="D"> D. HAVING 只能单独使用，不能和 GROUP BY 一起使用</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="D">
+        <h4>2. 当我们要查询出“包含未购买任何商品的用户在内的所有用户列表”时，应该使用哪种 JOIN？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q2_2" value="A"> A. INNER JOIN</label>
+          <label class="quiz-option"><input type="radio" name="q2_2" value="B"> B. JOIN</label>
+          <label class="quiz-option"><input type="radio" name="q2_2" value="C"> C. RIGHT JOIN (以 orders 表为右表)</label>
+          <label class="quiz-option"><input type="radio" name="q2_2" value="D"> D. LEFT JOIN (以 users 表为左表)</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+<!-- 第 3 节 · 索引原理与优化 -->
+<div class="topic" id="s3">
+  <div class="topic-header">
+    <h2 class="topic-title">第 3 节 · 索引原理与优化</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">索引是数据库性能的核心，理解它才能写出真正"快"的 SQL。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s3-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>理解索引的作用及其底层 B+ 树数据结构</li>
+        <li>区分聚簇索引和二级索引（非聚簇索引）的区别</li>
+        <li>掌握回表查询与覆盖索引的概念及优化方案</li>
+        <li>理解联合索引的“最左前缀原则”</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>索引是数据库性能优化的核心。理解索引才能写出不拖垮数据库的高效 SQL。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s3-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>索引</strong>是数据库为加速查询而建立的数据结构，类比于书的目录。有了索引，查询不再是全表扫描，而是 O(log n) 级别的快速定位。</p>
+      
+      <h4>B+ 树特性</h4>
+      <ul>
+        <li>所有数据存储在叶节点，且叶节点之间有双向链表连接，支持高效的范围查询。</li>
+        <li>非叶节点只存储键值和指针。树高固定，通常 3~4 层即可存储千万级数据。</li>
+      </ul>
+
+      <h4>聚簇索引 vs 二级索引</h4>
+      <table>
+        <thead>
+          <tr><th>类型</th><th>特点</th><th>叶子节点存储内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>聚簇索引</td><td>InnoDB 每张表有且仅有一个（通常是主键）</td><td>完整的行数据</td></tr>
+          <tr><td>二级索引</td><td>用户自定义创建的普通索引或唯一索引</td><td>索引字段值 + 对应的主键值</td></tr>
+        </tbody>
+      </table>
+      
+      <details>
+        <summary>什么是“回表”与“覆盖索引”？</summary>
+        <p>通过二级索引查询时，先在二级索引 B+ 树上查到主键 ID，然后再去聚簇索引的 B+ 树上查完整的行数据，这个过程称为**回表**。<br>
+        如果查询的列恰好包含在二级索引中（比如通过 <code>SELECT id, name FROM users WHERE name='张三'</code>，而 name 有索引），不需要回表直接返回结果，这就是**覆盖索引**，性能极高。</p>
+      </details>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s3-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. 索引的创建与查看</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 为单列创建普通索引</div>
+CREATE INDEX idx_email ON users(email);
+
+<div class="key-line">-- 为多列创建联合索引</div>
+CREATE INDEX idx_status_price ON products(status, price);
+
+<div class="key-line">-- 查看表上的所有索引</div>
+SHOW INDEX FROM products;</code></pre>
+      </div>
+
+      <h4>2. 联合索引与最左前缀原则</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 假设有联合索引 (category_id, status, price)</div>
+
+<div class="key-line">-- ✅ 索引生效（匹配最左前缀）</div>
+SELECT * FROM products WHERE category_id = 1;
+SELECT * FROM products WHERE category_id = 1 AND status = 'on_sale';
+
+<div class="key-line">-- ❌ 索引失效（没有匹配最左侧字段）</div>
+SELECT * FROM products WHERE status = 'on_sale';
+SELECT * FROM products WHERE price > 100;</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s3-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          表里的索引建得越多越好。<br><br>
+          在索引字段上使用函数，如：<code>WHERE YEAR(created_at) = 2026</code>。<br><br>
+          使用 <code>LIKE '%关键词%'</code> 进行模糊查询。
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          索引会占用磁盘空间，并且在 INSERT/UPDATE/DELETE 时需维护索引树，导致写入变慢。应按需创建。<br><br>
+          在字段上使用函数会导致索引失效。应改为：<code>created_at &gt;= '2026-01-01'</code>。<br><br>
+          左侧带 <code>%</code> 会导致索引失效，应尽量使用前缀匹配 <code>LIKE '关键词%'</code> 或借助 ElasticSearch。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s3-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="C">
+        <h4>1. 关于 InnoDB 索引，以下说法错误的是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q3_1" value="A"> A. 聚簇索引的叶子节点存储了完整的行数据</label>
+          <label class="quiz-option"><input type="radio" name="q3_1" value="B"> B. 二级索引的叶子节点存储的是主键的值</label>
+          <label class="quiz-option"><input type="radio" name="q3_1" value="C"> C. 覆盖索引是指必须要查询表中的所有字段</label>
+          <label class="quiz-option"><input type="radio" name="q3_1" value="D"> D. B+ 树的非叶子节点只存储键值和指针</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="B">
+        <h4>2. 表上有一个联合索引 <code>(A, B, C)</code>，以下哪个查询无法使用该索引（部分或全部）？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q3_2" value="A"> A. WHERE A = 1 AND B = 2 AND C = 3</label>
+          <label class="quiz-option"><input type="radio" name="q3_2" value="B"> B. WHERE B = 2 AND C = 3</label>
+          <label class="quiz-option"><input type="radio" name="q3_2" value="C"> C. WHERE A = 1 AND B = 2</label>
+          <label class="quiz-option"><input type="radio" name="q3_2" value="D"> D. WHERE A = 1</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+<!-- 第 4 节 · 事务与隔离级别 -->
+<div class="topic" id="s4">
+  <div class="topic-header">
+    <h2 class="topic-title">第 4 节 · 事务与隔离级别</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">事务是数据库的"原子操作"保障，隔离级别决定并发时数据的可见性。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s4-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>理解事务的作用与 ACID 四大特性</li>
+        <li>掌握事务的基本控制语句（START TRANSACTION、COMMIT、ROLLBACK）</li>
+        <li>理解并发事务带来的问题（脏读、不可重复读、幻读）</li>
+        <li>掌握 MySQL 的四种隔离级别及其对应的解决方案</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>只要涉及到资金扣减、库存变化等多步组合操作，必须使用事务，否则极易出现系统数据不一致。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s4-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>事务（Transaction）</strong>：一组 SQL 操作，要么全部成功，要么全部回滚，不存在执行了一半的中间态。</p>
+      
+      <h4>ACID 四大特性</h4>
+      <table>
+        <thead>
+          <tr><th>特性</th><th>全称</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A</strong> 原子性</td><td>Atomicity</td><td>事务内操作不可分割，全成功或全回滚（依赖 Undo Log）</td></tr>
+          <tr><td><strong>C</strong> 一致性</td><td>Consistency</td><td>事务前后数据库数据从一个合法状态到另一个合法状态</td></tr>
+          <tr><td><strong>I</strong> 隔离性</td><td>Isolation</td><td>并发事务互不干扰，各自看到的数据一致（依赖 MVCC + 锁）</td></tr>
+          <tr><td><strong>D</strong> 持久性</td><td>Durability</td><td>提交后数据永久保存，宕机不丢失（依赖 Redo Log）</td></tr>
+        </tbody>
+      </table>
+
+      <h4>并发问题与隔离级别</h4>
+      <ul>
+        <li><strong>脏读</strong>：读到了别的事务未提交的数据。</li>
+        <li><strong>不可重复读</strong>：同一个事务内两次读取同一行数据，结果不一样（别人 UPDATE 了）。</li>
+        <li><strong>幻读</strong>：同一个事务内两次相同的查询条件，查出的行数不一样（别人 INSERT/DELETE 了）。</li>
+      </ul>
+      <table>
+        <thead>
+          <tr><th>隔离级别</th><th>脏读</th><th>不可重复读</th><th>幻读</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>读未提交 (RU)</td><td>❌ 会</td><td>❌ 会</td><td>❌ 会</td></tr>
+          <tr><td>读已提交 (RC)</td><td>✅ 免</td><td>❌ 会</td><td>❌ 会</td></tr>
+          <tr><td>可重复读 (RR) - MySQL默认</td><td>✅ 免</td><td>✅ 免</td><td>⚠️ 很大程度避免</td></tr>
+          <tr><td>串行化 (Serializable)</td><td>✅ 免</td><td>✅ 免</td><td>✅ 免</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s4-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. 事务控制基本操作</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 开启事务</div>
+START TRANSACTION;
+-- 也可以用 BEGIN;
+
+<div class="key-line">-- 业务 SQL：扣减库存与扣除余额</div>
+UPDATE products SET stock = stock - 1 WHERE id = 1;
+UPDATE users SET balance = balance - 100 WHERE id = 1;
+
+<div class="key-line">-- 提交事务（永久生效）</div>
+COMMIT;
+
+<div class="key-line">-- 或回滚事务（撤销上述所有修改）</div>
+ROLLBACK;</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s4-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          只要将多条 SQL 放在一起执行就具有事务保护。<br><br>
+          隔离级别设为越高越好，直接用 Serializable 保证绝对安全。
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          必须显式执行 <code>START TRANSACTION</code> 和 <code>COMMIT/ROLLBACK</code> 才能确保原子性。<br><br>
+          串行化隔离级别会让所有请求排队，极大降低并发性能。通常保持 MySQL 默认的 RR 级别即可满足绝大多数业务需求。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s4-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="D">
+        <h4>1. 在执行退款操作时，先记录退款日志，再将余额加回。如果在执行第二步时断电了，下次重启后两步操作都未生效。这体现了事务的哪个特性？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q4_1" value="A"> A. 隔离性 (Isolation)</label>
+          <label class="quiz-option"><input type="radio" name="q4_1" value="B"> B. 持久性 (Durability)</label>
+          <label class="quiz-option"><input type="radio" name="q4_1" value="C"> C. 一致性 (Consistency)</label>
+          <label class="quiz-option"><input type="radio" name="q4_1" value="D"> D. 原子性 (Atomicity)</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="A">
+        <h4>2. MySQL InnoDB 的默认隔离级别是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q4_2" value="A"> A. 可重复读 (Repeatable Read)</label>
+          <label class="quiz-option"><input type="radio" name="q4_2" value="B"> B. 读已提交 (Read Committed)</label>
+          <label class="quiz-option"><input type="radio" name="q4_2" value="C"> C. 读未提交 (Read Uncommitted)</label>
+          <label class="quiz-option"><input type="radio" name="q4_2" value="D"> D. 串行化 (Serializable)</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+<!-- 第 5 节 · 表设计与慢查询优化 -->
+<div class="topic" id="s5">
+  <div class="topic-header">
+    <h2 class="topic-title">第 5 节 · 表设计与慢查询优化</h2>
+    <div class="topic-divider"></div>
+  </div>
+  <div class="topic-desc">好的表设计是性能的基础，慢查询优化是后端工程师必备技能。</div>
+
+  <!-- a) 学习目标 -->
+  <div class="section open" id="s5-goal">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-goal">🎯 目标</span>
+      <span>学习目标</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <ul>
+        <li>理解并掌握数据库表设计的三大范式及反范式化的应用场景</li>
+        <li>学会利用 EXPLAIN 关键字分析 SQL 慢查询并找到性能瓶颈</li>
+        <li>掌握常见慢查询的优化思路及改进方案</li>
+      </ul>
+      <div class="callout callout-blue">
+        <strong>与后端开发的关联：</strong>良好的表设计能预防未来数据灾难；当你接手一个老项目或者服务响应慢时，排查并优化慢 SQL 是体现高级工程师价值的核心工作。
+      </div>
+    </div>
+  </div>
+
+  <!-- b) 核心概念 -->
+  <div class="section open" id="s5-concept">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-concept">📖 概念</span>
+      <span>核心概念</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <p><strong>三大范式</strong>：数据库设计的规范化理论，帮助消除数据冗余和更新异常：</p>
+      <ul>
+        <li><strong>第一范式（1NF）</strong>：确保每列的原子性，不可再分（如不能在一个字段存“手机,电脑”）。</li>
+        <li><strong>第二范式（2NF）</strong>：消除部分依赖，非主键列必须完全依赖于主键。</li>
+        <li><strong>第三范式（3NF）</strong>：消除传递依赖，非主键列不依赖于其他非主键列。</li>
+      </ul>
+      <p><strong>反范式化</strong>：为了减少 JOIN 的性能开销，在业务允许范围内故意冗余少量字段（如在订单表冗余“商品名称”快照）。</p>
+      
+      <h4>EXPLAIN 执行计划（慢查询排查利器）</h4>
+      <p>在 SQL 语句前加上 <code>EXPLAIN</code>，MySQL 会模拟优化器执行该 SQL 并返回执行计划。</p>
+      <ul>
+        <li><strong>type</strong>：决定了查找方式。从好到坏：<code>system > const > eq_ref > ref > range > index > ALL</code>。（<code>ALL</code> 表示全表扫描，是必须优化的重点）</li>
+        <li><strong>key</strong>：实际使用的索引。如果为 NULL 表示没用到索引。</li>
+        <li><strong>rows</strong>：预计要扫描的行数。</li>
+        <li><strong>Extra</strong>：额外信息。如 <code>Using index</code> 表示覆盖索引（极好）；<code>Using filesort</code> 或 <code>Using temporary</code> 通常意味着性能较差。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- c) 代码示例 -->
+  <div class="section" id="s5-code">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-code">💻 示例</span>
+      <span>代码示例</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <h4>1. 使用 EXPLAIN 分析查询</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code><div class="key-line">-- 在原本的 SQL 前加 EXPLAIN</div>
+EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
+
+-- 结果输出大致如下：
+-- id | select_type | table | type | possible_keys | key | rows | Extra
+--  1 | SIMPLE      | users | ALL  | NULL          | NULL| 1000 | Using where
+
+-- type 为 ALL 且 key 为 NULL 表示这引发了全表扫描，必须建立索引优化！</code></pre>
+      </div>
+
+      <h4>2. 优化 LIMIT 大偏移量分页</h4>
+      <div class="code-block">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').innerText);this.innerText='✅ 已复制';setTimeout(()=>this.innerText='📋 复制',1500)">📋 复制</button>
+<pre><code>-- 慢查询：偏移量极大时，即使有索引，数据库也要丢弃 100 万条数据，极慢。
+SELECT * FROM orders ORDER BY id LIMIT 1000000, 10;
+
+<div class="key-line">-- 优化方案（延迟关联 / 子查询）：先利用覆盖索引获取主键，再联表查详情</div>
+SELECT o.* FROM orders o
+INNER JOIN (
+    SELECT id FROM orders ORDER BY id LIMIT 1000000, 10
+) AS tmp ON o.id = tmp.id;</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- d) 常见误区 -->
+  <div class="section" id="s5-pitfall">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-caution">⚠️ 误区</span>
+      <span>常见误区</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="comparison-table">
+        <div class="left">
+          <strong>❌ 误区</strong><br>
+          表设计必须严格遵循第三范式，哪怕牺牲大量性能做复杂多表 JOIN。<br><br>
+          只要加了索引，SQL 就一定会变快。
+        </div>
+        <div class="right">
+          <strong>✅ 纠正</strong><br>
+          工程实践中，为了避免高并发下严重的性能开销，常常会适当“反范式化”来用空间换时间。<br><br>
+          索引设计错误（未遵循最左前缀）、使用函数计算、或者隐式类型转换，都会导致优化器放弃使用索引（type=ALL）。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- e) 自测题 -->
+  <div class="section" id="s5-quiz">
+    <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="section-badge badge-quiz">✏️ 自测</span>
+      <span>自测题</span>
+      <span class="section-arrow">▼</span>
+    </div>
+    <div class="section-body section-content">
+      <div class="quiz-question" data-answer="D">
+        <h4>1. 在通过 EXPLAIN 分析慢查询时，以下哪种 <code>type</code> 代表性能最差（全表扫描）？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q5_1" value="A"> A. const</label>
+          <label class="quiz-option"><input type="radio" name="q5_1" value="B"> B. ref</label>
+          <label class="quiz-option"><input type="radio" name="q5_1" value="C"> C. range</label>
+          <label class="quiz-option"><input type="radio" name="q5_1" value="D"> D. ALL</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+      <div class="quiz-question" data-answer="B">
+        <h4>2. 下列关于三大范式的描述中，正确的是？</h4>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q5_2" value="A"> A. 第一范式（1NF）要求必须消除传递依赖</label>
+          <label class="quiz-option"><input type="radio" name="q5_2" value="B"> B. 第一范式要求每列数据必须是原子的，不可再分</label>
+          <label class="quiz-option"><input type="radio" name="q5_2" value="C"> C. 反范式化是完全错误的数据库设计行为</label>
+          <label class="quiz-option"><input type="radio" name="q5_2" value="D"> D. 第二范式要求消除所有的数据冗余</label>
+        </div>
+        <button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+        <button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+        <div class="quiz-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <section id="evidence">
+    <h2>📎 证据追溯</h2>
+    <p style="margin-bottom:12px;color:var(--text-muted);font-size:13.5px">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+    <table>
+      <thead>
+        <tr><th>结论摘要</th><th>来源文件</th><th>位置（章节/行号）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>命令行中明文输入密码会被保存在 Shell 历史记录中</td><td>0.MySQL环境与基础操作.md</td><td>三、连接 MySQL</td></tr>
+<tr><td>MySQL的utf8仅支持3字节，存Emoji需utf8mb4</td><td>0.MySQL环境与基础操作.md</td><td>五、字符集说明</td></tr>
+        <tr><td>金额必须用 DECIMAL 而不用 FLOAT，因浮点数存在精度问题</td><td>1.SQL基础与CRUD.md</td><td>三、建表语法</td></tr>
+<tr><td>空值判断必须用 IS NULL，不能用 = NULL</td><td>1.SQL基础与CRUD.md</td><td>五、SELECT — 查询数据</td></tr>
+<tr><td>UPDATE不加WHERE条件会更新全表</td><td>1.SQL基础与CRUD.md</td><td>六、UPDATE — 修改数据</td></tr>
+        <tr><td>WHERE 在 GROUP BY 之前执行，HAVING 在其后执行</td><td>2.多表联查与子查询.md</td><td>五、GROUP BY + HAVING</td></tr>
+<tr><td>SELECT 的别名不能在 WHERE 中使用，因为执行顺序 WHERE 在前</td><td>2.多表联查与子查询.md</td><td>七、SQL 执行顺序</td></tr>
+<tr><td>LEFT JOIN 若将右表条件放入 WHERE 会退化为 INNER JOIN</td><td>2.多表联查与子查询.md</td><td>八、常见坑</td></tr>
+        <tr><td>InnoDB二级索引叶节点存储对应的主键值</td><td>3.索引原理与优化.md</td><td>四、聚簇索引 vs 二级索引</td></tr>
+<tr><td>联合索引匹配必须遵循最左前缀原则</td><td>3.索引原理与优化.md</td><td>五、联合索引与最左前缀原则</td></tr>
+<tr><td>索引列使用函数会导致索引失效</td><td>3.索引原理与优化.md</td><td>六、索引失效场景</td></tr>
+        <tr><td>原子性由 Undo Log 保障，持久性由 Redo Log 保障</td><td>4.事务与隔离级别.md</td><td>三、ACID 四大特性</td></tr>
+<tr><td>MySQL 默认的隔离级别为可重复读（Repeatable Read）</td><td>4.事务与隔离级别.md</td><td>四、隔离级别与并发问题</td></tr>
+        <tr><td>违反第一范式（字段存多值）导致难以查询</td><td>5.表设计与慢查询优化.md</td><td>二、三大范式</td></tr>
+<tr><td>EXPLAIN 输出 type=ALL 表示全表扫描，是优化重点</td><td>5.表设计与慢查询优化.md</td><td>四、EXPLAIN 分析</td></tr>
+
+      </tbody>
+    </table>
+  </section>
+</main>
+</div>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<div id="mobile-nav">
+  <button id="hamburger">☰</button>
+  <div class="nav-title">MySQL 核心技术</div>
+</div>
+<div id="sidebar-overlay"></div>
+<script>
+(function(){
+  var dark=localStorage.getItem('dark-mode');
+  if(dark==='true'||(!dark&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+    document.body.classList.add('dark');
+    document.getElementById('dark-toggle').textContent='🌙';
+  }else{
+    document.getElementById('dark-toggle').textContent='☀️';
+  }
+  document.getElementById('dark-toggle').addEventListener('click',function(){
+    document.body.classList.toggle('dark');
+    var isDark=document.body.classList.contains('dark');
+    localStorage.setItem('dark-mode',isDark);
+    this.textContent=isDark?'🌙':'☀️';
+  });
+  window.addEventListener('scroll',function(){
+    var s=document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    document.getElementById('progress-bar').style.width=(s/h*100)+'%';
+    document.getElementById('back-to-top').classList.toggle('show',s>300);
+  });
+  window.toggleSection=function(el){
+    el.parentElement.classList.toggle('open');
+  };
+  window.scrollToTop=function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+  var links=document.querySelectorAll('.nav-link');
+  var sections=document.querySelectorAll('.topic, .section[id]');
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var id=e.target.id;
+        links.forEach(function(l){
+          l.classList.toggle('active',l.getAttribute('href')==='#'+id);
+        });
+        var section=document.getElementById(id);
+        if(section){
+          var parent=section.closest('.topic');
+          if(parent){
+            var topicLink=document.querySelector('.nav-topic[href="#'+parent.id+'"]');
+            if(topicLink) topicLink.classList.add('active');
+          }
+        }
+      }
+    });
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(function(s){observer.observe(s);});
+  window.copyCode=function(btn){
+    var pre=btn.parentElement.querySelector('pre');
+    var text=pre.textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent='✅ 已复制';
+      btn.classList.add('copied');
+      setTimeout(function(){
+        btn.textContent='📋 复制';
+        btn.classList.remove('copied');
+      },1500);
+    });
+  };
+  window.checkQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    var answer=q.getAttribute('data-answer');
+    var selected=q.querySelector('input[name]:checked');
+    var result=q.querySelector('.quiz-result');
+    if(!selected){alert('请选择一个选项');return;}
+    if(selected.value===answer){
+      result.textContent='✅ 回答正确！';
+      result.className='quiz-result correct';
+    }else{
+      result.textContent='❌ 回答错误，正确答案是 '+answer;
+      result.className='quiz-result incorrect';
+    }
+    result.style.display='block';
+  };
+  window.resetQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    q.querySelectorAll('input[name]').forEach(function(r){r.checked=false;});
+    var result=q.querySelector('.quiz-result');
+    result.style.display='none';
+    result.className='quiz-result';
+  };
+  window.toggleSidebar=function(){
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('show');
+  };
+})();
+</script>
+</body>
+</html>

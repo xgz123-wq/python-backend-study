@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第六节 · 中间件与异常处理 · FastAPI 核心</title>
+<style>
+:root{
+  --sidebar-width:260px;
+  --bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--quiz-bg:#fffbeb;
+  --accent:#2563eb;--concept:#7c3aed;--code:#0284c7;--warn:#dc2626;--quiz:#d97706;--ok:#16a34a;
+  --code-bg:#1e293b;--code-key:#c084fc;--code-str:#86efac;--code-fn:#93c5fd;--code-num:#fcd34d;--code-com:#64748b;--code-var:#e6edf3;--code-key2:#f472b6;
+  --diagram-bg:#0f172a;--diagram-text:#e2e8f0;--highlight:#f59e0b;--callout-bg:#eff6ff;--callout-border:#3b82f6;
+}
+.dark{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--quiz-bg:rgba(217,119,6,0.1);
+  --accent:#58a6ff;--concept:#a78bfa;--code:#38bdf8;--warn:#f87171;--quiz:#fbbf24;--ok:#4ade80;
+  --code-bg:#0d1117;--code-key:#d8b4fe;--code-str:#7ee787;--code-fn:#79c0ff;--code-num:#ffa657;--code-com:#8b949e;--code-var:#e6edf3;--code-key2:#ff7b72;
+  --diagram-bg:#010409;--diagram-text:#c9d1d9;--callout-bg:rgba(56,139,253,0.15);--callout-border:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;margin:0;transition:background .25s,color .25s}
+code,pre{font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:1000;transition:width .1s}
+#mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:99;align-items:center;padding:0 16px;gap:12px}
+#hamburger{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px}
+#mobile-title{font-weight:600;font-size:15px;flex:1}
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-width);background:var(--card);border-right:1px solid var(--border);padding:24px 16px;overflow-y:auto;z-index:90}
+#sidebar .brand{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--accent)}
+#sidebar .brand-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.nav-topic{display:block;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--text);padding:14px 8px 4px;border-top:1px solid var(--border);margin-top:6px}
+.nav-topic:first-child{border-top:none;margin-top:0}
+.nav-link{display:block;font-size:13.5px;font-weight:400;color:var(--muted);padding:5px 8px 5px 18px;border-left:2px solid transparent;border-radius:0 4px 4px 0;transition:all .15s}
+.nav-link:hover{background:rgba(37,99,235,.08);color:var(--text);text-decoration:none}
+.nav-link.active{color:var(--accent);border-left-color:var(--accent);background:rgba(37,99,235,.08);font-weight:600}
+.nav-topic.active{color:var(--accent)}
+#main-content{margin-left:var(--sidebar-width);padding:48px 56px 80px;min-height:100vh;max-width:none}
+#main-content h1{font-size:32px;margin-bottom:8px;line-height:1.3}
+.subtitle{color:var(--muted);font-size:16px;margin-bottom:8px}
+.reading-time{display:inline-block;font-size:13px;color:var(--muted);margin-bottom:32px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
+.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:8px 0 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+.chapter-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:32px;font-size:14px}
+.chapter-nav a,.chapter-nav span{padding:6px 12px;border-radius:6px;transition:background .15s}
+.chapter-nav a{color:var(--accent)}
+.chapter-nav a:hover{background:rgba(37,99,235,.08);text-decoration:none}
+.chapter-nav .home{font-weight:600}
+.chapter-nav span{color:var(--muted);cursor:default}
+.topic-section{margin-bottom:48px;scroll-margin-top:24px}
+.topic-section>h2{font-size:24px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);color:var(--text)}
+.topic-section h3{font-size:18px;margin:24px 0 10px;color:var(--text)}
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;background:var(--card);transition:background .15s}
+.section-head:hover{background:rgba(0,0,0,.02)}
+.dark .section-head:hover{background:rgba(255,255,255,.03)}
+.section-head .toggle{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:auto}
+.section.open .section-head .toggle{transform:rotate(90deg)}
+.section-body{padding:0 18px 18px;display:none}
+.section.open .section-body{display:block}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;color:#fff;flex-shrink:0}
+.tag-goal{background:var(--accent)}.tag-concept{background:var(--concept)}.tag-code{background:var(--code)}.tag-caution{background:var(--warn)}.tag-quiz{background:var(--quiz)}
+.section-title-text{font-size:15px;font-weight:600}
+.goal-list{list-style:none;padding:0}
+.goal-list li{padding:6px 0 6px 22px;position:relative;color:var(--text)}
+.goal-list li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.callout{background:var(--callout-bg);border-left:3px solid var(--callout-border);padding:12px 16px;border-radius:6px;margin-top:12px;font-size:14px;color:var(--text)}
+.callout strong{color:var(--accent)}
+.definition{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:10px 0;border-left:3px solid var(--concept)}
+.definition strong{color:var(--concept);font-size:14px;display:block;margin-bottom:4px}
+.ascii-diagram{background:var(--diagram-bg);color:var(--diagram-text);padding:16px 20px;border-radius:8px;font-size:12.5px;line-height:1.5;overflow-x:auto;margin:12px 0;white-space:pre;font-family:"Cascadia Code","Fira Code",Consolas,monospace}
+.table-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);word-break:break-word;vertical-align:top}
+th{background:rgba(0,0,0,.04);font-weight:700;font-size:14px}
+.dark th{background:rgba(255,255,255,.04)}
+tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
+.dark tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+td{font-size:14px}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden;border:1px solid #334155}
+.code-block pre{margin:0;padding:14px 16px 14px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;white-space:pre;color:var(--code-var)}
+.code-block pre .key{color:var(--code-key)}
+.code-block pre .str{color:var(--code-str)}
+.code-block pre .fn{color:var(--code-fn)}
+.code-block pre .num{color:var(--code-num)}
+.code-block pre .com{color:var(--code-com);font-style:italic}
+.code-block pre .key2{color:var(--code-key2)}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);color:#e6edf3;border:none;padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;transition:background .15s}
+.copy-btn:hover{background:rgba(255,255,255,.16)}
+.code-block .highlight-line{border-left:3px solid var(--highlight);padding-left:11px;display:block;background:rgba(245,158,11,.05);margin:0 -14px 0 -14px;padding-right:14px;padding-top:1px;padding-bottom:1px}
+.misconception-table td:first-child{color:var(--warn);font-weight:600}
+.misconception-table td:nth-child(2){color:var(--ok);font-weight:600}
+.misconception-table td:nth-child(1)::first-letter,.misconception-table td:nth-child(2)::first-letter{font-size:1.1em}
+.warn-callout{background:rgba(220,38,38,.08);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;margin:10px 0;font-size:14px;color:var(--text)}
+.warn-callout strong{color:var(--warn)}
+.quiz-card{background:var(--quiz-bg);border-radius:8px;padding:14px 18px;margin:12px 0;border-left:3px solid var(--quiz)}
+.quiz-card .q-title{font-weight:600;margin-bottom:10px;color:var(--text);font-size:14px;line-height:1.6}
+.quiz-options{list-style:none;padding:0;margin:10px 0}
+.quiz-options li{padding:6px 10px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px;font-size:14px}
+.quiz-options li:hover{background:rgba(37,99,235,.08)}
+.quiz-options input[type=radio]{cursor:pointer;accent-color:var(--accent)}
+.quiz-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:6px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-submit{background:var(--accent);color:#fff}
+.btn-submit:hover{background:#1d4ed8}
+.btn-reset{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-reset:hover{background:rgba(0,0,0,.04)}
+.dark .btn-reset:hover{background:rgba(255,255,255,.04)}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:14px;display:none;line-height:1.6}
+.quiz-feedback.correct{background:rgba(22,163,74,.12);border-left:3px solid var(--ok);color:var(--text)}
+.quiz-feedback.wrong{background:rgba(220,38,38,.10);border-left:3px solid var(--warn);color:var(--text)}
+.quiz-feedback strong{color:var(--ok)}
+.quiz-feedback.wrong strong{color:var(--warn)}
+#to-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:80;transition:transform .2s}
+#to-top:hover{transform:translateY(-2px)}
+#to-top.show{display:flex}
+#dark-toggle{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--border);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;z-index:101;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#dark-toggle:hover{transform:scale(1.06)}
+.evidence{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-top:48px}
+.evidence h2{font-size:20px;margin-bottom:8px}
+.evidence .desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+.evidence table{font-size:13px}
+@media (max-width:1024px){
+  :root{--sidebar-width:220px}
+  #main-content{padding:32px 24px}
+}
+@media (max-width:768px){
+  #mobile-topbar{display:flex}
+  #sidebar{transform:translateX(-100%);transition:transform .25s;width:260px;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  #sidebar.open{transform:translateX(0)}
+  #main-content{margin-left:0;padding:20px 16px 80px;padding-top:68px}
+  #dark-toggle{top:5px;right:8px}
+  #main-content h1{font-size:24px}
+  .topic-section>h2{font-size:20px}
+  .chapter-nav{font-size:13px;padding:10px 12px}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:89;display:none}
+  #overlay.show{display:block}
+}
+@media print{
+  #progress-bar,#mobile-topbar,#sidebar,#dark-toggle,#to-top,.chapter-nav{display:none!important}
+  #main-content{margin-left:0;padding:0;max-width:none}
+  body{background:#fff;color:#000}
+  .section-body{display:block!important}
+  .section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">🌙</button>
+<header id="mobile-topbar">
+  <button id="hamburger" aria-label="打开目录">☰</button>
+  <span id="mobile-title">中间件与异常处理</span>
+</header>
+<div id="overlay"></div>
+
+<nav id="sidebar">
+  <div class="brand">FastAPI 核心</div>
+  <div class="brand-sub">阶段4 · 01_FastAPI核心<br>第六节 · 中间件与异常处理</div>
+  <a href="#s1" class="nav-topic">第六节 · 中间件与异常处理</a>
+  <a href="#s1-goal" class="nav-link">学习目标</a>
+  <a href="#s1-concept" class="nav-link">核心概念</a>
+  <a href="#s1-code" class="nav-link">代码示例</a>
+  <a href="#s1-caution" class="nav-link">常见误区</a>
+  <a href="#s1-quiz" class="nav-link">自测题</a>
+</nav>
+
+<main id="main-content">
+
+<nav class="chapter-nav" aria-label="阶段章节导航">
+  <a href="05-sqlalchemy.html">← 上一章：SQLAlchemy 异步集成</a>
+  <a class="home" href="index.html">🏠 返回章节总览</a>
+  <span class="next">已是最后一章 →</span>
+</nav>
+
+<h1>第六节 · 中间件与异常处理</h1>
+<p class="subtitle">中间件拦截每个请求（日志/响应头/CORS）；异常处理把程序错误转成统一 JSON 格式——告别 500 堆栈露给前端。</p>
+<div class="topic-desc">给每个请求装一层拦截器，统一打日志、统一返错，不再泄露 500 堆栈。</div>
+<div class="reading-time">⏱️ 预估阅读 7 分钟</div>
+
+<section class="topic-section" id="s1">
+
+  <!-- 🎯 学习目标 -->
+  <div class="section open" id="s1-goal">
+    <div class="section-head">
+      <span class="tag tag-goal">🎯 学习目标</span>
+      <span class="section-title-text">本节你要带走什么</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <ul class="goal-list">
+        <li>理解中间件 = 每个请求都过一遍的拦截层（洋葱模型）</li>
+        <li>会用 <code>@app.middleware("http")</code> 自定义中间件（打日志/加响应头）</li>
+        <li>理解 <code>CORSMiddleware</code> 的作用和顺序坑</li>
+        <li>会用 <code>@app.exception_handler</code> 把业务异常转成统一 JSON 响应</li>
+        <li>理解 <code>HTTPException</code> 和自定义业务异常的分工</li>
+      </ul>
+      <div class="callout">
+        <strong>与后端开发的关联：</strong>中间件是「横切关注点」的标准位置（日志、鉴权、限流、压缩、TraceID），路由不需要写这些。异常处理是「不把内部错误露给前端」的第一道安全屏障——线上 500 堆栈泄露是严重事故。
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 核心概念 -->
+  <div class="section open" id="s1-concept">
+    <div class="section-head">
+      <span class="tag tag-concept">📖 核心概念</span>
+      <span class="section-title-text">洋葱模型 + 中间件顺序 + 异常处理</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="definition">
+        <strong>核心定义</strong>
+        中间件是一个 <code>async def(request, call_next) → response</code> 函数，注册后 <strong>每个请求</strong> 都会穿过它；<code>call_next</code> 调用下一个中间件或最终 handler。多个中间件按「后进先出」顺序执行（洋葱模型）。
+      </div>
+
+      <h3>1. 洋葱模型执行流</h3>
+      <pre class="ascii-diagram">请求进入
+   ↓
+中间件 A 入口 (打时间戳)
+   ↓
+中间件 B 入口 (记 trace_id)
+   ↓
+中间件 C 入口 (CORS 检查)
+   ↓
+路由 handler (业务)
+   ↓
+中间件 C 出口
+   ↓
+中间件 B 出口
+   ↓
+中间件 A 出口 (算耗时写响应头)
+   ↓
+响应返回</pre>
+
+      <h3>2. <code>add_middleware</code> 是后进先出</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>代码顺序</th><th>执行顺序（请求方向）</th></tr></thead>
+        <tbody>
+          <tr><td><code>app.add_middleware(A)</code> 先</td><td>B 先执行入口</td></tr>
+          <tr><td><code>app.add_middleware(B)</code> 后</td><td>A 后执行入口</td></tr>
+          <tr><td colspan="2">→ 后 add 的反而最外层，所以 CORS 写最后 add（最外层）</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>3. 异常处理两种风格</h3>
+      <pre class="ascii-diagram">风格 A：直接用 FastAPI 自带的 HTTPException
+   raise HTTPException(status_code=404, detail="not found")
+   → 自动返回 404 + {"detail": "not found"}
+
+风格 B：自定义业务异常 + @app.exception_handler 统一拦截
+   class ItemNotFound(Exception): ...
+   raise ItemNotFound(item_id=42)
+   @app.exception_handler(ItemNotFound)
+   async def handler(request, exc):
+       return JSONResponse(status_code=404, content={...})
+
+   → 自定义错误格式（统一 code/message 结构）</pre>
+
+      <h3>4. 常见中间件场景</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>中间件</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>CORSMiddleware</code></td><td>处理跨域（前后端分离必须）</td></tr>
+          <tr><td><code>GZipMiddleware</code></td><td>响应自动 gzip 压缩</td></tr>
+          <tr><td><code>TrustedHostMiddleware</code></td><td>限制允许访问的 Host（防 Host 头攻击）</td></tr>
+          <tr><td>自定义 <code>@app.middleware("http")</code></td><td>打日志、加响应头、记录耗时、注入 trace_id</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 💻 代码示例 -->
+  <div class="section" id="s1-code">
+    <div class="section-head">
+      <span class="tag tag-code">💻 代码示例</span>
+      <span class="section-title-text">从 demo/app/main.py 摘录</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <h3>① 最小演示（来自 6.中间件与异常处理.md）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">import</span> time
+<span class="key">from</span> fastapi <span class="key">import</span> Request
+
+<span class="com"># 自定义中间件：记录每个请求耗时</span>
+<span class="key2">@app</span>.<span class="fn">middleware</span>(<span class="str">"http"</span>)
+<span class="key">async def</span> <span class="fn">add_process_time</span>(request: Request, call_next):
+    start = time.<span class="fn">time</span>()
+    response = <span class="key">await</span> <span class="fn">call_next</span>(request)   <span class="com"># 调用下一个处理层</span>
+    process_time = time.<span class="fn">time</span>() - start
+    response.headers[<span class="str">"X-Process-Time"</span>] = <span class="fn">str</span>(process_time)
+    <span class="key">return</span> response
+
+<span class="com"># CORS 中间件（前后端分离必须加）</span>
+<span class="key">from</span> fastapi.middleware.cors <span class="key">import</span> CORSMiddleware
+
+app.<span class="fn">add_middleware</span>(
+    CORSMiddleware,
+    allow_origins=[<span class="str">"http://localhost:3000"</span>],  <span class="com"># 生产改为实际前端域名</span>
+    allow_credentials=<span class="key">True</span>,
+    allow_methods=[<span class="str">"*"</span>],
+    allow_headers=[<span class="str">"*"</span>],
+)</pre>
+      </div>
+
+      <h3>② 真实项目 main.py（中间件 + 异常处理 + lifespan）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">import</span> time
+<span class="key">from</span> contextlib <span class="key">import</span> asynccontextmanager
+
+<span class="key">from</span> fastapi <span class="key">import</span> FastAPI, Request
+<span class="key">from</span> fastapi.middleware.cors <span class="key">import</span> CORSMiddleware
+<span class="key">from</span> fastapi.responses <span class="key">import</span> JSONResponse
+
+<span class="key">from</span> app.database <span class="key">import</span> init_db
+<span class="key">from</span> app.routers.items <span class="key">import</span> router <span class="key">as</span> items_router
+
+
+<span class="com"># 生命周期管理（替代已废弃的 on_event）</span>
+<span class="key2">@asynccontextmanager</span>
+<span class="key">async def</span> <span class="fn">lifespan</span>(app: FastAPI):
+    <span class="key">await</span> <span class="fn">init_db</span>()
+    <span class="key">yield</span>
+
+
+app = <span class="fn">FastAPI</span>(
+    title=<span class="str">"FastAPI 学习 Demo"</span>,
+    version=<span class="str">"1.0.0"</span>,
+    lifespan=lifespan,
+)
+
+<span class="com"># ---- CORS 中间件（必须最先 add）----</span>
+app.<span class="fn">add_middleware</span>(
+    CORSMiddleware,
+    allow_origins=[<span class="str">"*"</span>],   <span class="com"># 开发用 *，生产改为实际前端域名</span>
+    allow_credentials=<span class="key">True</span>,
+    allow_methods=[<span class="str">"*"</span>],
+    allow_headers=[<span class="str">"*"</span>],
+)
+
+<span class="com"># ---- 自定义中间件（记录请求耗时）----</span>
+<span class="key2">@app</span>.<span class="fn">middleware</span>(<span class="str">"http"</span>)
+<span class="key">async def</span> <span class="fn">log_process_time</span>(request: Request, call_next):
+    start = time.<span class="fn">time</span>()
+    response = <span class="key">await</span> <span class="fn">call_next</span>(request)
+    duration = <span class="fn">round</span>((time.<span class="fn">time</span>() - start) * <span class="num">1000</span>, <span class="num">2</span>)
+    response.headers[<span class="str">"X-Process-Time"</span>] = <span class="str">f"</span>{duration}<span class="str">ms"</span>
+    <span class="fn">print</span>(<span class="str">f"</span>{request.method}<span class="str"> </span>{request.url.path}<span class="str"> → </span>{response.status_code}<span class="str"> (</span>{duration}<span class="str">ms)"</span>)
+    <span class="key">return</span> response
+
+<span class="com"># ---- 全局异常处理（把未捕获异常转为统一 JSON）----</span>
+<span class="key2">@app</span>.<span class="fn">exception_handler</span>(Exception)
+<span class="key">async def</span> <span class="fn">global_exception_handler</span>(request: Request, exc: Exception):
+    <span class="key">return</span> <span class="fn">JSONResponse</span>(
+        status_code=<span class="num">500</span>,
+        content={<span class="str">"code"</span>: <span class="num">500</span>, <span class="str">"message"</span>: <span class="str">"Internal Server Error"</span>, <span class="str">"detail"</span>: <span class="fn">str</span>(exc)},
+    )
+
+<span class="com"># ---- 注册路由 ----</span>
+app.<span class="fn">include_router</span>(items_router)
+
+
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/"</span>, tags=[<span class="str">"health"</span>])
+<span class="key">async def</span> <span class="fn">health_check</span>():
+    <span class="key">return</span> {<span class="str">"status"</span>: <span class="str">"ok"</span>, <span class="str">"docs"</span>: <span class="str">"/docs"</span>}</pre>
+      </div>
+
+      <h3>③ 业务异常 + 自定义 Handler</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> HTTPException, Request
+<span class="key">from</span> fastapi.responses <span class="key">import</span> JSONResponse
+
+<span class="com"># 自定义业务异常</span>
+<span class="key">class</span> <span class="fn">ItemNotFound</span>(Exception):
+    <span class="key">def</span> <span class="fn">__init__</span>(self, item_id: <span class="key">int</span>):
+        self.item_id = item_id
+
+<span class="com"># 注册异常处理器</span>
+<span class="key2">@app</span>.<span class="fn">exception_handler</span>(ItemNotFound)
+<span class="key">async def</span> <span class="fn">item_not_found_handler</span>(request, exc):
+    <span class="key">return</span> <span class="fn">JSONResponse</span>(
+        status_code=<span class="num">404</span>,
+        content={<span class="str">"code"</span>: <span class="num">404</span>, <span class="str">"message"</span>: <span class="str">f"Item </span>{exc.item_id}<span class="str"> not found"</span>}
+    )
+
+<span class="com"># 路由里直接 raise，不用写 if/return</span>
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/items/{item_id}"</span>)
+<span class="key">async def</span> <span class="fn">get_item</span>(item_id: <span class="key">int</span>, db: AsyncSession = <span class="fn">Depends</span>(get_db)):
+    item = <span class="key">await</span> db.<span class="fn">get</span>(Item, item_id)
+    <span class="key">if not</span> item:
+        <span class="key">raise</span> <span class="fn">ItemNotFound</span>(item_id)   <span class="com"># 自动走 handler，返回 404 JSON</span>
+    <span class="key">return</span> item</pre>
+      </div>
+
+      <h3>④ 效果：响应头 + 控制台日志</h3>
+      <pre class="ascii-diagram"># 请求
+GET /items/?limit=5
+
+# 响应头多一行
+X-Process-Time: 3.21ms
+
+# 控制台输出
+GET /items/ → 200 (3.21ms)
+POST /items/ → 201 (8.95ms)
+GET /items/999 → 404 (2.10ms)</pre>
+
+    </div>
+  </div>
+
+  <!-- ⚠️ 常见误区 -->
+  <div class="section" id="s1-caution">
+    <div class="section-head">
+      <span class="tag tag-caution">⚠️ 常见误区</span>
+      <span class="section-title-text">最常踩的坑</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <div class="table-wrap">
+      <table class="misconception-table">
+        <thead><tr><th>❌ 误区</th><th>✅ 正确做法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>CORS 写在其他中间件 <strong>下面</strong>（最后 add），预检请求被其他中间件拦截，前端报 CORS 错误</td>
+            <td>CORS 写在最上面（第一个 add）——后进先出，最先 add 反而最内层。CORSMiddleware 必须在最外层处理 OPTIONS 预检</td>
+          </tr>
+          <tr>
+            <td>中间件里漏写 <code>await call_next(request)</code>，请求卡住不返回</td>
+            <td><code>call_next</code> 一定要 <code>await</code>，它返回的是协程</td>
+          </tr>
+          <tr>
+            <td>把 <code>detail=str(exc)</code> 原样返回给客户端（500 时泄露堆栈）</td>
+            <td>生产环境只返回友好 message，<code>str(exc)</code> 写到日志/监控系统（不要回给前端）</td>
+          </tr>
+          <tr>
+            <td>业务代码到处 <code>try/except</code> 然后 <code>return JSONResponse(...)</code> 凑响应</td>
+            <td>统一 raise 业务异常 + <code>@app.exception_handler</code> 拦截，路由保持干净</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="warn-callout">
+        <strong>CORS 顺序：</strong>这是 FastAPI 部署时最常见的前端联调问题。代码里 <code>add_middleware</code> 第一个写的就是执行最外层；CORSMiddleware 必须 <strong>第一个 add</strong>，否则浏览器 OPTIONS 预检被其他中间件截掉。
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ 自测题 -->
+  <div class="section" id="s1-quiz">
+    <div class="section-head">
+      <span class="tag tag-quiz">✏️ 自测题</span>
+      <span class="section-title-text">4 道单选 · 检验理解</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="quiz-card" data-answer="C">
+        <div class="q-title">1. <code>app.add_middleware(A)</code> 然后 <code>app.add_middleware(B)</code>，请求到达时先执行哪个中间件？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q1" value="A"> A. A 先</label></li>
+          <li><label><input type="radio" name="q1" value="B"> B. B 先</label></li>
+          <li><label><input type="radio" name="q1" value="C"> C. B 先（后进先出，后 add 的 B 是最外层，先接收到请求）</label></li>
+          <li><label><input type="radio" name="q1" value="D"> D. 同时执行</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="B">
+        <div class="q-title">2. CORS 中间件应该放在什么位置？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q2" value="A"> A. 放在最下面（最后 add），等业务中间件处理完</label></li>
+          <li><label><input type="radio" name="q2" value="B"> B. 放在最上面（第一个 add），最外层处理 OPTIONS 预检</label></li>
+          <li><label><input type="radio" name="q2" value="C"> C. 放在所有中间件之后，handler 之前</label></li>
+          <li><label><input type="radio" name="q2" value="D"> D. 位置无关</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="A">
+        <div class="q-title">3. 自定义业务异常 <code>ItemNotFound</code> 配合 <code>@app.exception_handler</code> 的好处是？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q3" value="A"> A. 路由里只需 <code>raise ItemNotFound(...)</code>，统一由 handler 转 JSON，业务代码干净</label></li>
+          <li><label><input type="radio" name="q3" value="B"> B. 性能比 HTTPException 更快</label></li>
+          <li><label><input type="radio" name="q3" value="C"> C. 能自动发邮件</label></li>
+          <li><label><input type="radio" name="q3" value="D"> D. 不需要 Pydantic</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="D">
+        <div class="q-title">4. 全局异常处理器返回 <code>{"detail": str(exc)}</code> 给客户端，最大的风险是？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q4" value="A"> A. 客户端看不懂</label></li>
+          <li><label><input type="radio" name="q4" value="B"> B. 响应太大</label></li>
+          <li><label><input type="radio" name="q4" value="C"> C. 加密失败</label></li>
+          <li><label><input type="radio" name="q4" value="D"> D. 泄露内部堆栈、SQL、文件路径等敏感信息</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- 证据追溯 -->
+<section class="evidence">
+  <h2>📎 证据追溯</h2>
+  <p class="desc">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+    <tbody>
+      <tr><td>中间件 = 拦截层；CORS 必须在最外层</td><td><a href="../01_FastAPI核心/6.中间件与异常处理.md">6.中间件与异常处理.md</a></td><td>L3 / L19-30 / L60-62</td></tr>
+      <tr><td>自定义中间件 + call_next 写法</td><td><a href="../01_FastAPI核心/6.中间件与异常处理.md">6.中间件与异常处理.md</a></td><td>L11-18</td></tr>
+      <tr><td>自定义业务异常 + exception_handler 拦截</td><td><a href="../01_FastAPI核心/6.中间件与异常处理.md">6.中间件与异常处理.md</a></td><td>L37-57</td></tr>
+      <tr><td>CORS / 计时 / 全局异常三层中间件真实装配</td><td><a href="../01_FastAPI核心/demo/app/main.py">demo/app/main.py</a></td><td>L40-64</td></tr>
+      <tr><td>路由里 raise HTTPException 的实际用法</td><td><a href="../01_FastAPI核心/demo/app/routers/items.py">demo/app/routers/items.py</a></td><td>L40 / L62 / L79</td></tr>
+      <tr><td>CORS 模板（cheatsheet）</td><td><a href="../01_FastAPI核心/cheatsheet.md">cheatsheet.md</a></td><td>L166-177</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<button id="to-top" title="回到顶部">↑</button>
+
+<script>
+const bar=document.getElementById('progress-bar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;bar.style.width=pct+'%'});
+const topBtn=document.getElementById('to-top');
+window.addEventListener('scroll',()=>topBtn.classList.toggle('show',window.scrollY>300));
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+const toggle=document.getElementById('dark-toggle');
+const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+const savedMode=localStorage.getItem('theme');
+function applyMode(m){document.documentElement.classList.toggle('dark',m==='dark');toggle.textContent=m==='dark'?'☀️':'🌙'}
+if(savedMode){applyMode(savedMode)}else if(prefersDark){applyMode('dark')}else{applyMode('light')}
+toggle.addEventListener('click',()=>{const isDark=document.documentElement.classList.toggle('dark');localStorage.setItem('theme',isDark?'dark':'light');toggle.textContent=isDark?'☀️':'🌙'});
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('overlay');
+const hamburger=document.getElementById('hamburger');
+function closeSidebar(){sidebar.classList.remove('open');overlay.classList.remove('show');document.body.style.overflow=''}
+hamburger.addEventListener('click',()=>{const open=sidebar.classList.toggle('open');overlay.classList.toggle('show',open);document.body.style.overflow=open?'hidden':''});
+overlay.addEventListener('click',closeSidebar);
+sidebar.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeSidebar));
+window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar()});
+document.querySelectorAll('.section-head').forEach(h=>{h.addEventListener('click',()=>h.parentElement.classList.toggle('open'))});
+document.querySelectorAll('.copy-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const code=btn.parentElement.querySelector('pre code')||btn.parentElement.querySelector('pre');if(!code)return;try{await navigator.clipboard.writeText(code.innerText);btn.textContent='✅ 已复制';setTimeout(()=>btn.textContent='📋 复制',1500)}catch{btn.textContent='复制失败';setTimeout(()=>btn.textContent='📋 复制',1500)}})});
+const sections=document.querySelectorAll('.section[id],.topic-section[id]');
+const linkMap=new Map();
+document.querySelectorAll('#sidebar a').forEach(a=>{if(a.getAttribute('href')&&a.getAttribute('href').startsWith('#')){linkMap.set(a.getAttribute('href').slice(1),a)}});
+const navLinks=document.querySelectorAll('#sidebar .nav-link');
+const navTopics=document.querySelectorAll('#sidebar .nav-topic');
+function setActive(id){
+  navLinks.forEach(l=>l.classList.remove('active'));
+  navTopics.forEach(t=>t.classList.remove('active'));
+  const link=linkMap.get(id);
+  if(link&&link.classList.contains('nav-link')){
+    link.classList.add('active');
+    let prev=link.previousElementSibling;
+    while(prev&&!prev.classList.contains('nav-topic'))prev=prev.previousElementSibling;
+    if(prev)prev.classList.add('active');
+  }else if(link&&link.classList.contains('nav-topic')){link.classList.add('active')}
+}
+const obs=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);if(visible[0])setActive(visible[0].target.id)},{rootMargin:'-20% 0px -60% 0px',threshold:[0,.25,.5,.75,1]});
+sections.forEach(s=>obs.observe(s));
+const EXPLANATIONS={
+  q1:'<code>add_middleware</code> 是「后进先出」栈：后 add 的反而最外层，最先收到请求。所以 CORS 必须最后 add 才能最外层处理 OPTIONS 预检。',
+  q2:'CORSMiddleware 必须放在代码最上面（第一个 add），这样它就成为最外层中间件，最先处理浏览器发来的 OPTIONS 预检请求。',
+  q3:'自定义异常 + handler 让路由只需 <code>raise</code> 一行；handler 统一负责转 JSON 响应。业务代码里没有 <code>if/return</code> 分支。',
+  q4:'<code>str(exc)</code> 可能包含文件路径、SQL 语句、密钥等敏感信息。生产应只返回通用 message，详细堆栈写到日志/监控。'
+};
+document.querySelectorAll('.quiz-card').forEach(card=>{
+  const submit=card.querySelector('.btn-submit');
+  const reset=card.querySelector('.btn-reset');
+  const fb=card.querySelector('.quiz-feedback');
+  submit.addEventListener('click',()=>{
+    const name=card.querySelector('input[type=radio]').name;
+    const checked=card.querySelector('input[type=radio]:checked');
+    if(!checked){fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>未作答</strong> 请先选择一个选项。';return}
+    const correct=card.dataset.answer;
+    if(checked.value===correct){fb.className='quiz-feedback correct';fb.style.display='block';fb.innerHTML='<strong>✅ 回答正确！</strong> '+EXPLANATIONS[name]}
+    else{fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>❌ 回答错误。</strong>正确答案 '+correct+'。'+EXPLANATIONS[name]}
+  });
+  reset.addEventListener('click',()=>{card.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);fb.style.display='none';fb.className='quiz-feedback'});
+});
+</script>
+</body>
+</html>

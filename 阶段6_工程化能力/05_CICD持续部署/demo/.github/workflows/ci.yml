@@ -1,0 +1,240 @@
+# ============================================================================
+# GitHub Actions Workflow 示例：Python 后端 CI/CD 完整流水线
+# ============================================================================
+# 文件位置：.github/workflows/ci.yml
+# 触发条件：push 到 main/develop 分支 或 pull_request 到 main 分支
+# 流水线：代码检查 → 测试 → 构建 Docker 镜像 → 部署到服务器（SSH）
+# ============================================================================
+
+# Workflow 名称，显示在 GitHub 仓库的 Actions 页面
+name: Python Backend CI/CD
+
+# 定义触发条件（Event）
+on:
+  # 当代码推送到指定分支时触发
+  push:
+    branches:
+      - main       # 主分支：完整流水线（测试+构建+部署）
+      - develop    # 开发分支：只跑测试和构建，不部署
+    paths:
+      - 'src/**'       # 只有源码目录变更才触发
+      - 'tests/**'     # 测试目录变更也触发
+      - 'requirements.txt'  # 依赖变更也触发
+      - 'Dockerfile'   # Docker 配置变更也触发
+
+  # 当 Pull Request 创建或更新时触发
+  pull_request:
+    branches:
+      - main    # 只监听合并到 main 的 PR
+
+  # 允许在 GitHub 页面手动触发
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '选择部署环境'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging      # 预发布环境
+          - production   # 生产环境
+
+# 并发控制：同一分支只保留最新的 Workflow 运行，取消旧的
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 全局环境变量，所有 Job 共享
+env:
+  PYTHON_VERSION: '3.11'          # Python 版本
+  REGISTRY: ghcr.io               # Docker 镜像仓库（GitHub Container Registry）
+  IMAGE_NAME: ${{ github.repository }}  # 镜像名 = 仓库名（如 user/repo）
+
+# 定义所有 Job
+jobs:
+  # ==================== Job 1: 代码检查（Lint） ====================
+  lint:
+    name: Code Lint                    # 显示名称
+    runs-on: ubuntu-latest             # 使用 GitHub 提供的 Ubuntu 虚拟机
+    timeout-minutes: 5                 # 超时 5 分钟自动终止
+
+    steps:
+      # Step 1: 检出代码（必须有，否则 Runner 上没有你的代码）
+      - name: Checkout code
+        uses: actions/checkout@v4      # 使用 GitHub 官方的 checkout Action
+
+      # Step 2: 设置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'                 # 自动缓存 pip 包，加速安装
+
+      # Step 3: 安装 lint 工具
+      - name: Install lint tools
+        run: |                         # | 表示多行字符串
+          pip install flake8 mypy ruff
+
+      # Step 4: 使用 ruff 进行快速代码检查（比 flake8 快 10-100 倍）
+      - name: Lint with ruff
+        run: ruff check src/
+
+      # Step 5: 使用 mypy 进行类型检查
+      - name: Type check with mypy
+        run: mypy src/ --ignore-missing-imports
+        continue-on-error: true        # 类型检查失败不阻塞流水线（渐进式引入）
+
+
+  # ==================== Job 2: 运行测试 ====================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # 矩阵构建：在多个 Python 版本上测试
+    strategy:
+      fail-fast: false                 # 一个版本失败不取消其他版本
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 根据矩阵变量设置对应版本的 Python
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      # 安装项目依赖和测试工具
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio httpx
+
+      # 运行测试并生成覆盖率报告
+      - name: Run pytest
+        run: |
+          pytest tests/ \
+            -v \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --junitxml=test-results.xml
+        env:
+          # 使用 SQLite 内存数据库运行测试，避免依赖外部数据库
+          DATABASE_URL: 'sqlite+aiosqlite:///./test.db'
+          SECRET_KEY: 'test-secret-key-not-for-production'
+          ENVIRONMENT: 'test'
+
+      # 上传测试报告（可在 GitHub 页面下载查看）
+      - name: Upload test results
+        if: always()                   # 即使测试失败也上传报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            test-results.xml
+
+
+  # ==================== Job 3: 构建 Docker 镜像 ====================
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    # 依赖条件：lint 和 test 都通过后才能执行
+    needs: [lint, test]
+    # 只在 push 到 main 分支时构建（PR 不构建镜像）
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # 权限配置：需要写入 Packages 的权限来推送镜像
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 登录到 GitHub Container Registry
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}          # 当前触发 Workflow 的用户
+          password: ${{ secrets.GITHUB_TOKEN }}  # GitHub 自动提供的临时 Token
+
+      # 构建并推送 Docker 镜像
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .                              # Docker 构建上下文
+          push: true                              # 构建后推送到仓库
+          tags: |                                 # 打两个标签
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha                    # 使用 GitHub Actions 缓存
+          cache-to: type=gha,mode=max             # 最大化缓存层
+          build-args: |                           # 传入构建参数
+            COMMIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.run_id }}
+
+
+  # ==================== Job 4: 部署到服务器 ====================
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    # 依赖 build Job 完成
+    needs: [build]
+    # 使用 Environment 保护生产环境（可配置审批流程）
+    environment:
+      name: production
+      url: https://api.example.com
+
+    steps:
+      # 通过 SSH 连接到远程服务器执行部署命令
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          # SSH 连接信息（从 Secrets 读取，不要硬编码）
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          # 远程执行的部署脚本
+          script: |
+            # 进入应用目录
+            cd /opt/app
+
+            # 拉取最新镜像
+            docker compose pull
+
+            # 停止旧服务并启动新服务
+            docker compose up -d --remove-orphans
+
+            # 等待服务启动
+            sleep 10
+
+            # 健康检查：确认服务正常运行
+            if curl -sf http://localhost:8000/health > /dev/null; then
+              echo "部署成功！服务健康检查通过"
+              # 清理旧镜像释放磁盘空间
+              docker image prune -f
+            else
+              echo "健康检查失败！自动回滚..."
+              docker compose rollback
+              exit 1
+            fi
+
+      # 部署完成后发送通知（可选）
+      - name: Notify deployment
+        if: always()                     # 无论成功失败都通知
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "部署成功: commit ${{ github.sha }} 已上线"
+          else
+            echo "部署失败: 请检查流水线日志"
+          fi

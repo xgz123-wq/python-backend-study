@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redis 核心知识复习 — 五种数据结构 · 典型场景 · 缓存三大问题 · 持久化</title>
+<style>
+/* ===== 变量 ===== */
+:root {
+    --sidebar-width: 260px;
+    --bg: #f6f8fb;
+    --card: #fff;
+    --border: #e3e8ef;
+    --text: #1e293b;
+    --muted: #64748b;
+    --quiz-bg: #fffbeb;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --code-bg: #1e293b;
+    --ascii-bg: #0f172a;
+    --correct: #16a34a;
+    --wrong: #dc2626;
+    --warn-bg: #fef2f2;
+    --radius: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,.08);
+    --progress-height: 3px;
+}
+
+/* ===== 深色模式变量 ===== */
+.dark {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --quiz-bg: rgba(217,119,6,0.1);
+    --accent: #58a6ff;
+    --accent-light: rgba(88,166,255,.1);
+    --warn-bg: rgba(220,38,38,.1);
+}
+
+/* ===== 基础重置 ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg);transition:background .3s,color .3s}
+
+/* ===== 阅读进度条 ===== */
+#progress-bar{position:fixed;top:0;left:0;height:var(--progress-height);background:var(--accent);z-index:9999;transition:width .1s linear}
+
+/* ===== 深色模式按钮 ===== */
+#theme-toggle{position:fixed;top:16px;right:24px;z-index:9990;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;box-shadow:var(--shadow)}
+#theme-toggle:hover{background:var(--accent-light);border-color:var(--accent)}
+
+/* ===== 侧栏 ===== */
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:var(--card);border-right:1px solid var(--border);overflow-y:auto;z-index:9980;padding:24px 0 100px;transition:transform .3s,background .3s}
+#sidebar .sidebar-header{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:12px}
+#sidebar .sidebar-header h3{font-size:15px;color:var(--text);margin-bottom:4px}
+#sidebar .sidebar-header span{font-size:12px;color:var(--muted)}
+#sidebar a{display:block;text-decoration:none;color:var(--muted);padding:6px 20px;transition:all .2s;border-left:3px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sidebar a.nav-topic{font-size:12.5px;font-weight:bold;padding:10px 20px 4px;margin-top:6px;letter-spacing:.03em}
+#sidebar a.nav-topic:first-of-type{margin-top:0}
+#sidebar a.nav-link{font-size:13.5px;font-weight:normal;padding:5px 20px 5px 28px}
+#sidebar a:hover{color:var(--accent);background:var(--accent-light)}
+#sidebar a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-light)}
+
+/* ===== 移动端顶栏 ===== */
+#mobile-bar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:9970;align-items:center;padding:0 56px 0 16px;transition:background .3s}
+#mobile-bar .bar-title{font-size:14px;font-weight:bold;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+#hamburger{display:none;position:fixed;top:8px;left:12px;z-index:9985;width:32px;height:32px;border:none;background:transparent;color:var(--text);font-size:20px;cursor:pointer;align-items:center;justify-content:center}
+#mobile-theme-btn{display:none;position:fixed;top:8px;right:12px;z-index:9990;width:32px;height:32px;border:none;background:transparent;color:var(--text);font-size:18px;cursor:pointer;align-items:center;justify-content:center}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9975}
+
+/* ===== 主内容区 ===== */
+#main-content{margin-left:var(--sidebar-width);padding:40px 32px 60px;min-height:100vh;transition:margin-left .3s,padding .3s}
+#main-content h1{font-size:28px;margin-bottom:6px;color:var(--text)}
+#main-content .subtitle{color:var(--muted);font-size:14px;margin-bottom:6px}
+.reading-time{display:inline-block;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:4px 12px;border-radius:20px;margin-bottom:32px}
+
+/* ===== Topic 容器 ===== */
+.topic-section{margin-bottom:40px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:background .3s,border .3s}
+.topic-header{padding:18px 24px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.topic-header .topic-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex-shrink:0}
+.topic-header h2{font-size:18px;color:var(--text)}
+
+/* ===== 五区块 ===== */
+.section{border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-header{display:flex;align-items:center;gap:8px;padding:14px 24px;cursor:pointer;user-select:none;transition:background .2s}
+.section-header:hover{background:var(--accent-light)}
+.section-header .tag{font-size:11px;font-weight:bold;padding:2px 8px;border-radius:4px;color:#fff;white-space:nowrap;flex-shrink:0}
+.tag-goal{background:#2563eb}
+.tag-concept{background:#7c3aed}
+.tag-code{background:#0284c7}
+.tag-caution{background:#dc2626}
+.tag-quiz{background:#d97706}
+.tag-overview{background:#475569}
+.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:-4px 24px 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+.section-header h3{font-size:15px;color:var(--text);flex:1}
+.section-header .fold-icon{font-size:12px;color:var(--muted);transition:transform .3s;flex-shrink:0}
+.section.open .section-header .fold-icon{transform:rotate(180deg)}
+.section-body{display:none;padding:0 24px 20px}
+.section.open .section-body{display:block}
+
+/* ===== 学习目标 ===== */
+.goal-list{list-style:none;padding:8px 0}
+.goal-list li{padding:6px 0 6px 24px;position:relative;color:var(--text)}
+.goal-list li::before{content:"✓";position:absolute;left:0;color:var(--correct);font-weight:bold}
+.callout{padding:12px 16px;border-radius:var(--radius);margin-top:12px;font-size:14px}
+.callout-info{background:var(--accent-light);border-left:3px solid var(--accent);color:var(--text)}
+.callout-danger{background:var(--warn-bg);border-left:3px solid var(--wrong);color:var(--text)}
+
+/* ===== 核心概念 ===== */
+.definition{border-left:3px solid #7c3aed;padding:8px 16px;margin:12px 0;background:rgba(124,58,237,.05);border-radius:0 var(--radius) var(--radius) 0}
+.definition strong{color:#7c3aed}
+pre.ascii-diagram{background:var(--ascii-bg);color:#e2e8f0;padding:16px 20px;border-radius:var(--radius);overflow-x:auto;font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace;font-size:13px;line-height:1.6;white-space:pre;margin:12px 0}
+details{margin:8px 0;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;background:var(--bg)}
+details summary{cursor:pointer;font-weight:bold;color:var(--accent);font-size:14px;padding:4px 0}
+
+/* ===== 表格 ===== */
+.table-wrap{overflow-x:auto;margin:12px 0;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;font-size:14px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);word-break:break-word}
+th{background:var(--bg);font-weight:bold;color:var(--text);font-size:13px}
+tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+.dark tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+
+/* ===== 代码块 ===== */
+pre.code-block{background:var(--code-bg);color:#e2e8f0;padding:20px 16px 16px;border-radius:var(--radius);overflow-x:auto;font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace;font-size:12.5px;line-height:1.6;position:relative;margin:12px 0}
+pre.code-block code{font-family:inherit;font-size:inherit}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:11px;padding:2px 10px;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#cbd5e1;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,.16);color:#fff}
+.highlight-line{border-left:3px solid #f59e0b;padding-left:12px;margin-left:-16px;display:inline-block;width:calc(100% + 16px)}
+.kw{color:#c084fc}.cm{color:#6b7280;font-style:italic}.str{color:#86efac}.fn{color:#60a5fa}.num{color:#fbbf24}.op{color:#f472b6}
+
+/* ===== 误区 ===== */
+.caution-table td:first-child{color:var(--wrong);font-weight:bold;width:45%}
+.caution-table td:last-child{color:var(--correct)}
+.caution-table td:first-child::before{content:"❌ "}
+.caution-table td:last-child::before{content:"✅ "}
+
+/* ===== 自测题 ===== */
+.quiz-item{background:var(--quiz-bg);border-radius:var(--radius);padding:16px;margin:12px 0;border-left:3px solid #d97706}
+.quiz-item .q-title{font-weight:bold;color:var(--text);margin-bottom:10px}
+.quiz-item label{display:block;padding:8px 12px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .2s;color:var(--text)}
+.quiz-item label:hover{background:rgba(37,99,235,.08)}
+.quiz-item input[type=radio]{margin-right:8px}
+.quiz-feedback{display:none;padding:10px 14px;border-radius:var(--radius);margin-top:8px;font-size:14px}
+.quiz-feedback.correct{display:block;background:rgba(22,163,74,.1);border:1px solid var(--correct);color:var(--correct)}
+.quiz-feedback.wrong{display:block;background:rgba(220,38,38,.1);border:1px solid var(--wrong);color:var(--wrong)}
+.quiz-btns{margin-top:12px;display:flex;gap:8px}
+.quiz-btns button{padding:6px 18px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;transition:all .2s}
+.quiz-btns button:hover{background:var(--accent-light);border-color:var(--accent)}
+.quiz-btns button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.quiz-btns button.primary:hover{opacity:.9}
+
+/* ===== 回到顶部 ===== */
+#back-to-top{position:fixed;bottom:32px;right:32px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:18px;cursor:pointer;z-index:9980;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:opacity .3s,transform .3s}
+#back-to-top:hover{transform:translateY(-2px);opacity:.9}
+#back-to-top.visible{display:flex}
+
+/* ===== 证据追溯区 ===== */
+#evidence{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:40px 0 20px}
+#evidence h2{font-size:18px;margin-bottom:8px;color:var(--text)}
+#evidence .ev-desc{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+/* ===== 页脚 ===== */
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:20px}
+
+/* ===== 打印样式 ===== */
+@media print{
+    #progress-bar,#theme-toggle,#sidebar,#mobile-bar,#hamburger,#mobile-theme-btn,#overlay,#back-to-top{display:none!important}
+    #main-content{margin-left:0!important;padding:0!important}
+    body{background:#fff;color:#000}
+    .topic-section{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+}
+
+/* ===== 响应式: ≤1024px ===== */
+@media (max-width:1024px){
+    :root{--sidebar-width:220px}
+    #main-content{padding:32px 24px}
+}
+
+/* ===== 响应式: ≤768px ===== */
+@media (max-width:768px){
+    :root{--sidebar-width:260px}
+    #sidebar{transform:translateX(-100%)}
+    #sidebar.open{transform:translateX(0)}
+    #main-content{margin-left:0;padding:56px 16px 40px}
+    #theme-toggle{display:none}
+    #mobile-bar{display:flex}
+    #hamburger{display:flex}
+    #mobile-theme-btn{display:flex}
+    pre.code-block{font-size:11.5px}
+    #back-to-top{right:16px;bottom:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- 进度条 -->
+<div id="progress-bar"></div>
+
+<!-- 深色模式切换 -->
+<button id="theme-toggle" title="切换深色/浅色模式" aria-label="切换深色模式">🌙</button>
+
+<!-- 移动端顶栏 -->
+<div id="mobile-bar">
+    <span class="bar-title">Redis 核心知识</span>
+</div>
+<button id="hamburger" aria-label="菜单">☰</button>
+<button id="mobile-theme-btn" aria-label="切换深色模式">🌙</button>
+<div id="overlay"></div>
+
+<!-- 侧栏 -->
+<nav id="sidebar">
+    <div class="sidebar-header">
+        <h3>Redis 核心知识</h3>
+        <span>4 节 · 预估 32 分钟</span>
+    </div>
+    <a href="#s1" class="nav-topic">数据结构 · 五种核心类型</a>
+    <a href="#s1-goal" class="nav-link">学习目标</a>
+    <a href="#s1-concept" class="nav-link">核心概念</a>
+    <a href="#s1-code" class="nav-link">代码示例</a>
+    <a href="#s1-caution" class="nav-link">常见误区</a>
+    <a href="#s1-quiz" class="nav-link">自测题</a>
+
+    <a href="#s2" class="nav-topic">场景 · 四大典型应用</a>
+    <a href="#s2-goal" class="nav-link">学习目标</a>
+    <a href="#s2-concept" class="nav-link">核心概念</a>
+    <a href="#s2-code" class="nav-link">代码示例</a>
+    <a href="#s2-caution" class="nav-link">常见误区</a>
+    <a href="#s2-quiz" class="nav-link">自测题</a>
+
+    <a href="#s3" class="nav-topic">缓存问题 · 穿透击穿雪崩</a>
+    <a href="#s3-goal" class="nav-link">学习目标</a>
+    <a href="#s3-concept" class="nav-link">核心概念</a>
+    <a href="#s3-code" class="nav-link">代码示例</a>
+    <a href="#s3-caution" class="nav-link">常见误区</a>
+    <a href="#s3-quiz" class="nav-link">自测题</a>
+
+    <a href="#s4" class="nav-topic">过期淘汰 · 持久化机制</a>
+    <a href="#s4-goal" class="nav-link">学习目标</a>
+    <a href="#s4-concept" class="nav-link">核心概念</a>
+    <a href="#s4-code" class="nav-link">代码示例</a>
+    <a href="#s4-caution" class="nav-link">常见误区</a>
+    <a href="#s4-quiz" class="nav-link">自测题</a>
+</nav>
+
+<!-- 主内容区 -->
+<main id="main-content">
+    <h1>Redis 核心知识复习</h1>
+    <p class="subtitle">五种数据结构 · 四大典型场景 · 缓存三大问题 · 过期淘汰与持久化</p>
+    <div class="reading-time">⏱️ 预估阅读 32 分钟（约 9,500 字）</div>
+
+    <!-- 📌 本章总览 -->
+    <section class="topic-section" id="overview">
+        <div class="section open">
+            <div class="section-header">
+                <span class="tag tag-overview">📌 本章</span>
+                <h3>为什么要学 Redis？</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <p>Redis 是后端最常用的内存数据库与缓存中间件，能把读写 QPS 拉到 10 万级。读完本章，你能选对数据结构、用 Redis 顶住缓存穿透/击穿/雪崩三种典型故障、配好过期淘汰与持久化让线上不丢数据。</p>
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr></thead>
+                    <tbody>
+                    <tr><td>五种数据结构</td><td>String/Hash/List/Set/ZSet · 底层编码 · 场景选型</td><td>⭐⭐⭐</td></tr>
+                    <tr><td>典型使用场景</td><td>Cache-Aside · 分布式 Session · 排行榜 · 分布式锁</td><td>⭐⭐⭐</td></tr>
+                    <tr><td>缓存穿透/击穿/雪崩</td><td>布隆过滤器 · 互斥锁 · 逻辑过期 · 随机 TTL</td><td>⭐⭐⭐</td></tr>
+                    <tr><td>过期淘汰与持久化</td><td>惰性/定期删除 · 8 种淘汰策略 · RDB + AOF 混合</td><td>⭐⭐⭐</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== s1: 五种核心数据结构 ======================== -->
+    <section class="topic-section" id="s1">
+        <div class="topic-header">
+            <span class="topic-num">1</span>
+            <h2>五种核心数据结构</h2>
+        </div>
+        <div class="topic-desc">五种数据结构：String/Hash/List/Set/ZSet 各有擅长，选错就让性能砸盘。</div>
+
+        <!-- 🎯 学习目标 -->
+        <div class="section open" id="s1-goal">
+            <div class="section-header">
+                <span class="tag tag-goal">🎯 学习目标</span>
+                <h3>学完本节你将掌握</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <ul class="goal-list">
+                    <li>能说出 Redis 五种 Value 类型的名称与核心特征</li>
+                    <li>能为给定业务场景选择合适的数据结构</li>
+                    <li>能写出每种类型的至少 3 个核心命令</li>
+                    <li>能解释 String 底层三种编码的适用条件</li>
+                </ul>
+                <div class="callout callout-info">
+                    <strong>🔗 与后端开发的关联：</strong>数据结构选型直接影响缓存命中率、代码复杂度与内存成本。选错数据结构（如用 List 存排行榜）会导致 O(N) 操作拖垮性能。在生产环境中，90% 的 Redis 问题归根到底是"用错了数据结构"。
+                </div>
+            </div>
+        </div>
+
+        <!-- 📖 核心概念 -->
+        <div class="section open" id="s1-concept">
+            <div class="section-header">
+                <span class="tag tag-concept">📖 核心概念</span>
+                <h3>五种数据结构全景</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="definition">
+                    <strong>Redis</strong> = 开源的<strong>内存数据库</strong>，所有数据存在内存中，读写速度达 10 万+ QPS。数据以 <strong>Key-Value</strong> 存储，Key 始终是字符串，Value 支持 5 种数据结构。
+                </div>
+
+                <pre class="ascii-diagram">
+┌─────────────────────────────────────────────────────────┐
+│                    Redis 五种数据结构                     │
+├───────────┬───────────┬──────────┬──────────┬──────────┤
+│  String   │   Hash    │   List   │   Set    │  ZSet    │
+│  字符串    │   哈希     │   列表   │  集合    │ 有序集合  │
+├───────────┼───────────┼──────────┼──────────┼──────────┤
+│ "hello"   │{name:"zs" │["a","b"] │ {1,2,3}  │{a:9,b:7}│
+│   123     │ ,age:28}  │          │          │          │
+├───────────┼───────────┼──────────┼──────────┼──────────┤
+│ 缓存/计数  │ 对象存储   │消息队列   │ 去重/交并 │ 排行榜   │
+│分布式锁    │ 购物车     │最新列表   │ 随机抽奖  │ 延时队列  │
+└───────────┴───────────┴──────────┴──────────┴──────────┘</pre>
+
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>结构</th><th>特点</th><th>底层实现</th><th>典型场景</th></tr></thead>
+                    <tbody>
+                    <tr><td><strong>String</strong></td><td>最基础，可存字符串/整数/二进制</td><td>int / embstr / raw</td><td>缓存、计数器、分布式锁、Session</td></tr>
+                    <tr><td><strong>Hash</strong></td><td>field→value 字典，适合对象属性</td><td>ziplist / hashtable</td><td>用户信息缓存、购物车</td></tr>
+                    <tr><td><strong>List</strong></td><td>有序可重复，双向链表，两端 O(1)</td><td>quicklist</td><td>消息队列、最新动态列表</td></tr>
+                    <tr><td><strong>Set</strong></td><td>无序不重复，支持交/并/差集</td><td>intset / hashtable</td><td>在线用户、共同关注、抽奖</td></tr>
+                    <tr><td><strong>ZSet</strong></td><td>有序不重复，按 score 排序</td><td>skiplist + hashtable</td><td>排行榜、延时队列、优先级调度</td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <details>
+                    <summary>🔍 展开：Hash vs String 存对象的选择策略</summary>
+                    <p style="margin-top:8px">存一个用户对象有两种方式：</p>
+                    <p><strong>方式 A：String + JSON 序列化</strong> — <code>SET user:1 '{"name":"zs","age":28}'</code>，整体读写，适合对象小且整体读取的场景。</p>
+                    <p><strong>方式 B：Hash 存字段</strong> — <code>HSET user:1 name zs age 28</code>，可单独更新某字段而无需重写整个对象，适合频繁更新个别属性的场景。</p>
+                    <p>选择原则：频繁更新对象的某一字段 → Hash（只更新那个 field）；对象整体读取/很少修改 → String + JSON。</p>
+                </details>
+
+                <details>
+                    <summary>🔍 展开：List 底层结构演变与性能陷阱</summary>
+                    <p style="margin-top:8px">Redis 3.2 前用 linkedlist + ziplist，3.2+ 统一为 <strong>quicklist</strong>（ziplist 组成的双向链表）。</p>
+                    <p>⚠️ <code>LRANGE</code> 是 O(N)，不要用于超大列表全量获取；<code>LINDEX</code> 也是 O(N)，按索引取中间元素性能差——需要按位置取元素时应用 ZSet 而非 List。</p>
+                </details>
+            </div>
+        </div>
+
+        <!-- 💻 代码示例 -->
+        <div class="section" id="s1-code">
+            <div class="section-header">
+                <span class="tag tag-code">💻 代码示例</span>
+                <h3>核心命令速查</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <p style="color:var(--muted);font-size:13px;margin-bottom:10px">⚠️ 本章 demo/*.py 脚本文件缺失，以下示例摘自理论文档中的内嵌代码与命令表。</p>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">1. String — 缓存与计数器</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 基础读写</span>
+<span class="fn">SET</span> user:1:name <span class="str">"张三"</span>
+<span class="fn">GET</span> user:1:name            <span class="cm"># → "张三"</span>
+
+<span class="cm"># 带过期时间的写入（原子操作，防止死锁）</span>
+<span class="fn">SETEX</span> token:abc123 <span class="num">7200</span> <span class="str">"session_data"</span>
+
+<span class="cm"># 计数器（原子自增，并发安全）</span>
+<span class="fn">INCR</span> article:1:views         <span class="cm"># → 1 → 2 → 3 ...</span>
+<span class="fn">INCRBY</span> article:1:views <span class="num">10</span>   <span class="cm"># 一次加 10</span>
+
+<span class="cm"># 分布式锁关键命令</span>
+<span class="fn">SETNX</span> lock:order:123 <span class="str">"owner_id"</span>  <span class="cm"># 仅当不存在时设置</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">2. Hash — 对象字段操作</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 存用户信息（可单独更新某字段）</span>
+<span class="fn">HSET</span> user:1 name <span class="str">"张三"</span> age <span class="num">28</span> email <span class="str">"zs@qq.com"</span>
+<span class="fn">HGET</span> user:1 name              <span class="cm"># → "张三"</span>
+<span class="fn">HMGET</span> user:1 name age         <span class="cm"># → ["张三", "28"]</span>
+<span class="fn">HINCRBY</span> user:1 age <span class="num">1</span>        <span class="cm"># age 变为 29（原子操作）</span>
+<span class="fn">HKEYS</span> user:1                  <span class="cm"># → ["name","age","email"]</span>
+<span class="fn">HLEN</span> user:1                   <span class="cm"># → 3</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">3. List — 消息队列</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 生产者：从右端入队</span>
+<span class="fn">RPUSH</span> queue:tasks <span class="str">"task1"</span> <span class="str">"task2"</span> <span class="str">"task3"</span>
+
+<span class="cm"># 消费者：从左端阻塞弹出（队列空时等待）</span>
+<span class="fn">BLPOP</span> queue:tasks <span class="num">5</span>          <span class="cm"># 阻塞最多 5 秒</span>
+
+<span class="cm"># 获取最新 20 条（最新的在左边）</span>
+<span class="fn">LRANGE</span> messages:room:1 <span class="num">0</span> <span class="num">19</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">4. Set — 社交关系</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 用户关注列表</span>
+<span class="fn">SADD</span> user:1:follows <span class="num">101</span> <span class="num">205</span> <span class="num">333</span>
+<span class="fn">SADD</span> user:2:follows <span class="num">205</span> <span class="num">333</span> <span class="num">404</span>
+
+<span class="cm"># 共同关注（交集）→ {205, 333}</span>
+<span class="fn">SINTER</span> user:1:follows user:2:follows
+
+<span class="cm"># 我关注了但对方没关注的（差集）→ {101}</span>
+<span class="fn">SDIFF</span> user:1:follows user:2:follows
+
+<span class="cm"># 随机抽 3 个幸运用户</span>
+<span class="fn">SRANDMEMBER</span> online:users <span class="num">3</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">5. ZSet — 排行榜</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 添加/更新分数</span>
+<span class="fn">ZADD</span> leaderboard <span class="num">9800</span> <span class="str">"player:101"</span>
+<span class="fn">ZINCRBY</span> leaderboard <span class="num">200</span> <span class="str">"player:101"</span>  <span class="cm"># → score=10000</span>
+
+<span class="cm"># Top 10（倒序，分数高在前）</span>
+<span class="fn">ZREVRANGE</span> leaderboard <span class="num">0</span> <span class="num">9</span> WITHSCORES
+
+<span class="cm"># 查某玩家排名（从 0 开始）</span>
+<span class="fn">ZREVRANK</span> leaderboard <span class="str">"player:101"</span>  <span class="cm"># → 0（第一名）</span>
+
+<span class="cm"># 按分数段查询（8000~10000 分的玩家）</span>
+<span class="fn">ZRANGEBYSCORE</span> leaderboard <span class="num">8000</span> <span class="num">10000</span></code></pre>
+
+                <div class="table-wrap">
+                <table>
+                    <caption style="text-align:left;font-weight:bold;padding:8px 14px;color:var(--text)">命令速查总结</caption>
+                    <thead><tr><th>类型</th><th>最常用命令</th><th>核心场景</th></tr></thead>
+                    <tbody>
+                    <tr><td>String</td><td>SET/GET/INCR/SETEX/SETNX</td><td>缓存、计数器、分布式锁</td></tr>
+                    <tr><td>Hash</td><td>HSET/HGET/HGETALL/HINCRBY</td><td>对象缓存、购物车</td></tr>
+                    <tr><td>List</td><td>LPUSH/LRANGE/BLPOP</td><td>消息队列、最新列表</td></tr>
+                    <tr><td>Set</td><td>SADD/SISMEMBER/SINTER</td><td>去重、关系运算</td></tr>
+                    <tr><td>ZSet</td><td>ZADD/ZREVRANGE/ZINCRBY</td><td>排行榜、延时队列</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⚠️ 常见误区 -->
+        <div class="section" id="s1-caution">
+            <div class="section-header">
+                <span class="tag tag-caution">⚠️ 常见误区</span>
+                <h3>避坑指南</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap">
+                <table class="caution-table">
+                    <thead><tr><th>❌ 误区</th><th>✅ 纠正</th></tr></thead>
+                    <tbody>
+                    <tr><td>Key 随便起名，如 name、token</td><td>用冒号分隔层级：<code>user:1:token</code>，避免键名冲突</td></tr>
+                    <tr><td>用 <code>KEYS *</code> 查看所有 Key</td><td>生产环境禁止！全量扫描阻塞 Redis。用 <code>SCAN 0</code> 游标迭代</td></tr>
+                    <tr><td>单个 List/Hash 存几万元素无所谓</td><td>大 Key 问题：超过 1 万元素要警惕，序列化慢、内存大、迁移困难</td></tr>
+                    <tr><td>Redis 是单线程所以可以随便用 O(N) 命令</td><td>恰恰相反！单线程意味着耗时命令（SORT 大集合）会阻塞所有请求</td></tr>
+                    <tr><td>把 Redis 当成 MySQL 用，存了不设过期</td><td>Redis 是缓存，不设过期时间 → 内存泄漏 → OOM Kill</td></tr>
+                    </tbody>
+                </table>
+                </div>
+                <div class="callout callout-danger">
+                    <strong>🚨 安全警告：</strong><code>KEYS *</code> 在生产环境是灾难级操作——它遍历整个键空间，执行期间 Redis 无法处理其他请求。曾有案例因运维误执行 KEYS 导致服务雪崩、P99 延迟从 2ms 飙升到 2000ms。
+                </div>
+            </div>
+        </div>
+
+        <!-- ✏️ 自测题 -->
+        <div class="section" id="s1-quiz">
+            <div class="section-header">
+                <span class="tag tag-quiz">✏️ 自测题</span>
+                <h3>基础自测（3 题）</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <!-- Q1 -->
+                <div class="quiz-item" data-answer="C">
+                    <p class="q-title">Q1. 下列哪种数据结构最适合实现"积分排行榜 Top 100"？</p>
+                    <label><input type="radio" name="q1" value="A"> A. Hash，每位玩家一个 field</label>
+                    <label><input type="radio" name="q1" value="B"> B. List，按积分从高到低排列</label>
+                    <label><input type="radio" name="q1" value="C"> C. ZSet，以积分为 score</label>
+                    <label><input type="radio" name="q1" value="D"> D. Set，存所有玩家 ID</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <!-- Q2 -->
+                <div class="quiz-item" data-answer="A">
+                    <p class="q-title">Q2. 使用 <code>SET lock:order:123 uuid NX EX 10</code> 的目的是什么？</p>
+                    <label><input type="radio" name="q2" value="A"> A. 分布式锁：仅当 Key 不存在时设值，10 秒后自动过期防死锁</label>
+                    <label><input type="radio" name="q2" value="B"> B. 缓存预热：提前把数据写入 Redis 防止冷启动</label>
+                    <label><input type="radio" name="q2" value="C"> C. 计数器：每次请求自动 +1</label>
+                    <label><input type="radio" name="q2" value="D"> D. 限流：10 秒内只允许一次操作</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <!-- Q3 -->
+                <div class="quiz-item" data-answer="B">
+                    <p class="q-title">Q3. 关于 Hash 和 String 存对象，以下说法正确的是？</p>
+                    <label><input type="radio" name="q3" value="A"> A. 存对象永远用 Hash，因为性能更好</label>
+                    <label><input type="radio" name="q3" value="B"> B. 频繁更新个别字段用 Hash，整体读取居多用 String+JSON</label>
+                    <label><input type="radio" name="q3" value="C"> C. 用 String 存 JSON 无法设置过期时间</label>
+                    <label><input type="radio" name="q3" value="D"> D. Hash 的 HGETALL 时间复杂度是 O(N²)</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-btns">
+                    <button class="primary" onclick="submitQuiz(this)">提交</button>
+                    <button onclick="resetQuiz(this)">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== s2: 四大典型使用场景 ======================== -->
+    <section class="topic-section" id="s2">
+        <div class="topic-header">
+            <span class="topic-num">2</span>
+            <h2>四大典型使用场景</h2>
+        </div>
+        <div class="topic-desc">典型使用场景：缓存、Session、排行榜、分布式锁，覆盖后端 80% Redis 需求。</div>
+
+        <!-- 🎯 学习目标 -->
+        <div class="section open" id="s2-goal">
+            <div class="section-header">
+                <span class="tag tag-goal">🎯 学习目标</span>
+                <h3>学完本节你将掌握</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <ul class="goal-list">
+                    <li>能画出 Cache-Aside 模式的读写流程图</li>
+                    <li>能解释"先写库再删缓存"的顺序原因</li>
+                    <li>能实现带滑动过期的分布式 Session</li>
+                    <li>能写出安全的分布式锁（SET NX EX + Lua 释放）</li>
+                </ul>
+                <div class="callout callout-info">
+                    <strong>🔗 与后端开发的关联：</strong>这四个场景覆盖了 80% 的后端 Redis 使用需求。从单体到微服务，Redis 的角色从"锦上添花的缓存"升级为"分布式协调基础设施"——锁、Session、排行榜都需要跨节点一致。
+                </div>
+            </div>
+        </div>
+
+        <!-- 📖 核心概念 -->
+        <div class="section open" id="s2-concept">
+            <div class="section-header">
+                <span class="tag tag-concept">📖 核心概念</span>
+                <h3>四大场景全景</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:12px 0 8px;color:var(--text)">场景一：缓存（Cache-Aside 模式）</h4>
+                <pre class="ascii-diagram">
+┌─────────────────────────────────────────────────────────┐
+│              Cache-Aside（旁路缓存）模式                    │
+├─────────────────────┬───────────────────────────────────┤
+│      读流程          │          写流程                    │
+│                     │                                   │
+│  请求 → 查 Redis    │  请求 → 写数据库                   │
+│    ↓命中     ↓未命中 │           ↓                       │
+│  直接返回   查数据库  │      删除 Redis 缓存              │
+│             ↓        │      （不更新，下次读时重建）        │
+│          写入 Redis  │                                   │
+│             ↓        │                                   │
+│           返回数据    │                                   │
+└─────────────────────┴───────────────────────────────────┘</pre>
+                <p style="margin:8px 0"><strong>写时为什么删缓存而不是更新缓存？</strong>并发写场景下，线程 A 和 B 同时更新数据库和缓存 → 谁最后更新缓存谁的值就"胜出" → 但数据库里可能是另一个值 → 数据不一致。删除缓存更安全：下次读时自动从库拉最新。</p>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">场景二：分布式 Session</h4>
+                <p>传统服务器端 Session 存在单机内存中 → 多台部署时，负载均衡导致 Session 丢失。Redis 是独立外部存储，所有节点共享。</p>
+                <p>⚠️ 关键设计：<strong>滑动过期</strong>——用户每次活动都应刷新 TTL，避免正在操作时突然登出。</p>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">场景三：排行榜（ZSet）</h4>
+                <p>ZSet 天然支持按 score 排序，<code>ZINCRBY</code> 原子更新分数，<code>ZREVRANGE</code> 获取 Top N。多维度（日/周/月榜）用不同 Key 区分。</p>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">场景四：分布式锁</h4>
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>设计要点</th><th>原因</th></tr></thead>
+                    <tbody>
+                    <tr><td><code>SET NX EX</code> 而非 SETNX+EXPIRE</td><td>SETNX 和 EXPIRE 是两步，中间崩溃 → 死锁</td></tr>
+                    <tr><td>锁 value 用唯一 UUID</td><td>防止 A 超时后 B 获取锁，A 再来误删 B 的锁</td></tr>
+                    <tr><td>Lua 脚本释放锁</td><td>GET + DEL 两步必须原子执行</td></tr>
+                    <tr><td>合理过期时间</td><td>业务超时后自动释放，防止死锁</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 💻 代码示例 -->
+        <div class="section" id="s2-code">
+            <div class="section-header">
+                <span class="tag tag-code">💻 代码示例</span>
+                <h3>四大场景实现</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:16px 0 8px;color:var(--text)">1. Cache-Aside 缓存模式</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">import</span> json
+<span class="kw">import</span> redis
+
+r = redis.<span class="fn">Redis</span>(host=<span class="str">'localhost'</span>, port=<span class="num">6379</span>, db=<span class="num">0</span>)
+
+<span class="kw">def</span> <span class="fn">get_user</span>(user_id: int) -> dict:
+    cache_key = <span class="str">f"user:{user_id}"</span>
+    cached = r.<span class="fn">get</span>(cache_key)          <span class="cm"># 1. 先查缓存</span>
+    <span class="kw">if</span> cached:
+        <span class="kw">return</span> json.<span class="fn">loads</span>(cached)        <span class="cm"># 命中 → 直接返回</span>
+
+    user = db.<span class="fn">query_user</span>(user_id)          <span class="cm"># 2. 未命中 → 查库</span>
+    r.<span class="fn">setex</span>(cache_key, <span class="num">3600</span>, json.<span class="fn">dumps</span>(user)) <span class="cm"># 3. 写缓存 + 设过期</span>
+    <span class="kw">return</span> user
+
+<span class="kw">def</span> <span class="fn">update_user</span>(user_id: int, data: dict):
+    db.<span class="fn">update_user</span>(user_id, data)         <span class="cm"># 1. 先写库</span>
+    r.<span class="fn">delete</span>(<span class="str">f"user:{user_id}"</span>)          <span class="cm"># 2. 删缓存（下次读时重建）</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">2. 分布式 Session（滑动过期）</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">import</span> uuid, json
+SESSION_EXPIRE = <span class="num">1800</span>  <span class="cm"># 30分钟</span>
+
+<span class="kw">def</span> <span class="fn">create_session</span>(user_id: int, role: str) -> str:
+    session_id = str(uuid.<span class="fn">uuid4</span>())
+    data = {<span class="str">"user_id"</span>: user_id, <span class="str">"role"</span>: role}
+    r.<span class="fn">setex</span>(<span class="str">f"session:{session_id}"</span>, SESSION_EXPIRE, json.<span class="fn">dumps</span>(data))
+    <span class="kw">return</span> session_id
+
+<span class="kw">def</span> <span class="fn">get_session</span>(session_id: str) -> dict | <span class="kw">None</span>:
+    data = r.<span class="fn">get</span>(<span class="str">f"session:{session_id}"</span>)
+    <span class="kw">if not</span> data:
+        <span class="kw">return None</span>
+    r.<span class="fn">expire</span>(<span class="str">f"session:{session_id}"</span>, SESSION_EXPIRE)  <span class="cm"># 滑动过期</span>
+    <span class="kw">return</span> json.<span class="fn">loads</span>(data)</code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">3. 排行榜（ZSet）</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">def</span> <span class="fn">add_score</span>(player_id: int, points: int):
+    r.<span class="fn">zincrby</span>(<span class="str">"leaderboard:game:weekly"</span>, points, <span class="str">f"player:{player_id}"</span>)
+
+<span class="kw">def</span> <span class="fn">get_top_n</span>(n: int = <span class="num">10</span>) -> list:
+    results = r.<span class="fn">zrevrange</span>(<span class="str">"leaderboard:game:weekly"</span>, <span class="num">0</span>, n<span class="op">-</span><span class="num">1</span>, withscores=True)
+    <span class="kw">return</span> [{<span class="str">"player"</span>: m.<span class="fn">decode</span>(), <span class="str">"score"</span>: int(s)} <span class="kw">for</span> m, s <span class="kw">in</span> results]
+
+<span class="kw">def</span> <span class="fn">get_rank</span>(player_id: int) -> int | <span class="kw">None</span>:
+    rank = r.<span class="fn">zrevrank</span>(<span class="str">"leaderboard:game:weekly"</span>, <span class="str">f"player:{player_id}"</span>)
+    <span class="kw">return</span> rank <span class="op">+</span> <span class="num">1</span> <span class="kw">if</span> rank <span class="kw">is not None else None</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">4. 分布式锁（SET NX EX + Lua 释放）</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">def</span> <span class="fn">acquire_lock</span>(lock_key: str, expire: int = <span class="num">10</span>) -> str | <span class="kw">None</span>:
+    lock_value = str(uuid.<span class="fn">uuid4</span>())  <span class="cm"># 唯一标识，防止误删</span>
+    result = r.<span class="fn">set</span>(lock_key, lock_value, nx=True, ex=expire)
+    <span class="kw">return</span> lock_value <span class="kw">if</span> result <span class="kw">else None</span>
+
+<span class="kw">def</span> <span class="fn">release_lock</span>(lock_key: str, lock_value: str) -> bool:
+    lua = <span class="str">"""
+    if redis.call("GET", KEYS[1]) == ARGV[1] then
+        return redis.call("DEL", KEYS[1])
+    else
+        return 0
+    end
+    """</span>
+    <span class="kw">return</span> bool(r.<span class="fn">eval</span>(lua, <span class="num">1</span>, lock_key, lock_value))</code></pre>
+
+                <div class="table-wrap">
+                <table>
+                    <caption style="text-align:left;font-weight:bold;padding:8px 14px;color:var(--text)">场景对比总结</caption>
+                    <thead><tr><th>场景</th><th>结构</th><th>核心命令</th><th>关键设计</th></tr></thead>
+                    <tbody>
+                    <tr><td>数据缓存</td><td>String</td><td>SETEX/GET/DEL</td><td>Cache-Aside，写时删缓存</td></tr>
+                    <tr><td>Session</td><td>String(JSON)</td><td>SETEX/GET/EXPIRE</td><td>滑动过期，分布式共享</td></tr>
+                    <tr><td>排行榜</td><td>ZSet</td><td>ZINCRBY/ZREVRANGE</td><td>Key 按时间维度区分</td></tr>
+                    <tr><td>分布式锁</td><td>String</td><td>SET NX EX / Lua DEL</td><td>唯一 value + Lua 原子释放</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⚠️ 常见误区 -->
+        <div class="section" id="s2-caution">
+            <div class="section-header">
+                <span class="tag tag-caution">⚠️ 常见误区</span>
+                <h3>避坑指南</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap">
+                <table class="caution-table">
+                    <thead><tr><th>❌ 误区</th><th>✅ 纠正</th></tr></thead>
+                    <tbody>
+                    <tr><td>写操作后更新缓存而非删除缓存</td><td>并发写时更新缓存导致数据不一致，删缓存更安全</td></tr>
+                    <tr><td>缓存永不过期，反正内存够用</td><td>内存终有上限，不设过期 → OOM。低频数据过期时间可长但必须设</td></tr>
+                    <tr><td>锁过期时间设得足够短就行</td><td>业务没执行完锁就到期 → 其他请求进入临界区 → 并发安全问题</td></tr>
+                    <tr><td>锁释放时直接 DEL，不验证身份</td><td>A 的锁超时、B 获取锁后，A 再 DEL 会误删 B 的锁。必须用 Lua 验证</td></tr>
+                    <tr><td>Session 存了就不用管过期</td><td>用户操作中突然登出体验极差。每次访问应刷新 TTL（滑动过期）</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✏️ 自测题 -->
+        <div class="section" id="s2-quiz">
+            <div class="section-header">
+                <span class="tag tag-quiz">✏️ 自测题</span>
+                <h3>场景自测（4 题）</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="quiz-item" data-answer="C">
+                    <p class="q-title">Q1. Cache-Aside 模式下，写操作的正确顺序是？</p>
+                    <label><input type="radio" name="s2q1" value="A"> A. 先删缓存 → 再写数据库</label>
+                    <label><input type="radio" name="s2q1" value="B"> B. 先更新缓存 → 再写数据库</label>
+                    <label><input type="radio" name="s2q1" value="C"> C. 先写数据库 → 再删除缓存</label>
+                    <label><input type="radio" name="s2q1" value="D"> D. 数据库和缓存同时写入（双写）</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="D">
+                    <p class="q-title">Q2. 分布式锁设计中，SETNX 和 EXPIRE 为什么要用一条命令完成？</p>
+                    <label><input type="radio" name="s2q2" value="A"> A. 减少网络开销，一次 RTT 就够了</label>
+                    <label><input type="radio" name="s2q2" value="B"> B. Redis 6.0 后 SETNX 已废弃</label>
+                    <label><input type="radio" name="s2q2" value="C"> C. 分两步执行错误率更高</label>
+                    <label><input type="radio" name="s2q2" value="D"> D. 两步之间若进程崩溃 → Key 永不过期 → 死锁</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="B">
+                    <p class="q-title">Q3. 关于排行榜场景，以下设计错误的是？</p>
+                    <label><input type="radio" name="s2q3" value="A"> A. 用 ZINCRBY 原子地更新玩家分数</label>
+                    <label><input type="radio" name="s2q3" value="B"> B. 日榜和周榜共用同一个 Key 以节省内存</label>
+                    <label><input type="radio" name="s2q3" value="C"> C. 用 ZREVRANGE 获取 Top N（倒序排列）</label>
+                    <label><input type="radio" name="s2q3" value="D"> D. 用 ZREVRANK 查询某玩家的当前排名</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="A">
+                    <p class="q-title">Q4. Session 的"滑动过期"指的是？</p>
+                    <label><input type="radio" name="s2q4" value="A"> A. 用户每次活动时刷新 TTL，避免操作中突然登出</label>
+                    <label><input type="radio" name="s2q4" value="B"> B. 根据用户活跃度动态调整过期时间</label>
+                    <label><input type="radio" name="s2q4" value="C"> C. 过期时间按等差数列递增</label>
+                    <label><input type="radio" name="s2q4" value="D"> D. 不同用户类型分配不同过期时间</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-btns">
+                    <button class="primary" onclick="submitQuiz(this)">提交</button>
+                    <button onclick="resetQuiz(this)">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== s3: 缓存三大问题 ======================== -->
+    <section class="topic-section" id="s3">
+        <div class="topic-header">
+            <span class="topic-num">3</span>
+            <h2>缓存三大问题：穿透、击穿、雪崩</h2>
+        </div>
+        <div class="topic-desc">穿透/击穿/雪崩：三种缓存崩塌的脸，对应三种防护手段，面试与生产都绕不开。</div>
+
+        <!-- 🎯 学习目标 -->
+        <div class="section open" id="s3-goal">
+            <div class="section-header">
+                <span class="tag tag-goal">🎯 学习目标</span>
+                <h3>学完本节你将掌握</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <ul class="goal-list">
+                    <li>能区分穿透、击穿、雪崩的触发条件和影响范围</li>
+                    <li>能为每种问题选择最合适的解决方案</li>
+                    <li>能解释布隆过滤器的"一定不存在 vs 可能存在"原理</li>
+                    <li>能写出逻辑过期和互斥锁的核心代码</li>
+                </ul>
+                <div class="callout callout-info">
+                    <strong>🔗 与后端开发的关联：</strong>这是 Redis 面试必考题，也是生产环境最常见的稳定性隐患。不懂这三个问题就去维护缓存系统，等于开车不买保险——出事故只是时间问题。
+                </div>
+            </div>
+        </div>
+
+        <!-- 📖 核心概念 -->
+        <div class="section open" id="s3-concept">
+            <div class="section-header">
+                <span class="tag tag-concept">📖 核心概念</span>
+                <h3>三问题对比与原理图解</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:12px 0 8px;color:var(--text)">一、缓存穿透 — 查不存在的数据</h4>
+                <pre class="ascii-diagram">
+请求: GET /product/-1（数据库中不存在的 ID）
+  ↓
+查 Redis → Miss（从未缓存过）
+  ↓
+查 MySQL → 不存在（NULL）
+  ↓
+什么都没缓存 ← 每次相同请求都走完整链路
+  ↓
+恶意攻击：构造 -1、0、随机字符串狂发请求 → 数据库被打爆</pre>
+                <p><strong>解决方案：</strong></p>
+                <p>① 缓存空值：查到 NULL 也写入 Redis，设短过期（5 分钟）。缺点：攻击者用无穷不同 ID 会填满 Redis。</p>
+                <p>② <strong>布隆过滤器</strong> ⭐ 推荐：在 Redis 前加一层，存储所有合法 ID。请求先进布隆 → 不在则直接返回 404。</p>
+
+                <pre class="ascii-diagram">
+布隆过滤器原理：
+  存数据: ID=1001 → hash1→bit[3]=1, hash2→bit[7]=1, hash3→bit[15]=1
+  查数据: ID=1001 → 查 bit[3]、bit[7]、bit[15] 是否都为 1
+          ✓ 都为 1 → "可能存在"（有误判率 0.1%~1%）
+          ✗ 任一位为 0 → "一定不存在"（100% 准确）
+特点：占用极少内存，不支持删除，误判率可控</pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">二、缓存击穿 — 热点 Key 突然过期</h4>
+                <pre class="ascii-diagram">
+T 时刻：热点 Key "product:1001" 过期
+  ↓
+1000 个并发请求同时查缓存 → 全部 Miss
+  ↓
+1000 个请求同时查数据库 ← 击穿！
+  ↓
+数据库可能崩溃（瞬时并发太高）</pre>
+                <p><strong>解决方案：</strong>① 互斥锁：缓存 Miss 时只允许一个请求去查库，其他等待。② <strong>逻辑过期</strong> ⭐：缓存永不过期，value 存逻辑过期时间，过期后异步更新，当前请求返回旧数据。</p>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">三、缓存雪崩 — 大量 Key 同时过期</h4>
+                <pre class="ascii-diagram">
+场景 A：整点批量刷新，所有 Key 设相同 TTL=1h
+       → 1小时后全部同时过期 → 雪崩
+场景 B：Redis 服务器宕机
+       → 所有请求没有缓存层 → 全打数据库 → 系统崩溃</pre>
+                <p><strong>解决方案：</strong>① 过期时间加随机抖动（±20%）。② 热点数据永不过期 + 后台定时刷新。③ Redis 高可用部署（主从+哨兵/Cluster）。</p>
+
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>问题</th><th>触发条件</th><th>影响范围</th><th>核心解决方案</th></tr></thead>
+                    <tbody>
+                    <tr><td><strong>穿透</strong></td><td>查询不存在的数据</td><td>每次特定 Key</td><td>布隆过滤器 / 缓存空值</td></tr>
+                    <tr><td><strong>击穿</strong></td><td>热点 Key 突然过期</td><td>某个热点 Key 并发</td><td>互斥锁 / 逻辑过期</td></tr>
+                    <tr><td><strong>雪崩</strong></td><td>大量 Key 同时过期或宕机</td><td>整个系统</td><td>随机 TTL / 永不过期 / 高可用</td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <div class="definition" style="border-left-color:#2563eb">
+                    <strong>🧠 记忆口诀：</strong><br>
+                    <strong>穿透</strong> → 根本没有 → 用布隆过滤器拦在门口<br>
+                    <strong>击穿</strong> → 热点消失 → 用锁保护，一个人去取数据<br>
+                    <strong>雪崩</strong> → 集体失效 → 时间错开，不要集体退场
+                </div>
+            </div>
+        </div>
+
+        <!-- 💻 代码示例 -->
+        <div class="section" id="s3-code">
+            <div class="section-header">
+                <span class="tag tag-code">💻 代码示例</span>
+                <h3>解决方案实现</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:16px 0 8px;color:var(--text)">1. 缓存穿透 — 缓存空值方案</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">def</span> <span class="fn">get_product</span>(product_id: int) -> dict | <span class="kw">None</span>:
+    cache_key = <span class="str">f"product:{product_id}"</span>
+    cached = r.<span class="fn">get</span>(cache_key)
+    <span class="kw">if</span> cached <span class="kw">is not None</span>:
+        <span class="kw">if</span> cached == <span class="str">b"NULL"</span>:           <span class="cm"># 空值标记</span>
+            <span class="kw">return None</span>
+        <span class="kw">return</span> json.<span class="fn">loads</span>(cached)
+
+    product = db.<span class="fn">get_product</span>(product_id)
+    <span class="kw">if</span> product <span class="kw">is None</span>:
+        r.<span class="fn">setex</span>(cache_key, <span class="num">300</span>, <span class="str">"NULL"</span>)  <span class="cm"># 缓存空值 5 分钟</span>
+        <span class="kw">return None</span>
+    r.<span class="fn">setex</span>(cache_key, <span class="num">3600</span>, json.<span class="fn">dumps</span>(product))
+    <span class="kw">return</span> product</code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">2. 缓存击穿 — 互斥锁方案</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">def</span> <span class="fn">get_hot_product</span>(product_id: int) -> dict | <span class="kw">None</span>:
+    cache_key = <span class="str">f"product:{product_id}"</span>
+    lock_key  = <span class="str">f"lock:product:{product_id}"</span>
+
+    cached = r.<span class="fn">get</span>(cache_key)
+    <span class="kw">if</span> cached:
+        <span class="kw">return</span> json.<span class="fn">loads</span>(cached)
+
+    <span class="cm"># 缓存 Miss，尝试获取互斥锁</span>
+    lock_val = str(uuid.<span class="fn">uuid4</span>())
+    <span class="kw">if</span> r.<span class="fn">set</span>(lock_key, lock_val, nx=True, ex=<span class="num">5</span>):
+        <span class="kw">try</span>:
+            product = db.<span class="fn">get_product</span>(product_id)  <span class="cm"># 只有一人查库</span>
+            <span class="kw">if</span> product:
+                r.<span class="fn">setex</span>(cache_key, <span class="num">3600</span>, json.<span class="fn">dumps</span>(product))
+            <span class="kw">return</span> product
+        <span class="kw">finally</span>:
+            release_lock(lock_key, lock_val)       <span class="cm"># Lua 原子释放</span>
+    <span class="kw">else</span>:
+        time.<span class="fn">sleep</span>(<span class="num">0.05</span>)                        <span class="cm"># 等待后重试</span>
+        <span class="kw">return</span> get_hot_product(product_id)</code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">3. 缓存击穿 — 逻辑过期方案 ⭐</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">def</span> <span class="fn">get_hot_product_v2</span>(product_id: int) -> dict | <span class="kw">None</span>:
+    cache_key = <span class="str">f"product:{product_id}"</span>
+    cached = r.<span class="fn">get</span>(cache_key)
+    <span class="kw">if not</span> cached: <span class="kw">return None</span>
+
+    data = json.<span class="fn">loads</span>(cached)
+    <span class="kw">if</span> time.<span class="fn">time</span>() > data[<span class="str">"__expire_at__"</span>]:    <span class="cm"># 逻辑过期</span>
+        lock_key = <span class="str">f"lock:product:{product_id}"</span>
+        <span class="kw">if</span> r.<span class="fn">set</span>(lock_key, <span class="str">"1"</span>, nx=True, ex=<span class="num">5</span>):
+            threading.<span class="fn">Thread</span>(target=rebuild, args=(product_id,)).<span class="fn">start</span>()
+
+    <span class="cm"># 返回旧数据（允许短暂不一致，但避免击穿）</span>
+    <span class="kw">return</span> {k:v <span class="kw">for</span> k,v <span class="kw">in</span> data.<span class="fn">items</span>() <span class="kw">if</span> k != <span class="str">"__expire_at__"</span>}</code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">4. 缓存雪崩 — 过期时间随机抖动</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="kw">import</span> random
+
+<span class="kw">def</span> <span class="fn">set_cache_with_jitter</span>(key: str, value, base_ttl: int):
+    jitter = random.<span class="fn">randint</span>(<span class="op">-</span>base_ttl <span class="op">//</span> <span class="num">5</span>, base_ttl <span class="op">//</span> <span class="num">5</span>)
+    actual_ttl = base_ttl <span class="op">+</span> jitter
+    r.<span class="fn">setex</span>(key, actual_ttl, json.<span class="fn">dumps</span>(value))
+    <span class="cm"># 原来：3600 秒，所有 Key 同时过期 → 雪崩</span>
+    <span class="cm"># 现在：2880~4320 秒随机 → 过期时间分散</span></code></pre>
+            </div>
+        </div>
+
+        <!-- ⚠️ 常见误区 -->
+        <div class="section" id="s3-caution">
+            <div class="section-header">
+                <span class="tag tag-caution">⚠️ 常见误区</span>
+                <h3>避坑指南</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap">
+                <table class="caution-table">
+                    <thead><tr><th>❌ 误区</th><th>✅ 纠正</th></tr></thead>
+                    <tbody>
+                    <tr><td>缓存空值防穿透但忘了设过期</td><td>空值不过期 → 真有数据后永远返回 null → 业务异常。必须设短 TTL</td></tr>
+                    <tr><td>互斥锁等待时间设太短（如 10ms）</td><td>数据库查询还没完成，其他线程就超时放弃了，等于没防</td></tr>
+                    <tr><td>部署时统一初始化缓存（相同 TTL）</td><td>系统启动时所有缓存同时写入、同时过期 → 雪崩定时炸弹</td></tr>
+                    <tr><td>布隆过滤器不清不楚就用</td><td>布隆不支持删除，商品下架后 ID 仍在 → 需要周期性重建</td></tr>
+                    <tr><td>认为穿透、击穿、雪崩是同一个东西</td><td>三者触发条件、影响范围、解决方案完全不同。面试混淆这三个直接挂</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✏️ 自测题 -->
+        <div class="section" id="s3-quiz">
+            <div class="section-header">
+                <span class="tag tag-quiz">✏️ 自测题</span>
+                <h3>综合自测（5 题）</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="quiz-item" data-answer="B">
+                    <p class="q-title">Q1. 攻击者用不存在的商品 ID 狂发请求导致数据库被打爆，这属于哪种问题？</p>
+                    <label><input type="radio" name="s3q1" value="A"> A. 缓存击穿</label>
+                    <label><input type="radio" name="s3q1" value="B"> B. 缓存穿透</label>
+                    <label><input type="radio" name="s3q1" value="C"> C. 缓存雪崩</label>
+                    <label><input type="radio" name="s3q1" value="D"> D. 缓存预热失败</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="C">
+                    <p class="q-title">Q2. 关于布隆过滤器，以下说法正确的是？</p>
+                    <label><input type="radio" name="s3q2" value="A"> A. 说"一定存在"就是一定存在，100% 准确</label>
+                    <label><input type="radio" name="s3q2" value="B"> B. 支持删除操作，可随时移除已下架的商品 ID</label>
+                    <label><input type="radio" name="s3q2" value="C"> C. 说"一定不存在"是 100% 准确的，不存在误判</label>
+                    <label><input type="radio" name="s3q2" value="D"> D. 占用内存与存储的数据量成正比</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="A">
+                    <p class="q-title">Q3. 逻辑过期方案相比互斥锁方案的核心优势是？</p>
+                    <label><input type="radio" name="s3q3" value="A"> A. 不阻塞用户请求，体验更好（返回旧数据 + 异步更新）</label>
+                    <label><input type="radio" name="s3q3" value="B"> B. 数据一致性更强，永远不会返回过期数据</label>
+                    <label><input type="radio" name="s3q3" value="C"> C. 实现更简单，代码量更少</label>
+                    <label><input type="radio" name="s3q3" value="D"> D. 不依赖 Redis，纯应用层方案</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="D">
+                    <p class="q-title">Q4. 以下哪种措施对防止缓存雪崩最有效？</p>
+                    <label><input type="radio" name="s3q4" value="A"> A. 使用布隆过滤器过滤非法请求</label>
+                    <label><input type="radio" name="s3q4" value="B"> B. 对热点 Key 加互斥锁</label>
+                    <label><input type="radio" name="s3q4" value="C"> C. 缓存空值并设短过期</label>
+                    <label><input type="radio" name="s3q4" value="D"> D. 过期时间加随机抖动 + 高可用部署</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="B">
+                    <p class="q-title">Q5. 一个热点商品缓存刚好过期，1000 个用户同时刷新页面，数据库瞬时 QPS 飙升。这是？</p>
+                    <label><input type="radio" name="s3q5" value="A"> A. 缓存穿透 — 因为请求穿过了缓存层</label>
+                    <label><input type="radio" name="s3q5" value="B"> B. 缓存击穿 — 热点 Key 过期导致并发冲击数据库</label>
+                    <label><input type="radio" name="s3q5" value="C"> C. 缓存雪崩 — 大量请求同时到达</label>
+                    <label><input type="radio" name="s3q5" value="D"> D. DDoS 攻击 — 不符合正常流量特征</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-btns">
+                    <button class="primary" onclick="submitQuiz(this)">提交</button>
+                    <button onclick="resetQuiz(this)">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== s4: 过期淘汰与持久化 ======================== -->
+    <section class="topic-section" id="s4">
+        <div class="topic-header">
+            <span class="topic-num">4</span>
+            <h2>过期策略、淘汰策略与持久化</h2>
+        </div>
+        <div class="topic-desc">过期、淘汰、持久化：决定 Redis 内存会不会爆、重启会不会丢数据。</div>
+
+        <!-- 🎯 学习目标 -->
+        <div class="section open" id="s4-goal">
+            <div class="section-header">
+                <span class="tag tag-goal">🎯 学习目标</span>
+                <h3>学完本节你将掌握</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <ul class="goal-list">
+                    <li>能解释惰性删除和定期删除的协作方式</li>
+                    <li>能从 8 种淘汰策略中为生产环境做出推荐选择</li>
+                    <li>能对比 RDB 和 AOF 的优缺点和适用场景</li>
+                    <li>能写出生产环境推荐的持久化配置</li>
+                </ul>
+                <div class="callout callout-info">
+                    <strong>🔗 与后端开发的关联：</strong>不懂过期/淘汰策略 → 内存打满 → OOM Kill → 服务中断。不懂持久化 → Redis 重启 → 缓存全丢 → 数据库被瞬间打爆。这两个是生产 Redis 运维的基础生存技能。
+                </div>
+            </div>
+        </div>
+
+        <!-- 📖 核心概念 -->
+        <div class="section open" id="s4-concept">
+            <div class="section-header">
+                <span class="tag tag-concept">📖 核心概念</span>
+                <h3>过期、淘汰与持久化全景</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:12px 0 8px;color:var(--text)">一、Key 过期策略（两种组合）</h4>
+                <pre class="ascii-diagram">
+┌──────────────────────────────────────────────────────┐
+│              Redis Key 过期策略（双机制协作）           │
+├─────────────────────┬────────────────────────────────┤
+│   惰性删除           │        定期删除                 │
+│   (Lazy Expiration) │   (Periodic Expiration)        │
+├─────────────────────┼────────────────────────────────┤
+│ 访问 Key 时才检查     │ 每 100ms 随机抽取一批           │
+│ 过期 → 删除 + 返null │ 检查并删除已过期的 Key           │
+│                     │                                │
+│ 优点: 零 CPU 开销     │ 优点: 主动回收内存              │
+│ 缺点: 不访问不删 →   │ 缺点: 随机抽取 → 不保证         │
+│      内存泄漏风险     │      全部过期 Key 被清理        │
+└─────────────────────┴────────────────────────────────┘
+协作：惰性删除兜底（访问即检查），定期删除扫墓（定时主动清理）</pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">二、内存淘汰策略（8 种）</h4>
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>策略</th><th>说明</th><th>适用场景</th></tr></thead>
+                    <tbody>
+                    <tr><td><code>noeviction</code></td><td>不淘汰，内存满时报错</td><td>数据不允许丢失</td></tr>
+                    <tr><td><code>allkeys-lru</code> ⭐</td><td>淘汰最近最少使用的</td><td><strong>通用缓存场景，最常用</strong></td></tr>
+                    <tr><td><code>volatile-lru</code></td><td>仅淘汰有过期时间中最少使用的</td><td>混合存储（持久+缓存）</td></tr>
+                    <tr><td><code>allkeys-lfu</code></td><td>淘汰访问频率最低的</td><td>热点数据分布不均</td></tr>
+                    <tr><td><code>volatile-lfu</code></td><td>有过期时间中淘汰频率最低的</td><td>-</td></tr>
+                    <tr><td><code>allkeys-random</code></td><td>随机淘汰任意 Key</td><td>数据均匀访问</td></tr>
+                    <tr><td><code>volatile-random</code></td><td>随机淘汰有过期时间的 Key</td><td>-</td></tr>
+                    <tr><td><code>volatile-ttl</code></td><td>淘汰剩余存活时间最短的</td><td>希望快过期的先淘汰</td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <details>
+                    <summary>🔍 LRU vs LFU 深度对比</summary>
+                    <div class="table-wrap" style="margin-top:8px">
+                    <table>
+                        <thead><tr><th>维度</th><th>LRU</th><th>LFU</th></tr></thead>
+                        <tbody>
+                        <tr><td>含义</td><td>Least Recently Used（最久未访问）</td><td>Least Frequently Used（最少被访问）</td></tr>
+                        <tr><td>淘汰逻辑</td><td>上次访问距今最久的淘汰</td><td>总访问次数最少的淘汰</td></tr>
+                        <tr><td>缺点</td><td>热点数据可能被一次批量操作冲掉</td><td>新数据访问少容易被误淘汰</td></tr>
+                        <tr><td>Redis 版本</td><td>所有版本</td><td>Redis 4.0+</td></tr>
+                        <tr><td>推荐</td><td>通用缓存首选</td><td>热点数据分布严重不均时</td></tr>
+                    </tbody>
+                    </table>
+                    </div>
+                </details>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">三、持久化：RDB vs AOF</h4>
+                <pre class="ascii-diagram">
+┌────────────────────────────────────────────────────────┐
+│                    RDB（快照持久化）                       │
+│  主进程 fork() → 子进程遍历内存 → 写入 dump.rdb           │
+│  技术: Copy-On-Write，子进程看到的是 fork 时刻的快照        │
+│                                                         │
+│  触发: save 3600 1  # 3600s内1次修改                    │
+│        save 300 100  # 300s内100次修改                   │
+│        save 60 10000 # 60s内10000次修改                  │
+│        手动: BGSAVE（异步）/ SAVE（同步，禁用）            │
+├────────────────────────────────────────────────────────┤
+│                    AOF（追加日志持久化）                    │
+│  每条写命令追加写入 appendonly.aof → 恢复时重放所有命令     │
+│                                                         │
+│  fsync 策略:                                            │
+│    always   — 每条都刷盘，最安全，最慢                     │
+│    everysec — 每秒刷盘，最多丢1秒 ⭐ 默认推荐              │
+│    no       — OS 决定，性能最好，可能丢较多                 │
+│                                                         │
+│  AOF 重写: BGREWRITEAOF 压缩日志（防止文件无限增长）        │
+└────────────────────────────────────────────────────────┘</pre>
+
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>对比维度</th><th>RDB</th><th>AOF</th></tr></thead>
+                    <tbody>
+                    <tr><td>持久化方式</td><td>快照（全量）</td><td>日志（增量）</td></tr>
+                    <tr><td>数据丢失</td><td>快照间隔内的数据会丢</td><td>最多丢失 1 秒</td></tr>
+                    <tr><td>文件体积</td><td>小，紧凑</td><td>大，文本格式</td></tr>
+                    <tr><td>恢复速度</td><td>快</td><td>慢（重放命令）</td></tr>
+                    <tr><td>适用场景</td><td>定期备份、允许少量丢失</td><td>数据安全性要求高</td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <div class="definition" style="border-left-color:var(--correct)">
+                    <strong>⭐ 生产推荐：RDB + AOF 混合持久化</strong>（Redis 4.0+，<code>aof-use-rdb-preamble yes</code>）<br>
+                    AOF 文件头部存储 RDB 快照 + 后续追加增量 AOF 日志 → 恢复速度接近 RDB，数据完整性接近 AOF。
+                </div>
+            </div>
+        </div>
+
+        <!-- 💻 代码示例 -->
+        <div class="section" id="s4-code">
+            <div class="section-header">
+                <span class="tag tag-code">💻 代码示例</span>
+                <h3>生产配置与命令</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <h4 style="margin:16px 0 8px;color:var(--text)">1. 完整生产推荐配置</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># redis.conf 生产推荐配置片段</span>
+
+<span class="cm"># ── 内存限制 ──</span>
+maxmemory <span class="num">4gb</span>
+maxmemory-policy allkeys-lru
+
+<span class="cm"># ── RDB 快照备份 ──</span>
+save <span class="num">3600</span> <span class="num">1</span>
+save <span class="num">300</span> <span class="num">100</span>
+dbfilename dump.rdb
+dir /data/redis/
+
+<span class="cm"># ── AOF 日志持久化 ──</span>
+appendonly yes
+appendfilename <span class="str">"appendonly.aof"</span>
+appendfsync everysec
+auto-aof-rewrite-percentage <span class="num">100</span>
+auto-aof-rewrite-min-size <span class="num">64mb</span>
+aof-use-rdb-preamble yes       <span class="cm"># 混合持久化 ⭐</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">2. Python 客户端动态配置</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 动态修改淘汰策略（临时生效，重启恢复配置文件的值）</span>
+r.<span class="fn">config_set</span>(<span class="str">"maxmemory-policy"</span>, <span class="str">"allkeys-lru"</span>)
+
+<span class="cm"># 查看内存信息</span>
+info = r.<span class="fn">info</span>(<span class="str">"memory"</span>)
+print(info[<span class="str">"used_memory_human"</span>])      <span class="cm"># → "1.2G"</span>
+print(info[<span class="str">"maxmemory_human"</span>])        <span class="cm"># → "4.0G"</span>
+
+<span class="cm"># 手动触发持久化</span>
+r.<span class="fn">bgsave</span>()                           <span class="cm"># 异步 RDB 快照</span>
+r.<span class="fn">bgrewriteaof</span>()                     <span class="cm"># AOF 重写</span>
+
+<span class="cm"># 查看持久化状态</span>
+persist = r.<span class="fn">info</span>(<span class="str">"persistence"</span>)
+print(persist[<span class="str">"rdb_last_bgsave_status"</span>]) <span class="cm"># → "ok"</span></code></pre>
+
+                <h4 style="margin:16px 0 8px;color:var(--text)">3. 过期 Key 操作命令</h4>
+                <pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><code><span class="cm"># 设置/查看过期时间</span>
+<span class="fn">EXPIRE</span>  key <span class="num">3600</span>          <span class="cm"># 设 3600 秒后过期</span>
+<span class="fn">TTL</span>     key              <span class="cm"># 查看剩余秒数（-1:永不过期, -2:不存在）</span>
+<span class="fn">PERSIST</span> key              <span class="cm"># 移除过期时间（变永不过期）</span>
+<span class="fn">EXPIREAT</span> key <span class="num">1717401600</span> <span class="cm"># 指定 Unix 时间戳过期</span>
+
+<span class="cm"># 查看 Key 底层编码</span>
+<span class="fn">OBJECT</span> ENCODING key      <span class="cm"># → "embstr" / "ziplist" / "skiplist" 等</span>
+
+<span class="cm"># 安全扫描替代 KEYs *</span>
+<span class="fn">SCAN</span> <span class="num">0</span> COUNT <span class="num">10</span>         <span class="cm"># 游标迭代（生产环境替代 KEYS *）</span></code></pre>
+            </div>
+        </div>
+
+        <!-- ⚠️ 常见误区 -->
+        <div class="section" id="s4-caution">
+            <div class="section-header">
+                <span class="tag tag-caution">⚠️ 常见误区</span>
+                <h3>避坑指南</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap">
+                <table class="caution-table">
+                    <thead><tr><th>❌ 误区</th><th>✅ 纠正</th></tr></thead>
+                    <tbody>
+                    <tr><td>生产环境未配置 maxmemory</td><td>内存用尽 → OOM Kill → 服务中断。必须设 maxmemory + 淘汰策略</td></tr>
+                    <tr><td>RDB save 全部注释掉 + AOF 也没开</td><td>重启直接丢所有数据！至少开一个持久化方案</td></tr>
+                    <tr><td>AOF 文件大到几十 GB 不管</td><td>定期触发 BGREWRITEAOF 或合理配置自动重写阈值</td></tr>
+                    <tr><td>大内存（>10GB）fork() 阻塞不关心</td><td>fork() 会短暂阻塞 Redis 主线程，内存越大阻塞越久，需监控慢日志</td></tr>
+                    <tr><td>持久化目录权限不对，Redis 静默失败</td><td>启动后检查 INFO persistence 确认 rdb_last_bgsave_status 为 ok</td></tr>
+                    </tbody>
+                </table>
+                </div>
+                <div class="callout callout-danger">
+                    <strong>🚨 真实事故：</strong>某团队 RDB 配置被注释、AOF 未开启，运维重启 Redis 后发现所有缓存数据丢失。由于缓存预热脚本也有 bug，数据库瞬间被请求打爆，P99 延迟从 5ms 飙升到 30 秒，服务不可用长达 40 分钟。
+                </div>
+            </div>
+        </div>
+
+        <!-- ✏️ 自测题 -->
+        <div class="section" id="s4-quiz">
+            <div class="section-header">
+                <span class="tag tag-quiz">✏️ 自测题</span>
+                <h3>进阶自测（4 题）</h3>
+                <span class="fold-icon">▼</span>
+            </div>
+            <div class="section-body">
+                <div class="quiz-item" data-answer="C">
+                    <p class="q-title">Q1. 纯缓存用途的 Redis 实例，推荐使用哪种淘汰策略？</p>
+                    <label><input type="radio" name="s4q1" value="A"> A. noeviction（不淘汰）</label>
+                    <label><input type="radio" name="s4q1" value="B"> B. volatile-ttl（淘汰剩余时间最短的）</label>
+                    <label><input type="radio" name="s4q1" value="C"> C. allkeys-lru（淘汰最近最少使用的）</label>
+                    <label><input type="radio" name="s4q1" value="D"> D. allkeys-random（随机淘汰）</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="D">
+                    <p class="q-title">Q2. Redis 同时采用惰性删除和定期删除的原因是？</p>
+                    <label><input type="radio" name="s4q2" value="A"> A. 双重保险，防止数据丢失</label>
+                    <label><input type="radio" name="s4q2" value="B"> B. 惰性删除保证速度，定期删除保证准确性</label>
+                    <label><input type="radio" name="s4q2" value="C"> C. 这是 Redis 的设计缺陷，未来版本会合并</label>
+                    <label><input type="radio" name="s4q2" value="D"> D. 惰性删除省 CPU 但可能内存泄漏，定期删除主动回收但随机不完整，互补</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="B">
+                    <p class="q-title">Q3. 关于 RDB 和 AOF 的对比，以下说法错误的是？</p>
+                    <label><input type="radio" name="s4q3" value="A"> A. RDB 恢复速度比 AOF 快</label>
+                    <label><input type="radio" name="s4q3" value="B"> B. RDB 可以做到数据零丢失</label>
+                    <label><input type="radio" name="s4q3" value="C"> C. AOF 文件通常比 RDB 大</label>
+                    <label><input type="radio" name="s4q3" value="D"> D. AOF appendfsync everysec 最多丢失 1 秒数据</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-item" data-answer="A">
+                    <p class="q-title">Q4. 混合持久化（aof-use-rdb-preamble）相比纯 AOF 的优势是？</p>
+                    <label><input type="radio" name="s4q4" value="A"> A. 恢复速度接近 RDB，数据完整性接近 AOF</label>
+                    <label><input type="radio" name="s4q4" value="B"> B. AOF 文件不再增长，不需要重写</label>
+                    <label><input type="radio" name="s4q4" value="C"> C. 完全替代 RDB，可以关闭 RDB 配置</label>
+                    <label><input type="radio" name="s4q4" value="D"> D. 内存占用减半</label>
+                    <div class="quiz-feedback"></div>
+                </div>
+                <div class="quiz-btns">
+                    <button class="primary" onclick="submitQuiz(this)">提交</button>
+                    <button onclick="resetQuiz(this)">再次作答</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======================== 📎 证据追溯区 ======================== -->
+    <section id="evidence">
+        <h2>📎 证据追溯</h2>
+        <p class="ev-desc">以下列出本页每个核心结论的原始来源，确保可验证。标注"⚠️ 待确认"的为 AI 基于上下文推理，非原文直接支持。</p>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+            <tbody>
+            <tr><td>Redis 5 种数据结构：String/Hash/List/Set/ZSet</td><td>1.五种数据结构.md</td><td>第 1 章 · 概念解释</td></tr>
+            <tr><td>String 底层三种编码：int/embstr/raw</td><td>1.五种数据结构.md</td><td>第 1 章 · String 部分末尾</td></tr>
+            <tr><td>List 底层为双向链表，两端操作 O(1)</td><td>1.五种数据结构.md</td><td>第 3 节 · List 开头</td></tr>
+            <tr><td>ZSet 底层为 skiplist + hashtable</td><td>1.五种数据结构.md</td><td>⚠️ 待确认（原文未明确底层，基于 Redis 源码知识补充）</td></tr>
+            <tr><td>Cache-Aside 模式：读先查缓存、写先写库再删缓存</td><td>2.典型使用场景.md</td><td>场景一 · 缓存基本模式</td></tr>
+            <tr><td>分布式锁必须用 SET NX EX + Lua 脚本释放</td><td>2.典型使用场景.md</td><td>场景四 · 关键设计要点表格</td></tr>
+            <tr><td>Session 滑动过期：每次访问刷新 TTL</td><td>2.典型使用场景.md</td><td>场景二 · 代码示意 get_session()</td></tr>
+            <tr><td>缓存穿透三种解决方案：缓存空值/布隆过滤器/参数校验</td><td>3.缓存问题穿透击穿雪崩.md</td><td>一、缓存穿透 · 解决方案</td></tr>
+            <tr><td>布隆过滤器"一定不存在"100% 准确，"可能存在"有误判率</td><td>3.缓存问题穿透击穿雪崩.md</td><td>布隆过滤器原理段落</td></tr>
+            <tr><td>缓存击穿用互斥锁或逻辑过期方案</td><td>3.缓存问题穿透击穿雪崩.md</td><td>二、缓存击穿 · 解决方案</td></tr>
+            <tr><td>缓存雪崩用随机 TTL 抖动（±20%）</td><td>3.缓存问题穿透击穿雪崩.md</td><td>三、缓存雪崩 · 方案一</td></tr>
+            <tr><td>Redis 过期策略：惰性删除 + 定期删除双机制</td><td>4.过期淘汰策略与持久化.md</td><td>一、Key 过期策略</td></tr>
+            <tr><td>8 种淘汰策略，allkeys-lru 是纯缓存最常用</td><td>4.过期淘汰策略与持久化.md</td><td>二、内存淘汰策略 · 8 种策略表</td></tr>
+            <tr><td>RDB 用 fork() + Copy-On-Write 实现快照</td><td>4.过期淘汰策略与持久化.md</td><td>三、RDB 工作原理</td></tr>
+            <tr><td>混合持久化（4.0+）：RDB 头部 + AOF 增量</td><td>4.过期淘汰策略与持久化.md</td><td>五、生产推荐：混合持久化</td></tr>
+            <tr><td>4 个 Demo 脚本存在但 .py 文件缺失</td><td>demo/README.md</td><td>学习顺序表格</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <footer>
+        <p>Redis 章节复习页 · 基于 <code>阶段3_中间件技术/02_Redis</code> 生成 · 4 个理论文档 + 1 个 Demo README（.py 脚本缺失）</p>
+    </footer>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button id="back-to-top" aria-label="回到顶部">↑</button>
+
+<script>
+(function(){
+    /* ===== 进度条 ===== */
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', function(){
+        const h = document.documentElement;
+        const total = h.scrollHeight - h.clientHeight;
+        progressBar.style.width = total > 0 ? (h.scrollTop / total * 100) + '%' : '0%';
+    });
+
+    /* ===== 深色模式 ===== */
+    const themeToggle = document.getElementById('theme-toggle');
+    const mobileThemeBtn = document.getElementById('mobile-theme-btn');
+    function applyTheme(dark){
+        document.documentElement.classList.toggle('dark', dark);
+        var icon = dark ? '☀️' : '🌙';
+        if(themeToggle) themeToggle.textContent = icon;
+        if(mobileThemeBtn) mobileThemeBtn.textContent = icon;
+        try{ localStorage.setItem('redis-review-theme', dark ? 'dark' : 'light'); }catch(e){}
+    }
+    var saved = null;
+    try{ saved = localStorage.getItem('redis-review-theme'); }catch(e){}
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var isDark = saved === 'dark' || (!saved && prefersDark);
+    applyTheme(isDark);
+    if(themeToggle) themeToggle.addEventListener('click', function(){ applyTheme(!document.documentElement.classList.contains('dark')); });
+    if(mobileThemeBtn) mobileThemeBtn.addEventListener('click', function(){ applyTheme(!document.documentElement.classList.contains('dark')); });
+
+    /* ===== 回到顶部 ===== */
+    var backBtn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', function(){
+        backBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+    backBtn.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+
+    /* ===== 折叠展开（纯 CSS class，不设内联 style） ===== */
+    document.querySelectorAll('.section-header').forEach(function(header){
+        header.addEventListener('click', function(){
+            this.parentElement.classList.toggle('open');
+        });
+    });
+
+    /* ===== 侧栏高亮（IntersectionObserver） ===== */
+    var navLinks = document.querySelectorAll('#sidebar .nav-link, #sidebar .nav-topic');
+    var observer = new IntersectionObserver(function(entries){
+        var activeLink = null;
+        entries.forEach(function(e){
+            if(e.isIntersecting){
+                var id = e.target.id;
+                if(!id) return;
+                // 匹配 nav-link（五区块）或 nav-topic（节标题）
+                var link = document.querySelector('#sidebar a[href="#' + id + '"]');
+                if(link) activeLink = link;
+            }
+        });
+        if(activeLink){
+            navLinks.forEach(function(l){ l.classList.remove('active'); });
+            activeLink.classList.add('active');
+            // 联动高亮父级 nav-topic
+            var prev = activeLink.previousElementSibling;
+            while(prev){
+                if(prev.classList.contains('nav-topic')){
+                    prev.classList.add('active');
+                    break;
+                }
+                prev = prev.previousElementSibling;
+            }
+        }
+    }, {rootMargin: '-10% 0px -70% 0px', threshold: 0});
+    // 观察所有 topic-section 和 section（五区块）
+    document.querySelectorAll('.topic-section[id], .section[id]').forEach(function(el){ observer.observe(el); });
+
+    /* ===== 移动端汉堡菜单 ===== */
+    var sidebar = document.getElementById('sidebar');
+    var hamburger = document.getElementById('hamburger');
+    var overlay = document.getElementById('overlay');
+    var mobileBar = document.getElementById('mobile-bar');
+
+    function openSidebar(){
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar(){
+        sidebar.classList.remove('open');
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    if(hamburger){
+        hamburger.addEventListener('click', function(){
+            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+    }
+    if(overlay){
+        overlay.addEventListener('click', closeSidebar);
+    }
+    // 点击侧栏导航项关闭侧栏（移动端）
+    sidebar.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){
+            if(window.innerWidth <= 768) closeSidebar();
+        });
+    });
+    // resize 时清理状态
+    window.addEventListener('resize', function(){
+        if(window.innerWidth > 768) closeSidebar();
+    });
+
+    /* ===== 复制按钮 ===== */
+    window.copyCode = function(btn){
+        var pre = btn.parentElement;
+        var code = pre.querySelector('code');
+        var text = code ? code.innerText : pre.innerText.replace(/📋 复制\n?/,'');
+        navigator.clipboard.writeText(text).then(function(){
+            btn.textContent = '✅ 已复制';
+            setTimeout(function(){ btn.textContent = '📋 复制'; }, 1500);
+        }).catch(function(){
+            btn.textContent = '❌ 失败';
+            setTimeout(function(){ btn.textContent = '📋 复制'; }, 1500);
+        });
+    };
+
+    /* ===== 自测题 ===== */
+    window.submitQuiz = function(btn){
+        var container = btn.closest('.section-body');
+        var items = container.querySelectorAll('.quiz-item');
+        var total = items.length, correct = 0;
+        items.forEach(function(item){
+            var answer = item.getAttribute('data-answer');
+            var radios = item.querySelectorAll('input[type=radio]');
+            var fb = item.querySelector('.quiz-feedback');
+            var selected = null;
+            radios.forEach(function(r){ if(r.checked) selected = r.value; });
+            // 清除旧结果
+            fb.className = 'quiz-feedback';
+            fb.textContent = '';
+            if(!selected){
+                fb.className = 'quiz-feedback wrong';
+                fb.textContent = '⚠️ 未作答';
+                return;
+            }
+            if(selected === answer){
+                fb.className = 'quiz-feedback correct';
+                fb.textContent = '✅ 正确！答案：' + answer;
+                correct++;
+            } else {
+                fb.className = 'quiz-feedback wrong';
+                fb.textContent = '❌ 错误。你的选择：' + selected + '，正确答案：' + answer;
+            }
+        });
+    };
+    window.resetQuiz = function(btn){
+        var container = btn.closest('.section-body');
+        container.querySelectorAll('input[type=radio]').forEach(function(r){ r.checked = false; });
+        container.querySelectorAll('.quiz-feedback').forEach(function(fb){
+            fb.className = 'quiz-feedback';
+            fb.textContent = '';
+        });
+    };
+})();
+</script>
+</body>
+</html>

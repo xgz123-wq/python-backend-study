@@ -1,0 +1,157 @@
+# ============================================================
+# systemd 服务文件模板
+# ============================================================
+#
+# 本文件是 systemd 的服务配置模板，用于将 Python Web 应用
+# 注册为系统服务，实现：
+#   - 开机自动启动
+#   - 进程崩溃自动重启
+#   - 日志统一管理（systemd journal）
+#   - 资源限制和安全加固
+#
+# 使用方法：
+#   1. 将本文件复制到 /etc/systemd/system/myapp.service
+#   2. 修改下方配置（APP_NAME、路径等）
+#   3. 执行：sudo systemctl daemon-reload
+#   4. 执行：sudo systemctl enable --now myapp
+#
+# 常用命令：
+#   sudo systemctl start myapp    # 启动
+#   sudo systemctl stop myapp     # 停止
+#   sudo systemctl restart myapp  # 重启
+#   sudo systemctl status myapp   # 查看状态
+#   sudo journalctl -u myapp -f   # 查看日志
+# ============================================================
+
+[Unit]
+# 服务描述
+Description=MyApp - FastAPI Production Application
+
+# 启动顺序：在网络就绪后启动
+After=network.target network-online.target
+
+# 依赖网络在线状态
+Wants=network-online.target
+
+# 如果使用了本地 PostgreSQL，取消下面的注释
+# After=network.target postgresql.service
+# Wants=postgresql.service
+
+# 如果使用了本地 Redis，取消下面的注释
+# After=network.target redis.service
+# Wants=redis.service
+
+[Service]
+# ============================================================
+# 用户和组（不要用 root 运行应用！）
+# ============================================================
+User=www-data
+Group=www-data
+
+# ============================================================
+# 工作目录
+# ============================================================
+# 应用的根目录，所有相对路径都基于此目录
+WorkingDirectory=/opt/myapp
+
+# ============================================================
+# 环境变量
+# ============================================================
+# 方式一：从文件加载环境变量（推荐）
+EnvironmentFile=/opt/myapp/.env
+
+# 方式二：直接设置环境变量（不推荐，敏感信息会暴露在配置文件中）
+# Environment="APP_ENV=production"
+# Environment="DATABASE_URL=postgresql://user:pass@localhost/mydb"
+# Environment="SECRET_KEY=your-secret-key"
+
+# ============================================================
+# 启动命令
+# ============================================================
+# 使用虚拟环境中的 Gunicorn
+# -c 指定配置文件
+# 最后一个是应用的导入路径（模块:变量）
+ExecStart=/opt/myapp/venv/bin/gunicorn \
+    -c /opt/myapp/gunicorn_config.py \
+    app.main:app
+
+# ============================================================
+# 重启策略
+# ============================================================
+# always：无论退出码是什么，总是重启
+# on-failure：只在非零退出码或被信号杀死时重启
+# on-abnormal：只在被信号杀死、超时、watchdog 超时时重启
+Restart=always
+
+# 重启间隔（秒）
+# 避免进程频繁崩溃时不断重启（重启风暴）
+RestartSec=5
+
+# 启动超时（秒）
+# 如果服务在 TimeoutStartSec 内没有启动完成，systemd 认为启动失败
+TimeoutStartSec=30
+
+# 停止超时（秒）
+# 发送 SIGTERM 后等待进程优雅退出的时间
+# 超时后发送 SIGKILL 强制杀死
+TimeoutStopSec=30
+
+# ============================================================
+# 安全加固
+# ============================================================
+
+# 使用独立的 /tmp 目录（防止进程间通过 /tmp 通信）
+PrivateTmp=true
+
+# 保护系统目录（/usr、/boot 只读）
+ProtectSystem=strict
+
+# 禁止访问 /home、/root、/run/user
+ProtectHome=true
+
+# 禁止进程获取新权限（防止 setuid 攻击）
+NoNewPrivileges=true
+
+# 禁止修改内核参数
+ProtectKernelTunables=true
+
+# 禁止加载内核模块
+ProtectKernelModules=true
+
+# 禁止修改系统时钟
+ProtectClock=true
+
+# 限制可写目录（如果需要写入日志目录，取消注释并修改）
+# ReadWritePaths=/var/log/myapp
+
+# ============================================================
+# 资源限制（可选）
+# ============================================================
+
+# 内存限制（超过后 OOM Killer 会杀死进程）
+# MemoryMax=512M
+
+# CPU 限制（占单个 CPU 的百分比）
+# CPUQuota=80%
+
+# 打开文件数限制
+LimitNOFILE=65536
+
+# ============================================================
+# 日志配置
+# ============================================================
+
+# 标准输出和标准错误发送到 systemd journal
+StandardOutput=journal
+StandardError=journal
+
+# 日志标识符（journal 中显示的名称）
+SyslogIdentifier=myapp
+
+[Install]
+# ============================================================
+# 开机启动
+# ============================================================
+# multi-user.target：多用户模式（正常开机，不带图形界面）
+# graphical.target：图形界面模式
+WantedBy=multi-user.target

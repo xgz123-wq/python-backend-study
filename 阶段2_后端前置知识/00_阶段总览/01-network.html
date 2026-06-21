@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 计算机网络基础 | Python 后端学习</title>
+<style>
+/* ═══════════ CSS Variables ═══════════ */
+:root {
+  --sidebar-w: 260px;
+  --bg: #f6f8fb;           --surface: #fff;          --border: #e3e8ef;
+  --text: #1e293b;         --muted: #64748b;
+  --code-bg: #1e293b;      --code-text: #e2e8f0;     --code-line-highlight: #f59e0b;
+  --accent: #2563eb;       --accent-light: #dbeafe;
+  --tag-goal: #16a34a;     --tag-concept: #7c3aed;    --tag-example: #0284c7;
+  --tag-pitfall: #dc2626;  --tag-quiz: #d97706;
+  --radius: 10px;          --shadow: 0 1px 4px rgba(0,0,0,.08);
+  --quiz-bg: #fffbeb;
+  --callout-info-bg: #dbeafe;   --callout-info-border: #2563eb;
+  --callout-warn-bg: #fff1f2;   --callout-warn-border: #dc2626;
+  --trace-bg: #f1f5f9;
+  --back-top-bg: #2563eb;       --back-top-text: #fff;
+  --ascii-bg: #0f172a;          --ascii-text: #94a3b8;
+}
+
+/* ── Dark Mode (GitHub Dark 风格) ── */
+body.dark {
+  --bg: #0d1117;            --surface: #161b22;        --border: #30363d;
+  --text: #e6edf3;          --muted: #8b949e;
+  --code-bg: #0d1117;       --accent: #58a6ff;
+  --quiz-bg: rgba(217, 119, 6, 0.1);
+  --accent-light: rgba(88,166,255,0.12);
+  --quiz-bg: #161b22;
+  --callout-info-bg: rgba(88,166,255,0.1);   --callout-info-border: #58a6ff;
+  --callout-warn-bg: rgba(248,81,73,0.15);    --callout-warn-border: #f85149;
+  --trace-bg: #161b22;
+  --ascii-bg: #0d1117;      --ascii-text: #8b949e;
+  --shadow: 0 1px 4px rgba(0,0,0,.5);
+  --back-top-bg: #58a6ff;
+}
+
+/* ═══════════ Reset ═══════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+  transition: background .3s, color .3s;
+}
+
+/* ═══════════ Theme Toggle ═══════════ */
+.theme-toggle {
+  position: fixed; top: 12px; right: 16px; z-index: 300;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow); transition: transform .15s;
+}
+.theme-toggle:hover { transform: scale(1.1); }
+
+/* ═══════════ Layout ═══════════ */
+.layout { display: flex; min-height: 100vh; }
+
+/* ═══════════ Sidebar ═══════════ */
+.sidebar {
+  width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100;
+  transition: transform .25s ease;
+}
+.sidebar-header { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+.sidebar-header .chapter { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.sidebar-header h1 { font-size: 15px; font-weight: 700; }
+.sidebar nav { padding: 12px 0 24px; }
+.nav-topic { display: block; padding: 10px 18px 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-decoration: none; cursor: pointer; transition: color .15s; }
+.nav-topic:hover { color: var(--accent); }
+.nav-topic.active { color: var(--accent); }
+.nav-link {
+  display: flex; align-items: center; gap: 8px; padding: 7px 18px; font-size: 13.5px;
+  color: var(--muted); text-decoration: none; border-left: 3px solid transparent; transition: all .15s;
+}
+.nav-link:hover { background: var(--accent-light); color: var(--accent); border-left-color: var(--accent); }
+.nav-link.active { background: var(--accent-light); color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+.nav-link .icon { font-size: 15px; flex-shrink: 0; }
+
+/* ═══════════ Main Content ═══════════ */
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 40px 80px; max-width: calc(900px + var(--sidebar-w)); }
+.page-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+.page-subtitle { color: var(--muted); margin-bottom: 6px; font-size: 14.5px; }
+.reading-time { color: var(--muted); font-size: 13px; margin-bottom: 30px; }
+
+/* ═══════════ Topic Cards ═══════════ */
+.topic { margin-bottom: 56px; }
+.topic-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+.topic-num { width: 36px; height: 36px; background: var(--accent); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+.topic-title { font-size: 21px; font-weight: 700; }
+.topic-desc { font-size: 14px; color: var(--muted); font-style: italic; }
+
+/* ═══════════ Section Blocks ═══════════ */
+.section { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; border: 1px solid var(--border); }
+.section-head { display: flex; align-items: center; gap: 10px; padding: 13px 18px; cursor: pointer; user-select: none; transition: background .15s; }
+.section-head:hover { background: var(--bg); }
+.section-tag { font-size: 11px; font-weight: 700; letter-spacing: .05em; padding: 2px 9px; border-radius: 20px; text-transform: uppercase; color: #fff; }
+.tag-goal    { background: var(--tag-goal); }
+.tag-concept { background: var(--tag-concept); }
+.tag-example { background: var(--tag-example); }
+.tag-pitfall { background: var(--tag-pitfall); }
+.tag-quiz    { background: var(--tag-quiz); }
+.section-title { font-weight: 600; font-size: 15px; flex: 1; }
+.section-arrow { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.section.open .section-arrow { transform: rotate(180deg); }
+.section-body { display: none; padding: 0 18px 18px; border-top: 1px solid var(--border); }
+.section.open .section-body { display: block; }
+
+/* ═══════════ Content Styles ═══════════ */
+.section-body h3 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; color: var(--accent); }
+.section-body p { margin: 8px 0; font-size: 14.5px; }
+.section-body ul, .section-body ol { padding-left: 22px; margin: 8px 0; }
+.section-body li { font-size: 14.5px; margin: 4px 0; }
+
+/* Table */
+.tbl-wrap { overflow-x: auto; margin: 12px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { background: var(--bg); padding: 8px 12px; text-align: left; font-weight: 600; border: 1px solid var(--border); }
+td { padding: 7px 12px; border: 1px solid var(--border); vertical-align: top; }
+tr:nth-child(even) td { background: var(--bg); }
+
+/* Code */
+pre {
+  background: var(--code-bg); color: var(--code-text); border-radius: 8px;
+  padding: 16px; overflow-x: auto; margin: 12px 0; position: relative;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12.5px; line-height: 1.65;
+}
+pre .kw { color: #93c5fd; }    /* keyword */
+pre .cm { color: #6b7280; font-style: italic; }  /* comment */
+pre .st { color: #86efac; }    /* string */
+pre .nm { color: #fde68a; }    /* number */
+pre .fn { color: #67e8f9; }    /* function/call */
+pre .hl { border-left: 3px solid #f59e0b; padding-left: 12px; display: inline-block; width: 100%; }
+code:not(pre code) { background: #e2e8f0; color: #b45309; padding: 1px 6px; border-radius: 4px; font-size: 13px; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; }
+body.dark code:not(pre code) { background: #30363d; color: #fbbf24; }
+
+/* Copy button */
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  padding: 4px 10px; font-size: 12px;
+  background: rgba(255,255,255,.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,.15);
+  border-radius: 5px; cursor: pointer; transition: all .15s;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.copy-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+.copy-btn.copied { background: #16a34a; color: #fff; border-color: #16a34a; }
+
+/* Callout boxes */
+.callout { border-left: 4px solid var(--accent); background: var(--callout-info-bg); border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 10px 0; font-size: 14px; }
+.callout.warn { border-color: var(--callout-warn-border); background: var(--callout-warn-bg); }
+
+/* ASCII diagram */
+.ascii {
+  background: var(--ascii-bg); color: var(--ascii-text); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; margin: 10px 0; white-space: pre;
+  font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; line-height: 1.6;
+}
+
+/* ═══════════ Quiz ═══════════ */
+.quiz-list { list-style: none; padding: 0; }
+.quiz-item { margin-bottom: 22px; }
+.quiz-q { font-weight: 600; font-size: 14.5px; margin-bottom: 10px; padding: 10px 14px; background: var(--quiz-bg); border-left: 3px solid var(--tag-quiz); border-radius: 0 6px 6px 0; }
+.quiz-opts { list-style: none; padding: 0; }
+.quiz-opts li { margin: 5px 0; }
+.quiz-opts label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; transition: background .15s; }
+.quiz-opts label:hover { background: var(--accent-light); }
+.quiz-opts input[type="radio"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+.quiz-result { margin-top: 8px; padding: 7px 12px; border-radius: 6px; font-size: 13.5px; display: none; }
+.quiz-result.correct { background: #dcfce7; color: #166534; display: block; }
+.quiz-result.wrong { background: #fee2e2; color: #991b1b; display: block; }
+body.dark .quiz-result.correct { background: #14532d; color: #86efac; }
+body.dark .quiz-result.wrong { background: #7f1d1d; color: #fca5a5; }
+.quiz-btn { margin-top: 10px; padding: 6px 18px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: opacity .15s; }
+.quiz-btn:hover { opacity: .85; }
+
+/* ═══════════ Evidence Trace ═══════════ */
+.trace-section { background: var(--trace-bg); border-radius: var(--radius); padding: 24px; margin-top: 48px; border: 1px solid var(--border); }
+.trace-section h2 { font-size: 18px; margin-bottom: 4px; }
+.trace-section .trace-desc { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+.trace-section .tag-pending { display: inline-block; background: #fef3c7; color: #92400e; font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+body.dark .trace-section .tag-pending { background: #78350f; color: #fde68a; }
+
+/* ═══════════ Back to Top ═══════════ */
+.back-to-top {
+  position: fixed; bottom: 24px; right: 24px; z-index: 250;
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: var(--back-top-bg); color: var(--back-top-text);
+  font-size: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+  display: flex; align-items: center; justify-content: center;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { opacity: .85; }
+
+/* ═══════════ Mobile Topbar ═══════════ */
+.topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 200; align-items: center; padding: 0 16px; gap: 12px; }
+.topbar h2 { font-size: 15px; font-weight: 700; flex: 1; }
+.menu-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text); padding: 4px; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; }
+.overlay.show { display: block; }
+
+/* ═══════════ Progress Bar ═══════════ */
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 999; transition: width .1s linear; }
+
+/* ═══════════ Responsive ═══════════ */
+@media (max-width: 768px) {
+  .topbar { display: flex; }
+  .main { margin-left: 0; padding: 72px 16px 60px; max-width: 100%; }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+  .page-title { font-size: 20px; }
+  .topic-title { font-size: 18px; }
+  pre { font-size: 11.5px; }
+  .back-to-top { bottom: 16px; right: 12px; width: 36px; height: 36px; }
+  .theme-toggle { top: 10px; right: 56px; }
+}
+
+/* ═══════════ Print ═══════════ */
+@media print {
+  .sidebar, .topbar, .progress-bar, .back-to-top, .theme-toggle, .menu-btn, .overlay, .copy-btn { display: none !important; }
+  .main { margin-left: 0 !important; padding: 0 !important; max-width: 100% !important; }
+  body { background: #fff !important; color: #000 !important; font-size: 13px; }
+  .section { box-shadow: none; break-inside: avoid; border: 1px solid #ddd; }
+  .section-body { display: block !important; }
+  pre, .ascii { background: #f5f5f5 !important; color: #333 !important; border: 1px solid #ddd; }
+  .section-tag { color: #000 !important; border: 1px solid #000; background: none !important; }
+  .trace-section { background: #f9f9f9 !important; }
+  .quiz-result { display: block !important; border: 1px solid #ddd; }
+  .quiz-btn { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Reading progress -->
+<div class="progress-bar" id="progress"></div>
+
+<!-- Theme toggle -->
+<button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换深色模式">🌙</button>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backTop" title="回到顶部" aria-label="回到顶部">↑</button>
+
+<!-- Mobile topbar -->
+<div class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="打开目录">☰</button>
+  <h2>计算机网络基础</h2>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="chapter">阶段 2 · 后端前置知识</div>
+      <h1>计算机网络基础</h1>
+    </div>
+    <nav>
+      <div class="nav-topic">导览</div>
+      <a class="nav-link" href="#overview"><span class="icon">🗺️</span>本章概述</a>
+
+      <a class="nav-topic" href="#tcp-topic">第一节 · TCP/IP</a>
+      <a class="nav-link" href="#tcp-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#tcp-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#tcp-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#tcp-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#tcp-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#dns-topic">第二节 · DNS</a>
+      <a class="nav-link" href="#dns-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#dns-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#dns-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#dns-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#dns-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <a class="nav-topic" href="#port-topic">第三节 · 端口</a>
+      <a class="nav-link" href="#port-goal"><span class="icon">🎯</span>学习目标</a>
+      <a class="nav-link" href="#port-concept"><span class="icon">📖</span>核心概念</a>
+      <a class="nav-link" href="#port-example"><span class="icon">💻</span>代码示例</a>
+      <a class="nav-link" href="#port-pitfall"><span class="icon">⚠️</span>常见误区</a>
+      <a class="nav-link" href="#port-quiz"><span class="icon">✏️</span>自测题</a>
+
+      <div class="nav-topic">附录</div>
+      <a class="nav-link" href="#trace"><span class="icon">📎</span>证据追溯</a>
+    </nav>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main">
+    <style>
+      .chapter-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); font-size: 13.5px; }
+      .chapter-nav a, .chapter-nav span { flex: 1; color: var(--muted); text-decoration: none; }
+      .chapter-nav a { color: var(--accent); font-weight: 700; }
+      .chapter-nav a:hover { text-decoration: underline; }
+      .chapter-nav .home { text-align: center; }
+      .chapter-nav .next { text-align: right; }
+      @media (max-width: 768px) { .chapter-nav { flex-direction: column; align-items: stretch; } .chapter-nav .home, .chapter-nav .next { text-align: left; } }
+    </style>
+    <nav class="chapter-nav" aria-label="阶段 2 章节导航">
+      <span>← 已是第一章</span>
+      <a class="home" href="index.html">🏠 返回阶段总目录</a>
+      <a class="next" href="02-http.html">下一章：HTTP 协议 →</a>
+    </nav>
+    <div class="page-title">🌐 计算机网络基础</div>
+    <div class="page-subtitle">后端开发必知：TCP/IP · DNS · 端口与协议 | 含目标、概念、示例、误区、自测五大区块</div>
+    <div class="reading-time">⏱️ 预估阅读时间：约 18 分钟（含 12 道自测题）</div>
+
+    <!-- ── Overview ── -->
+    <div id="overview" class="section open">
+      <div class="section-head" onclick="toggleSection(this)">
+        <span class="section-tag" style="background:#475569">📌 本章</span>
+        <span class="section-title">为什么要学计算机网络？</span>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>后端开发的每一行代码，最终都要通过网络传输到客户端或在服务之间流转。不懂网络，排查问题就等同于盲人驾车。</p>
+        <div class="tbl-wrap">
+          <table>
+            <tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+            <tr><td>TCP/IP 协议</td><td>四层模型、三次握手、四次挥手、TCP vs UDP</td><td>⭐⭐⭐</td></tr>
+            <tr><td>DNS 解析</td><td>记录类型、解析流程、hosts 文件、TTL</td><td>⭐⭐⭐</td></tr>
+            <tr><td>常见端口与协议</td><td>知名端口、端口冲突、0.0.0.0 vs 127.0.0.1</td><td>⭐⭐⭐</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TOPIC 1 · TCP/IP 协议
+    ════════════════════════════════════ -->
+    <div class="topic" id="tcp-topic">
+      <div class="topic-header">
+        <div class="topic-num">1</div>
+        <div>
+          <div class="topic-title">TCP/IP 协议</div>
+          <div class="topic-desc">后端开发的一切都建立在网络通信之上，TCP/IP 是这座大厦的地基。</div>
+        </div>
+      </div>
+
+      <!-- ── 目标 ── -->
+      <div class="section open" id="tcp-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>理解 TCP/IP 四层模型及各层职责</li>
+            <li>能用自己的话解释三次握手与四次挥手的过程和原因</li>
+            <li>掌握 TCP 与 UDP 的核心差异，根据场景正确选择</li>
+            <li>了解 TCP 可靠性保证的五大机制（序列号、ACK、重传、滑动窗口、拥塞控制）</li>
+            <li>能在面试中流畅回答 TIME_WAIT 的含义及其存在意义</li>
+          </ul>
+          <div class="callout">💡 后端视角：你写的 FastAPI / Flask 代码工作在应用层，框架底层已处理传输层和网络层，但理解底层才能排查超时、连接等疑难问题。</div>
+        </div>
+      </div>
+
+      <!-- ── 概念 ── -->
+      <div class="section open" id="tcp-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>TCP/IP 四层模型</h3>
+          <div class="ascii">┌─────────────────────────────────────────────┐
+│   应用层    │ HTTP · DNS · FTP · SMTP          │  ← 你写代码的地方
+├─────────────────────────────────────────────┤
+│   传输层    │ TCP · UDP                         │  ← 决定数据怎么传
+├─────────────────────────────────────────────┤
+│   网络层    │ IP                                │  ← 决定数据发到哪
+├─────────────────────────────────────────────┤
+│ 网络接口层  │ 以太网 · Wi-Fi                     │  ← 物理传输
+└─────────────────────────────────────────────┘</div>
+
+          <details>
+            <summary style="cursor:pointer;font-weight:600;color:var(--accent);padding:8px 0;">展开查看：各层详细说明</summary>
+            <p><strong>应用层</strong>：你最常接触的一层。HTTP 请求、DNS 查询都发生在这层。你写的每一行 FastAPI 代码都在这里工作。</p>
+            <p><strong>传输层</strong>：TCP 和 UDP 的家。负责把应用层的数据可靠（或快速）地送到目的地。端口号在这层发挥作用。</p>
+            <p><strong>网络层</strong>：IP 协议的地盘。负责把数据包从源主机路由到目标主机。IP 地址在这层定义。</p>
+            <p><strong>网络接口层</strong>：负责物理传输。以太网帧、Wi-Fi 信号等。后端开发者几乎不需要关心这层。</p>
+          </details>
+
+          <h3>TCP 三次握手（建立连接）</h3>
+          <div class="ascii">客户端                              服务器
+  │                                   │
+  │──── SYN (seq=x) ─────────────────>│  ① 客户端：我要连接
+  │                                   │
+  │<─── SYN+ACK (seq=y, ack=x+1) ────│  ② 服务器：好的，我也准备好了
+  │                                   │
+  │──── ACK (ack=y+1) ───────────────>│  ③ 客户端：确认，开始传数据
+  │                                   │
+  │═══════════ 连接建立 ═══════════════│</div>
+          <div class="callout">❓ 为什么是三次？两次无法确认客户端的接收能力。若有历史"过期连接请求"（网络延迟导致）到达服务器，两次握手就会误建连接，浪费服务器资源。三次握手确保双方都确认了对方的收发能力。</div>
+
+          <h3>TCP 四次挥手（断开连接）</h3>
+          <div class="ascii">客户端                              服务器
+  │                                   │
+  │──── FIN ─────────────────────────>│  ① 客户端：我发完了
+  │<─── ACK ──────────────────────────│  ② 服务器：知道了（可能还有数据要发）
+  │                                   │   （服务器继续发送剩余数据）
+  │<─── FIN ──────────────────────────│  ③ 服务器：我也发完了
+  │──── ACK ─────────────────────────>│  ④ 客户端：好，断开
+  │                                   │
+  │════════════ 连接关闭 ══════════════│</div>
+          <div class="callout">❓ 为什么是四次？ACK 和 FIN 不能合并发送。服务器收到 FIN 后可能还有数据未发完，必须先 ACK 确认收到，等数据发完后再发自己的 FIN。</div>
+
+          <details>
+            <summary style="cursor:pointer;font-weight:600;color:var(--accent);padding:8px 0;">展开查看：TIME_WAIT 详解</summary>
+            <p>主动关闭连接的一方发出最后 ACK 后，不立即关闭，而是等待 <code>2MSL</code>（约 60 秒）。目的：</p>
+            <ul>
+              <li>确保对方收到了最后的 ACK。如果没收到，对方会重发 FIN</li>
+              <li>让网络中残留的历史数据包有足够时间消失，避免干扰后续新连接</li>
+            </ul>
+            <div class="callout warn">🔴 踩坑：高并发短连接场景下，大量 TIME_WAIT 会占满可用端口（最多 65535 个），导致新连接建立失败。解决方案：开启 <code>SO_REUSEADDR</code>、使用连接池复用连接。</div>
+          </details>
+
+          <h3>TCP vs UDP 对比</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>特性</th><th>TCP</th><th>UDP</th></tr>
+              <tr><td>连接方式</td><td>面向连接（三次握手）</td><td>无连接（直接发）</td></tr>
+              <tr><td>可靠性</td><td>✅ 可靠（确认重传）</td><td>❌ 不可靠（发完不管）</td></tr>
+              <tr><td>有序性</td><td>✅ 保证顺序</td><td>❌ 不保证</td></tr>
+              <tr><td>速度</td><td>较慢（有确认开销）</td><td>更快（无额外开销）</td></tr>
+              <tr><td>头部大小</td><td>20 字节</td><td>8 字节</td></tr>
+              <tr><td>适用场景</td><td>HTTP、数据库、文件传输</td><td>DNS、视频直播、游戏</td></tr>
+            </table>
+          </div>
+
+          <h3>TCP 可靠性保证机制</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>机制</th><th>作用</th></tr>
+              <tr><td>序列号（Sequence Number）</td><td>给每个字节编号，保证接收方能按序重组</td></tr>
+              <tr><td>确认应答（ACK）</td><td>接收方告知发送方"已收到"</td></tr>
+              <tr><td>超时重传</td><td>规定时间内未收到 ACK，自动重发数据</td></tr>
+              <tr><td>滑动窗口</td><td>控制发送速率，不让接收方缓冲区溢出</td></tr>
+              <tr><td>拥塞控制</td><td>感知网络拥塞程度，动态调整发送速度</td></tr>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 示例 ── -->
+      <div class="section" id="tcp-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例（来自 <a href="../01_计算机网络基础/demo/1_tcp_ip.py">demo/1_tcp_ip.py</a>）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>1. TCP 服务端与客户端 — 体验三次握手</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="kw">import</span> socket, threading, time
+
+<span class="cm"># ── TCP 服务端 ──</span>
+<span class="kw">def</span> <span class="fn">tcp_server</span>():
+    server = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)  <span class="cm"># SOCK_STREAM = TCP</span>
+    server.<span class="fn">setsockopt</span>(socket.SOL_SOCKET, socket.SO_REUSEADDR, <span class="nm">1</span>)
+    server.<span class="fn">bind</span>((<span class="st">"127.0.0.1"</span>, <span class="nm">9001</span>))
+    server.<span class="fn">listen</span>(<span class="nm">1</span>)
+    conn, addr = server.<span class="fn">accept</span>()         <span class="cm"># 阻塞，等三次握手完成</span>
+    data = conn.<span class="fn">recv</span>(<span class="nm">1024</span>)
+    conn.<span class="fn">send</span>(<span class="st">"TCP 服务端收到你的消息！"</span>.<span class="fn">encode</span>())
+    conn.<span class="fn">close</span>(); server.<span class="fn">close</span>()
+
+<span class="cm"># ── TCP 客户端 ──</span>
+<span class="kw">def</span> <span class="fn">tcp_client</span>():
+    time.<span class="fn">sleep</span>(<span class="nm">0.3</span>)
+    client = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)
+    client.<span class="fn">connect</span>((<span class="st">"127.0.0.1"</span>, <span class="nm">9001</span>))  <span class="cm"># connect() 内部完成三次握手</span>
+    client.<span class="fn">send</span>(<span class="st">"Hello TCP!"</span>.<span class="fn">encode</span>())
+    response = client.<span class="fn">recv</span>(<span class="nm">1024</span>)
+    client.<span class="fn">close</span>()                          <span class="cm"># close() 内部完成四次挥手</span></pre>
+
+          <h3>关键行解读</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>代码行</th><th>底层发生了什么</th></tr>
+              <tr><td><code>socket.SOCK_STREAM</code></td><td>指定使用 TCP 协议（流式传输）</td></tr>
+              <tr><td><code>server.listen(1)</code></td><td>开始监听，等待客户端连接</td></tr>
+              <tr><td><code>server.accept()</code></td><td>阻塞直到三次握手完成，返回已建立的连接</td></tr>
+              <tr><td><code>client.connect()</code></td><td>发起三次握手，建立 TCP 连接</td></tr>
+              <tr><td><code>client.close()</code></td><td>发起四次挥手，断开 TCP 连接</td></tr>
+            </table>
+          </div>
+
+          <h3>2. UDP 通信 — 体验"无连接"</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="kw">def</span> <span class="fn">udp_server</span>():
+    server = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_DGRAM)  <span class="cm"># SOCK_DGRAM = UDP</span>
+    server.<span class="fn">bind</span>((<span class="st">"127.0.0.1"</span>, <span class="nm">9002</span>))
+    data, addr = server.<span class="fn">recvfrom</span>(<span class="nm">1024</span>)         <span class="cm"># 等待数据，不需要建立连接</span>
+    server.<span class="fn">sendto</span>(<span class="st">"UDP 服务端收到！"</span>.<span class="fn">encode</span>(), addr)
+
+<span class="kw">def</span> <span class="fn">udp_client</span>():
+    client = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_DGRAM)
+    client.<span class="fn">sendto</span>(<span class="st">"Hello UDP!"</span>.<span class="fn">encode</span>(), (<span class="st">"127.0.0.1"</span>, <span class="nm">9002</span>))  <span class="cm"># 无 connect，直接发送</span>
+    response, _ = client.<span class="fn">recvfrom</span>(<span class="nm">1024</span>)</pre>
+
+          <div class="callout">🔍 对比要点：UDP 客户端没有 <code>connect()</code>，直接 <code>sendto()</code>。服务端也没有 <code>accept()</code>，用 <code>recvfrom()</code> 同时接收数据和来源地址。</div>
+
+          <h3>3. 浏览器输入 URL 后发生了什么？</h3>
+          <div class="ascii">1. DNS 解析：域名 → IP 地址                   (应用层/UDP)
+2. TCP 三次握手：建立与服务器的连接             (传输层/TCP)
+3. TLS 握手：HTTPS 则协商加密                  (传输层)
+4. 发送 HTTP 请求                              (应用层)
+5. 服务器处理，返回 HTTP 响应                   (应用层)
+6. 浏览器渲染页面                              (客户端)
+7. TCP 四次挥手：断开连接                       (传输层/TCP)</div>
+        </div>
+      </div>
+
+      <!-- ── 误区 ── -->
+      <div class="section" id="tcp-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>"TCP 比 UDP 好"</td>
+                <td>没有好坏之分，只有适合与否。视频直播用 TCP 反而体验更差（重传导致卡顿）。</td>
+              </tr>
+              <tr>
+                <td>"三次握手可以简化成两次"</td>
+                <td>不行。两次握手无法防止历史重复连接，会导致服务器为失效请求浪费资源。</td>
+              </tr>
+              <tr>
+                <td>"TCP 连接是一根物理线"</td>
+                <td>TCP 连接是逻辑概念，靠双方内存中的状态信息维护，不是物理连接。</td>
+              </tr>
+              <tr>
+                <td>"UDP 不安全"</td>
+                <td>UDP 不可靠 ≠ 不安全。安全性由上层协议（如 DTLS）或应用层加密保障。</td>
+              </tr>
+              <tr>
+                <td>"TIME_WAIT 越短越好"</td>
+                <td>TIME_WAIT 是必要的安全机制。过短会导致新连接收到旧连接的残余数据包。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 自测 ── -->
+      <div class="section" id="tcp-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（TCP/IP · 共 4 题）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q1. TCP 三次握手的第二次，服务器发送的是什么？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q1" value="a"> A. 只发 SYN</label></li>
+                <li><label><input type="radio" name="q1" value="b"> B. SYN + ACK</label></li>
+                <li><label><input type="radio" name="q1" value="c"> C. 只发 ACK</label></li>
+                <li><label><input type="radio" name="q1" value="d"> D. FIN + ACK</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q1','b',this)">提交</button>
+              <div class="quiz-result" id="q1-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q2. 断开连接为什么需要四次挥手，而不是三次？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q2" value="a"> A. TCP 协议规定必须四次</label></li>
+                <li><label><input type="radio" name="q2" value="b"> B. 服务器收到 FIN 时可能还有数据未发完，ACK 和 FIN 需分开</label></li>
+                <li><label><input type="radio" name="q2" value="c"> C. 需要等待客户端确认两次</label></li>
+                <li><label><input type="radio" name="q2" value="d"> D. 四次更安全，防止数据丢失</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q2','b',this)">提交</button>
+              <div class="quiz-result" id="q2-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q3. 以下哪个场景更适合使用 UDP？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q3" value="a"> A. 用户登录接口</label></li>
+                <li><label><input type="radio" name="q3" value="b"> B. 数据库查询</label></li>
+                <li><label><input type="radio" name="q3" value="c"> C. 实时视频直播</label></li>
+                <li><label><input type="radio" name="q3" value="d"> D. 文件下载</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q3','c',this)">提交</button>
+              <div class="quiz-result" id="q3-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q4. TIME_WAIT 状态的等待时间约为？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q4" value="a"> A. 1 秒</label></li>
+                <li><label><input type="radio" name="q4" value="b"> B. 2MSL（约 60 秒）</label></li>
+                <li><label><input type="radio" name="q4" value="c"> C. 5 分钟</label></li>
+                <li><label><input type="radio" name="q4" value="d"> D. 无限等待</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q4','b',this)">提交</button>
+              <div class="quiz-result" id="q4-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 1 -->
+
+
+    <!-- ════════════════════════════════
+         TOPIC 2 · DNS 解析
+    ════════════════════════════════════ -->
+    <div class="topic" id="dns-topic">
+      <div class="topic-header">
+        <div class="topic-num">2</div>
+        <div>
+          <div class="topic-title">DNS 解析</div>
+          <div class="topic-desc">你输入 google.com，但计算机只认 IP 地址——DNS 是互联网的"电话簿"。</div>
+        </div>
+      </div>
+
+      <!-- ── 目标 ── -->
+      <div class="section open" id="dns-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>理解 DNS 解析完整流程（浏览器缓存 → OS 缓存 → 本地 DNS → 根 → 顶级 → 权威）</li>
+            <li>掌握 A、CNAME、MX、TXT、NS 五种核心记录类型及其用途</li>
+            <li>理解 TTL 对 DNS 传播的影响，知道上线前降低 TTL</li>
+            <li>能使用 <code>nslookup</code> 和 Python socket 排查 DNS 故障</li>
+            <li>了解 hosts 文件的优先级及后端开发中的应用场景</li>
+          </ul>
+          <div class="callout">💡 DNS 修改后不会立即生效——记录 TTL 决定各级缓存过期时间。短则分钟，长则 48 小时。上线前降低 TTL，上线后再恢复！</div>
+        </div>
+      </div>
+
+      <!-- ── 概念 ── -->
+      <div class="section open" id="dns-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>DNS 记录类型</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>类型</th><th>作用</th><th>示例</th></tr>
+              <tr><td><strong>A</strong></td><td>域名 → IPv4 地址</td><td><code>api.example.com → 1.2.3.4</code></td></tr>
+              <tr><td><strong>AAAA</strong></td><td>域名 → IPv6 地址</td><td><code>api.example.com → 2001:db8::1</code></td></tr>
+              <tr><td><strong>CNAME</strong></td><td>域名 → 另一个域名（别名）</td><td><code>www.example.com → example.com</code></td></tr>
+              <tr><td><strong>MX</strong></td><td>邮件服务器地址</td><td><code>example.com → mail.example.com</code></td></tr>
+              <tr><td><strong>TXT</strong></td><td>文本记录（域名验证等）</td><td><code>"v=spf1 include:..."</code></td></tr>
+              <tr><td><strong>NS</strong></td><td>指定域名服务器</td><td><code>ns1.dnspod.net</code></td></tr>
+            </table>
+          </div>
+          <div class="callout">🔑 后端最常用：<strong>A 记录</strong>（部署绑定服务器 IP）和 <strong>CNAME</strong>（CDN / 负载均衡配置）。</div>
+
+          <h3>DNS 解析完整流程</h3>
+          <div class="ascii">浏览器输入 api.example.com
+    │
+    ├─① 浏览器缓存           → 查过？直接用
+    │      ↓ 没有
+    ├─② 操作系统缓存/hosts   → 系统缓存 & /etc/hosts
+    │      ↓ 没有
+    ├─③ 本地 DNS 服务器      → 运营商/公司DNS（如 8.8.8.8）
+    │      ↓ 没有（以下为迭代查询）
+    ├─④ 根域名服务器         → "我不知道，去问 .com 服务器"
+    │      ↓
+    ├─⑤ 顶级域名服务器       → ".com 说：去问 ns1.example.com"
+    │      ↓
+    └─⑥ 权威域名服务器       → "IP 是 1.2.3.4！" ✓
+              ↓
+         缓存结果，返回浏览器</div>
+
+          <details>
+            <summary style="cursor:pointer;font-weight:600;color:var(--accent);padding:8px 0;">展开查看：递归查询 vs 迭代查询</summary>
+            <p><strong>递归查询</strong>：客户端（浏览器）只问一次本地 DNS，本地 DNS 帮你跑完全程，最后把完整结果返回给你。</p>
+            <p><strong>迭代查询</strong>：本地 DNS 依次询问根→顶级→权威服务器，每次只获得"下一步去找谁"的线索，直到最后拿到结果。</p>
+            <p>一句话：你（客户端）发出的是递归查询，本地 DNS 向上游发出的是迭代查询。</p>
+          </details>
+
+          <h3>hosts 文件</h3>
+          <p>操作系统本地的"手动 DNS"，优先级高于远程 DNS 查询：</p>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="cm"># Windows: C:\Windows\System32\drivers\etc\hosts</span>
+<span class="cm"># Linux/Mac: /etc/hosts</span>
+
+<span class="nm">127.0.0.1</span>    localhost
+<span class="nm">127.0.0.1</span>    myapp.local        <span class="cm"># 开发环境自定义域名</span>
+<span class="nm">192.168.1.100</span>  db.internal      <span class="cm"># 内网数据库别名</span></pre>
+
+          <h3>常用公共 DNS</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>服务商</th><th>IP 地址</th><th>特点</th></tr>
+              <tr><td>Google DNS</td><td>8.8.8.8 / 8.8.4.4</td><td>全球通用，响应快</td></tr>
+              <tr><td>Cloudflare</td><td>1.1.1.1</td><td>注重隐私，速度快</td></tr>
+              <tr><td>阿里 DNS</td><td>223.5.5.5 / 223.6.6.6</td><td>国内首选</td></tr>
+              <tr><td>腾讯 DNS</td><td>119.29.29.29</td><td>国内备选</td></tr>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 示例 ── -->
+      <div class="section" id="dns-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例（来自 <a href="../01_计算机网络基础/demo/2_dns.py">demo/2_dns.py</a>）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>1. 基础 DNS 查询 — 域名 → IP</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="kw">import</span> socket
+
+domains = [<span class="st">"www.baidu.com"</span>, <span class="st">"github.com"</span>, <span class="st">"localhost"</span>]
+<span class="kw">for</span> domain <span class="kw">in</span> domains:
+    <span class="kw">try</span>:
+        ip = socket.<span class="fn">gethostbyname</span>(domain)      <span class="cm"># 最简单的 DNS 查询</span>
+        <span class="fn">print</span>(<span class="st">f"  {domain} → {ip}"</span>)
+    <span class="kw">except</span> socket.gaierror <span class="kw">as</span> e:
+        <span class="fn">print</span>(<span class="st">f"  {domain} → 解析失败: {e}"</span>)
+
+<span class="cm"># localhost 总是解析为 127.0.0.1（在 hosts 文件中定义）</span></pre>
+
+          <h3>2. 测量 DNS 缓存效果</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="kw">import</span> time
+
+domain = <span class="st">"www.baidu.com"</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">3</span>):
+    start = time.<span class="fn">perf_counter</span>()
+    socket.<span class="fn">gethostbyname</span>(domain)
+    elapsed = (time.<span class="fn">perf_counter</span>() - start) * <span class="nm">1000</span>
+    <span class="fn">print</span>(<span class="st">f"  第{i+1}次查询: {elapsed:.2f}ms"</span>)
+
+<span class="cm"># 观察：第1次较慢（完整解析），后续明显更快（命中系统DNS缓存）</span></pre>
+          <div class="callout">📊 预期输出：第一次 20-50ms，后续 0.01-1ms。这 10-50 倍的差距就是 DNS 缓存的效果。</div>
+
+          <h3>3. 反向 DNS 查询 — IP → 域名</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button>ips = [<span class="st">"8.8.8.8"</span>, <span class="st">"1.1.1.1"</span>, <span class="st">"127.0.0.1"</span>]
+<span class="kw">for</span> ip <span class="kw">in</span> ips:
+    <span class="kw">try</span>:
+        hostname, aliases, _ = socket.<span class="fn">gethostbyaddr</span>(ip)
+        <span class="fn">print</span>(<span class="st">f"  {ip} → {hostname}"</span>)
+    <span class="kw">except</span> socket.herror:
+        <span class="fn">print</span>(<span class="st">f"  {ip} → 反向查询失败（未配置PTR记录）"</span>)</pre>
+
+          <h3>4. 部署后域名无法访问 — 排查清单</h3>
+          <div class="ascii">排查步骤（按顺序执行）：
+1. nslookup api.example.com     → DNS 是否解析到正确 IP？
+2. ping 1.2.3.4                 → 服务器网络是否通？
+3. curl http://1.2.3.4:8000     → 直接访问 IP，服务是否正常？
+4. 检查 DNS 记录配置            → A 记录/CNAME 是否正确？
+5. 等待 DNS 传播                → 新记录可能需要几分钟到 48 小时生效</div>
+
+        </div>
+      </div>
+
+      <!-- ── 误区 ── -->
+      <div class="section" id="dns-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>"DNS 修改后立即生效"</td>
+                <td>DNS 有缓存和传播时间，TTL 短则几分钟，长则 48 小时。</td>
+              </tr>
+              <tr>
+                <td>"DNS 只做域名到 IP 的翻译"</td>
+                <td>还有 CNAME、MX、TXT 等多种记录类型，承担路由、邮件、验证等功能。</td>
+              </tr>
+              <tr>
+                <td>"DNS 用的是 TCP"</td>
+                <td>DNS 默认使用 <strong>UDP</strong>（端口 53），快速且数据量小。超过 512 字节或区域传送时才用 TCP。</td>
+              </tr>
+              <tr>
+                <td>"hosts 文件没用了"</td>
+                <td>开发环境中非常有用，且优先级高于 DNS 查询，可用于模拟域名、内网别名、临时绕过 DNS。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 自测 ── -->
+      <div class="section" id="dns-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（DNS 解析 · 共 4 题）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q5. DNS 查询时，以下哪个优先级最高？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q5" value="a"> A. 本地 DNS 服务器</label></li>
+                <li><label><input type="radio" name="q5" value="b"> B. 根域名服务器</label></li>
+                <li><label><input type="radio" name="q5" value="c"> C. 浏览器缓存</label></li>
+                <li><label><input type="radio" name="q5" value="d"> D. 操作系统 DNS 缓存</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q5','c',this)">提交</button>
+              <div class="quiz-result" id="q5-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q6. 将 www.example.com 指向 CDN 加速域名 xxx.cdn.com，应使用哪种 DNS 记录？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q6" value="a"> A. A 记录</label></li>
+                <li><label><input type="radio" name="q6" value="b"> B. CNAME 记录</label></li>
+                <li><label><input type="radio" name="q6" value="c"> C. MX 记录</label></li>
+                <li><label><input type="radio" name="q6" value="d"> D. TXT 记录</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q6','b',this)">提交</button>
+              <div class="quiz-result" id="q6-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q7. DNS 默认使用哪种传输层协议？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q7" value="a"> A. TCP，端口 53</label></li>
+                <li><label><input type="radio" name="q7" value="b"> B. UDP，端口 53</label></li>
+                <li><label><input type="radio" name="q7" value="c"> C. UDP，端口 80</label></li>
+                <li><label><input type="radio" name="q7" value="d"> D. TCP，端口 443</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q7','b',this)">提交</button>
+              <div class="quiz-result" id="q7-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q8. TTL（Time To Live）在 DNS 中的作用是？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q8" value="a"> A. 控制数据包在网络中跳转的最大次数</label></li>
+                <li><label><input type="radio" name="q8" value="b"> B. 决定 DNS 记录在各级缓存中的存活时间</label></li>
+                <li><label><input type="radio" name="q8" value="c"> C. 限制每秒 DNS 查询的次数</label></li>
+                <li><label><input type="radio" name="q8" value="d"> D. 设置域名的过期时间</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q8','b',this)">提交</button>
+              <div class="quiz-result" id="q8-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 2 -->
+
+
+    <!-- ════════════════════════════════
+         TOPIC 3 · 常见端口与协议
+    ════════════════════════════════════ -->
+    <div class="topic" id="port-topic">
+      <div class="topic-header">
+        <div class="topic-num">3</div>
+        <div>
+          <div class="topic-title">常见端口与协议</div>
+          <div class="topic-desc">端口 = 服务器上的"门牌号"。IP 定位到哪台机器，端口定位到哪个服务。</div>
+        </div>
+      </div>
+
+      <!-- ── 目标 ── -->
+      <div class="section open" id="port-goal">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-goal">目标</span>
+          <span class="section-title">学习目标</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul>
+            <li>熟记后端核心端口：HTTP(80)、HTTPS(443)、MySQL(3306)、PostgreSQL(5432)、Redis(6379)、SSH(22)</li>
+            <li>理解端口号三大范围（0-1023 / 1024-49151 / 49152-65535）及权限限制</li>
+            <li>能排查"端口被占用"错误，掌握 Windows/Linux 查端口命令</li>
+            <li>理解 <code>0.0.0.0</code> 与 <code>127.0.0.1</code> 的核心区别及使用场景</li>
+            <li>了解协议分层：你的一行 HTTP 请求在底层如何经历各协议层</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ── 概念 ── -->
+      <div class="section open" id="port-concept">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-concept">概念</span>
+          <span class="section-title">核心概念</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>端口号范围</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>范围</th><th>名称</th><th>说明</th></tr>
+              <tr><td>0 ~ 1023</td><td>知名端口</td><td>HTTP=80, HTTPS=443。需管理员权限绑定</td></tr>
+              <tr><td>1024 ~ 49151</td><td>注册端口</td><td>MySQL=3306, Redis=6379。常用应用</td></tr>
+              <tr><td>49152 ~ 65535</td><td>动态/私有端口</td><td>操作系统临时分配给客户端连接</td></tr>
+            </table>
+          </div>
+
+          <h3>后端必记端口清单</h3>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>端口</th><th>协议/服务</th><th>后端使用场景</th></tr>
+              <tr><td><strong>80</strong></td><td>HTTP</td><td>Nginx 监听，Web 服务默认</td></tr>
+              <tr><td><strong>443</strong></td><td>HTTPS</td><td>生产环境必须，加密 Web 服务</td></tr>
+              <tr><td><strong>22</strong></td><td>SSH</td><td>远程登录服务器</td></tr>
+              <tr><td><strong>53</strong></td><td>DNS</td><td>域名解析（UDP）</td></tr>
+              <tr><td><strong>3306</strong></td><td>MySQL</td><td>后端连接数据库</td></tr>
+              <tr><td><strong>5432</strong></td><td>PostgreSQL</td><td>Django/FastAPI 常用</td></tr>
+              <tr><td><strong>6379</strong></td><td>Redis</td><td>缓存、Session、消息队列</td></tr>
+              <tr><td><strong>8000</strong></td><td>FastAPI/Django 开发</td><td>本地开发默认端口</td></tr>
+              <tr><td>27017</td><td>MongoDB</td><td>NoSQL 文档数据库</td></tr>
+              <tr><td>5672</td><td>RabbitMQ</td><td>消息队列（AMQP 协议）</td></tr>
+              <tr><td>9200</td><td>Elasticsearch</td><td>全文搜索引擎</td></tr>
+            </table>
+          </div>
+
+          <h3>0.0.0.0 vs 127.0.0.1</h3>
+          <div class="ascii">┌──────────────┬──────────────────────────────────────────┐
+│ 127.0.0.1    │ 回环地址，只接受本机连接                  │
+│ (localhost)  │ 其他机器无法访问 → 适合纯本地开发         │
+├──────────────┼──────────────────────────────────────────┤
+│ 0.0.0.0      │ 监听所有网络接口                          │
+│              │ 局域网/Docker 内均可访问 → 适合服务暴露   │
+└──────────────┴──────────────────────────────────────────┘</div>
+          <div class="callout warn">🔴 重要：使用 0.0.0.0 让服务暴露时，务必配置防火墙规则！数据库端口（3306、5432、6379）绝不应暴露在公网。</div>
+
+          <h3>协议分层实例</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="cm"># 你写的一行代码，底层经过了多个协议层：</span>
+response = requests.<span class="fn">get</span>(<span class="st">"http://api.example.com/users"</span>)
+
+<span class="cm"># 实际发生：</span>
+<span class="cm"># HTTP 协议（应用层）  → 构造 GET 请求报文</span>
+<span class="cm"># TCP 协议（传输层）   → 建立连接、可靠传输</span>
+<span class="cm"># IP  协议（网络层）   → 寻址路由到目标服务器</span>
+<span class="cm"># 以太网（链路层）    → 物理传输</span></pre>
+
+        </div>
+      </div>
+
+      <!-- ── 示例 ── -->
+      <div class="section" id="port-example">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-example">示例</span>
+          <span class="section-title">代码示例（来自 <a href="../01_计算机网络基础/demo/3_ports_protocols.py">demo/3_ports_protocols.py</a>）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+
+          <h3>1. 扫描本机常见端口</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button>common_ports = {
+    <span class="nm">80</span>: <span class="st">"HTTP"</span>, <span class="nm">443</span>: <span class="st">"HTTPS"</span>, <span class="nm">3306</span>: <span class="st">"MySQL"</span>,
+    <span class="nm">5432</span>: <span class="st">"PostgreSQL"</span>, <span class="nm">6379</span>: <span class="st">"Redis"</span>, <span class="nm">8000</span>: <span class="st">"FastAPI"</span>
+}
+<span class="kw">for</span> port, service <span class="kw">in</span> common_ports.<span class="fn">items</span>():
+    sock = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)
+    sock.<span class="fn">settimeout</span>(<span class="nm">0.5</span>)
+    result = sock.<span class="fn">connect_ex</span>((<span class="st">"127.0.0.1"</span>, port))   <span class="cm"># 0 = 端口开放</span>
+    status = <span class="st">"✓ 开放"</span> <span class="kw">if</span> result == <span class="nm">0</span> <span class="kw">else</span> <span class="st">"✗ 关闭"</span>
+    <span class="fn">print</span>(<span class="st">f"  {port:<8} {service:<20} {status}"</span>)
+    sock.<span class="fn">close</span>()</pre>
+
+          <h3>2. 端口冲突演示 — "Address already in use"</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button>server1 = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)
+server1.<span class="fn">bind</span>((<span class="st">"127.0.0.1"</span>, <span class="nm">9100</span>))
+server1.<span class="fn">listen</span>(<span class="nm">1</span>)
+<span class="fn">print</span>(<span class="st">"[服务1] 成功绑定端口 9100"</span>)
+
+server2 = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)
+<span class="kw">try</span>:
+    server2.<span class="fn">bind</span>((<span class="st">"127.0.0.1"</span>, <span class="nm">9100</span>))   <span class="cm"># 同一端口！</span>
+<span class="kw">except</span> OSError <span class="kw">as</span> e:
+    <span class="fn">print</span>(<span class="st">f"[服务2] 绑定失败: {e}"</span>)  <span class="cm"># Address already in use</span></pre>
+          <div class="callout">🔧 排查命令：Windows → <code>netstat -ano | findstr :端口号</code>；Linux/Mac → <code>lsof -i :端口号</code> 或 <code>ss -tlnp | grep 端口号</code></div>
+
+          <h3>3. Docker Compose 端口映射示例</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="cm"># docker-compose.yml</span>
+services:
+  mysql:
+    image: mysql:<span class="nm">8.0</span>
+    ports:
+      - <span class="st">"3306:3306"</span>    <span class="cm"># 宿主机端口:容器端口</span>
+  redis:
+    image: redis:<span class="nm">7</span>
+    ports:
+      - <span class="st">"6379:6379"</span>
+  api:
+    build: .
+    ports:
+      - <span class="st">"8000:8000"</span></pre>
+
+          <h3>4. 端口连通性测试工具</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)" title="复制代码">📋 复制</button><span class="kw">def</span> <span class="fn">check_port</span>(host, port, timeout=<span class="nm">2</span>):
+    sock = socket.<span class="fn">socket</span>(socket.AF_INET, socket.SOCK_STREAM)
+    sock.<span class="fn">settimeout</span>(timeout)
+    <span class="kw">try</span>:
+        start = time.<span class="fn">perf_counter</span>()
+        result = sock.<span class="fn">connect_ex</span>((host, port))
+        elapsed = (time.<span class="fn">perf_counter</span>() - start) * <span class="nm">1000</span>
+        <span class="kw">if</span> result == <span class="nm">0</span>:
+            <span class="kw">return</span> <span class="nm">True</span>, <span class="st">f"{elapsed:.1f}ms"</span>
+        <span class="kw">return</span> <span class="nm">False</span>, <span class="st">"连接被拒绝"</span>
+    <span class="kw">except</span> socket.timeout:
+        <span class="kw">return</span> <span class="nm">False</span>, <span class="st">"连接超时"</span>
+    <span class="kw">finally</span>:
+        sock.<span class="fn">close</span>()</pre>
+          <div class="callout">💡 实践技巧：后端连不上 MySQL？先用这个函数测试 <code>check_port("db-host", 3306)</code>，判断是网络问题还是认证问题。</div>
+
+        </div>
+      </div>
+
+      <!-- ── 误区 ── -->
+      <div class="section" id="port-pitfall">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-pitfall">误区</span>
+          <span class="section-title">常见误区</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+              <tr>
+                <td>"一个端口只能一个进程"</td>
+                <td>默认如此，但 <code>SO_REUSEPORT</code> 可让多个进程监听同一端口（负载均衡场景）。</td>
+              </tr>
+              <tr>
+                <td>"修改端口就安全了"</td>
+                <td>改端口只是"隐蔽"，真正的安全靠认证、加密和防火墙规则。</td>
+              </tr>
+              <tr>
+                <td>"0.0.0.0 是无效地址"</td>
+                <td>0.0.0.0 表示监听所有网络接口，是合法且常用的地址。Docker 容器内必须使用它。</td>
+              </tr>
+              <tr>
+                <td>"端口号可以随便选"</td>
+                <td>1024 以下需要管理员权限；生产服务要避免与已知服务冲突；团队需统一端口规范。</td>
+              </tr>
+            </table>
+          </div>
+          <div class="callout warn">🔴 安全提醒：数据库端口（3306、5432、6379）绝不要暴露在公网！应使用防火墙/SG 规则限制，只允许应用服务器 IP 访问。</div>
+        </div>
+      </div>
+
+      <!-- ── 自测 ── -->
+      <div class="section" id="port-quiz">
+        <div class="section-head" onclick="toggleSection(this)">
+          <span class="section-tag tag-quiz">自测</span>
+          <span class="section-title">自测题（端口与协议 · 共 4 题）</span>
+          <span class="section-arrow">▼</span>
+        </div>
+        <div class="section-body">
+          <ul class="quiz-list">
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q9. Redis 的默认端口号是？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q9" value="a"> A. 3306</label></li>
+                <li><label><input type="radio" name="q9" value="b"> B. 5432</label></li>
+                <li><label><input type="radio" name="q9" value="c"> C. 6379</label></li>
+                <li><label><input type="radio" name="q9" value="d"> D. 27017</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q9','c',this)">提交</button>
+              <div class="quiz-result" id="q9-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q10. 以下哪个地址让服务只接受本机连接，拒绝局域网访问？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q10" value="a"> A. 0.0.0.0</label></li>
+                <li><label><input type="radio" name="q10" value="b"> B. 127.0.0.1</label></li>
+                <li><label><input type="radio" name="q10" value="c"> C. 192.168.1.1</label></li>
+                <li><label><input type="radio" name="q10" value="d"> D. 255.255.255.255</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q10','b',this)">提交</button>
+              <div class="quiz-result" id="q10-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q11. 启动 FastAPI 时报 "Address already in use"，最可能的原因是？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q11" value="a"> A. 代码有语法错误</label></li>
+                <li><label><input type="radio" name="q11" value="b"> B. 该端口已被另一个进程占用</label></li>
+                <li><label><input type="radio" name="q11" value="c"> C. Python 版本不兼容</label></li>
+                <li><label><input type="radio" name="q11" value="d"> D. 防火墙阻止了连接</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q11','b',this)">提交</button>
+              <div class="quiz-result" id="q11-result"></div>
+            </li>
+
+            <li class="quiz-item">
+              <div class="quiz-q">Q12. 为什么 1024 以下的端口需要管理员权限才能绑定？</div>
+              <ul class="quiz-opts">
+                <li><label><input type="radio" name="q12" value="a"> A. 这些端口已被操作系统占用</label></li>
+                <li><label><input type="radio" name="q12" value="b"> B. 知名端口，限制权限防止普通用户冒充系统服务</label></li>
+                <li><label><input type="radio" name="q12" value="c"> C. 低端口号传输速度更快，需要保护</label></li>
+                <li><label><input type="radio" name="q12" value="d"> D. 历史原因，已无实际意义</label></li>
+              </ul>
+              <button class="quiz-btn" onclick="checkQuiz('q12','b',this)">提交</button>
+              <div class="quiz-result" id="q12-result"></div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div><!-- /topic 3 -->
+
+
+    <!-- ════════════════════════════════
+         📎 证据追溯区
+    ════════════════════════════════════ -->
+    <div class="trace-section" id="trace">
+      <h2>📎 证据追溯</h2>
+      <p class="trace-desc">以下列出本页每个核心结论的原始来源，确保可验证。标记 <span class="tag-pending">⚠️ 待确认</span> 的为 AI 基于已有知识推断，未在原始 md 中直接明述。</p>
+      <div class="tbl-wrap">
+        <table>
+          <tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr>
+          <tr><td>TCP/IP 是协议族而非单一协议，核心为 TCP 和 IP</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>一、概念解释</td></tr>
+          <tr><td>四层模型：应用层→传输层→网络层→网络接口层</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>一、四层模型</td></tr>
+          <tr><td>三次握手流程：SYN → SYN+ACK → ACK</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、核心知识点 §1</td></tr>
+          <tr><td>两次握手无法防止历史重复连接</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、§1「为什么是三次」</td></tr>
+          <tr><td>四次挥手因全双工需要分别关闭两个方向</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、§2「为什么是四次」</td></tr>
+          <tr><td>TIME_WAIT 等待 2MSL（约 60 秒）</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、§2「关键概念」</td></tr>
+          <tr><td>TCP 五大可靠性机制：序列号/ACK/超时重传/滑动窗口/拥塞控制</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、§4</td></tr>
+          <tr><td>TCP vs UDP 六大维度对比（连接/可靠性/有序性/速度/场景/头部）</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>三、§3</td></tr>
+          <tr><td>浏览器输入 URL 的七步流程</td><td><a href="../01_计算机网络基础/1.TCP-IP协议.md">1.TCP-IP协议.md</a></td><td>四、场景1</td></tr>
+          <tr><td>DNS 六种记录类型：A/AAAA/CNAME/MX/TXT/NS</td><td><a href="../01_计算机网络基础/2.DNS解析.md">2.DNS解析.md</a></td><td>三、§1</td></tr>
+          <tr><td>DNS 解析六步流程：浏览器缓存→OS→本地DNS→根→顶级→权威</td><td><a href="../01_计算机网络基础/2.DNS解析.md">2.DNS解析.md</a></td><td>三、§2</td></tr>
+          <tr><td>DNS 默认使用 UDP（端口 53），超出 512 字节或区域传送用 TCP</td><td><a href="../01_计算机网络基础/2.DNS解析.md">2.DNS解析.md</a></td><td>五、常见误区</td></tr>
+          <tr><td>hosts 文件优先级高于 DNS 查询</td><td><a href="../01_计算机网络基础/2.DNS解析.md">2.DNS解析.md</a></td><td>三、§3</td></tr>
+          <tr><td>端口号三大范围：知名(0-1023) / 注册(1024-49151) / 动态(49152-65535)</td><td><a href="../01_计算机网络基础/3.常见端口与协议.md">3.常见端口与协议.md</a></td><td>一、端口号范围</td></tr>
+          <tr><td>后端必记端口：80/443/3306/5432/6379/8000/22/53</td><td><a href="../01_计算机网络基础/3.常见端口与协议.md">3.常见端口与协议.md</a></td><td>三、核心端口</td></tr>
+          <tr><td>0.0.0.0 监听所有接口，127.0.0.1 只监听本机回环</td><td><a href="../01_计算机网络基础/3.常见端口与协议.md">3.常见端口与协议.md</a></td><td>六、0.0.0.0 vs 127.0.0.1</td></tr>
+          <tr><td>SO_REUSEPORT 允许多进程监听同一端口</td><td><a href="../01_计算机网络基础/3.常见端口与协议.md">3.常见端口与协议.md</a></td><td>六、常见误区</td></tr>
+          <tr><td>TCP 连接由五元组唯一标识（协议+源IP+源端口+目标IP+目标端口）</td><td><a href="../01_计算机网络基础/demo/1_tcp_ip.py">demo/1_tcp_ip.py</a></td><td>§4 连接五元组</td></tr>
+          <tr><td>DNS 缓存使二次查询比首次快 10-50 倍</td><td><a href="../01_计算机网络基础/demo/2_dns.py">demo/2_dns.py</a></td><td>§3 耗时测量 <span class="tag-pending">⚠️ 待确认</span></td></tr>
+          <tr><td>connect_ex() 返回 0 表示端口可达</td><td><a href="../01_计算机网络基础/demo/3_ports_protocols.py">demo/3_ports_protocols.py</a></td><td>§1 端口扫描</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+// ═══════════ Section Toggle ═══════════
+function toggleSection(head) {
+  head.closest('.section').classList.toggle('open');
+}
+
+// ═══════════ Quiz Logic ═══════════
+var explanations = {
+  q1:  { b: "第二次握手服务器同时发送 SYN（自己的序列号）和 ACK（确认客户端序列号+1），合并为一次。" },
+  q2:  { b: "TCP 是全双工通信，两个方向的数据流需分别关闭。服务器收到 FIN 后可能还有未发完的数据，ACK 和 FIN 必须分开发送。" },
+  q3:  { c: "视频直播对延迟敏感，丢几帧无所谓，UDP 更快；登录、数据库查询、文件下载需要可靠性，用 TCP。" },
+  q4:  { b: "TIME_WAIT 等待 2MSL（两倍最大报文生存时间，约 60 秒），确保对方收到最后 ACK，并防止历史数据包干扰新连接。" },
+  q5:  { c: "DNS 解析优先级：浏览器缓存 > OS缓存/hosts > 本地DNS服务器 > 根域名服务器。浏览器缓存最先检查。" },
+  q6:  { b: "CNAME（别名记录）将一个域名指向另一个域名。CDN 和负载均衡通常通过 CNAME 实现，便于动态切换 IP。" },
+  q7:  { b: "DNS 默认使用 UDP 协议，端口 53。UDP 无连接开销，适合 DNS 查询这类小数据量请求。" },
+  q8:  { b: "TTL 指定 DNS 记录在缓存中的存活秒数。过期后各级缓存必须重新查询。降低 TTL 可加快 DNS 变更生效。" },
+  q9:  { c: "Redis 默认端口 6379。MySQL=3306，PostgreSQL=5432，MongoDB=27017。" },
+  q10: { b: "127.0.0.1（localhost）只接受来自本机的连接；0.0.0.0 监听所有接口，允许外部访问。" },
+  q11: { b: "\"Address already in use\" 表示该端口已被另一进程占用。用 netstat -ano | findstr :端口号(Windows)查找并关闭，或换端口启动。" },
+  q12: { b: "0-1023 是 IANA 分配的知名端口，限制权限防止普通用户程序绑定 80/443 等端口冒充系统服务，是一项安全机制。" },
+};
+
+function checkQuiz(name, correct, btn) {
+  var selected = document.querySelector('input[name="' + name + '"]:checked');
+  var resultEl = document.getElementById(name + '-result');
+  if (!selected) {
+    resultEl.style.display = 'block';
+    resultEl.className = 'quiz-result wrong';
+    resultEl.textContent = '请先选择一个答案！';
+    return;
+  }
+  var isCorrect = selected.value === correct;
+  var exp = (explanations[name] && explanations[name][correct]) || '';
+  resultEl.className = 'quiz-result ' + (isCorrect ? 'correct' : 'wrong');
+  resultEl.textContent = isCorrect
+    ? '✅ 正确！' + exp
+    : '❌ 错误，正确答案是 ' + correct.toUpperCase() + '。' + exp;
+  btn.textContent = '再次作答';
+  btn.onclick = function() { resetQuiz(name, correct, btn); };
+}
+
+function resetQuiz(name, correct, btn) {
+  var radios = document.querySelectorAll('input[name="' + name + '"]');
+  for (var i = 0; i < radios.length; i++) { radios[i].checked = false; }
+  document.getElementById(name + '-result').className = 'quiz-result';
+  document.getElementById(name + '-result').style.display = 'none';
+  btn.textContent = '提交';
+  btn.onclick = function() { checkQuiz(name, correct, btn); };
+}
+
+// ═══════════ Copy Code ═══════════
+function copyCode(btn) {
+  var pre = btn.parentElement;
+  // Get text content excluding the button text
+  var code = '';
+  for (var i = 0; i < pre.childNodes.length; i++) {
+    if (pre.childNodes[i].nodeType === 3) { code += pre.childNodes[i].textContent; }
+    else if (pre.childNodes[i].nodeType === 1 && pre.childNodes[i] !== btn) {
+      code += pre.childNodes[i].textContent;
+    }
+  }
+  // Clean: concatenate all text nodes
+  var allText = pre.textContent.replace(/^📋 复制/, '').replace(/^✅ 已复制/, '').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(allText).then(function() {
+      btn.textContent = '✅ 已复制';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '📋 复制'; btn.classList.remove('copied'); }, 1500);
+    }).catch(function() { fallbackCopy(pre, btn); });
+  } else { fallbackCopy(pre, btn); }
+}
+
+function fallbackCopy(pre, btn) {
+  var textarea = document.createElement('textarea');
+  var allText = pre.textContent.replace(/^📋 复制/, '').replace(/^✅ 已复制/, '').trim();
+  textarea.value = allText;
+  textarea.style.position = 'fixed'; textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try { document.execCommand('copy'); btn.textContent = '✅ 已复制'; btn.classList.add('copied'); }
+  catch(e) { btn.textContent = '复制失败'; }
+  finally {
+    document.body.removeChild(textarea);
+    setTimeout(function() { btn.textContent = '📋 复制'; btn.classList.remove('copied'); }, 1500);
+  }
+}
+
+// ═══════════ Mobile Sidebar ═══════════
+var sidebar = document.getElementById('sidebar');
+var overlay = document.getElementById('overlay');
+var menuBtn = document.getElementById('menuBtn');
+
+menuBtn.addEventListener('click', function() {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', closeSidebar);
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+}
+
+var navLinks = document.querySelectorAll('.nav-link');
+for (var i = 0; i < navLinks.length; i++) {
+  navLinks[i].addEventListener('click', function() {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+}
+
+// ═══════════ Active Nav on Scroll ═══════════
+var allNavTopics = document.querySelectorAll('a.nav-topic');
+var sections = document.querySelectorAll('[id]');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.id;
+      for (var i = 0; i < navLinks.length; i++) {
+        navLinks[i].classList.toggle('active', navLinks[i].getAttribute('href') === '#' + id);
+      }
+      // 联动高亮父级节标题：找到当前高亮 nav-link 前面最近的 a.nav-topic
+      for (var j = 0; j < allNavTopics.length; j++) { allNavTopics[j].classList.remove('active'); }
+      var highlighted = document.querySelector('.nav-link.active');
+      if (highlighted) {
+        var prev = highlighted.previousElementSibling;
+        while (prev) {
+          if (prev.tagName === 'A' && prev.classList.contains('nav-topic')) {
+            prev.classList.add('active');
+            break;
+          }
+          prev = prev.previousElementSibling;
+        }
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(function(s) { observer.observe(s); });
+
+// ═══════════ Reading Progress Bar ═══════════
+var progressBar = document.getElementById('progress');
+window.addEventListener('scroll', function() {
+  var total = document.documentElement.scrollHeight - window.innerHeight;
+  progressBar.style.width = total > 0 ? (window.scrollY / total) * 100 + '%' : '0%';
+});
+
+// ═══════════ Back to Top ═══════════
+var backTop = document.getElementById('backTop');
+window.addEventListener('scroll', function() {
+  backTop.classList.toggle('visible', window.scrollY > 300);
+});
+backTop.addEventListener('click', function() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ═══════════ Dark Mode ═══════════
+var themeToggle = document.getElementById('themeToggle');
+var savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark');
+  themeToggle.textContent = '☀️';
+} else if (savedTheme === 'light') {
+  document.body.classList.remove('dark');
+  themeToggle.textContent = '🌙';
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.body.classList.add('dark');
+  themeToggle.textContent = '☀️';
+}
+themeToggle.addEventListener('click', function() {
+  var isDark = document.body.classList.toggle('dark');
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+
+</script>
+</body>
+</html>

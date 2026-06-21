@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第四节 · async 异步 · FastAPI 核心</title>
+<style>
+:root{
+  --sidebar-width:260px;
+  --bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--quiz-bg:#fffbeb;
+  --accent:#2563eb;--concept:#7c3aed;--code:#0284c7;--warn:#dc2626;--quiz:#d97706;--ok:#16a34a;
+  --code-bg:#1e293b;--code-key:#c084fc;--code-str:#86efac;--code-fn:#93c5fd;--code-num:#fcd34d;--code-com:#64748b;--code-var:#e6edf3;--code-key2:#f472b6;
+  --diagram-bg:#0f172a;--diagram-text:#e2e8f0;--highlight:#f59e0b;--callout-bg:#eff6ff;--callout-border:#3b82f6;
+}
+.dark{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--quiz-bg:rgba(217,119,6,0.1);
+  --accent:#58a6ff;--concept:#a78bfa;--code:#38bdf8;--warn:#f87171;--quiz:#fbbf24;--ok:#4ade80;
+  --code-bg:#0d1117;--code-key:#d8b4fe;--code-str:#7ee787;--code-fn:#79c0ff;--code-num:#ffa657;--code-com:#8b949e;--code-var:#e6edf3;--code-key2:#ff7b72;
+  --diagram-bg:#010409;--diagram-text:#c9d1d9;--callout-bg:rgba(56,139,253,0.15);--callout-border:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;margin:0;transition:background .25s,color .25s}
+code,pre{font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:1000;transition:width .1s}
+#mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:99;align-items:center;padding:0 16px;gap:12px}
+#hamburger{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px}
+#mobile-title{font-weight:600;font-size:15px;flex:1}
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-width);background:var(--card);border-right:1px solid var(--border);padding:24px 16px;overflow-y:auto;z-index:90}
+#sidebar .brand{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--accent)}
+#sidebar .brand-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.nav-topic{display:block;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--text);padding:14px 8px 4px;border-top:1px solid var(--border);margin-top:6px}
+.nav-topic:first-child{border-top:none;margin-top:0}
+.nav-link{display:block;font-size:13.5px;font-weight:400;color:var(--muted);padding:5px 8px 5px 18px;border-left:2px solid transparent;border-radius:0 4px 4px 0;transition:all .15s}
+.nav-link:hover{background:rgba(37,99,235,.08);color:var(--text);text-decoration:none}
+.nav-link.active{color:var(--accent);border-left-color:var(--accent);background:rgba(37,99,235,.08);font-weight:600}
+.nav-topic.active{color:var(--accent)}
+#main-content{margin-left:var(--sidebar-width);padding:48px 56px 80px;min-height:100vh;max-width:none}
+#main-content h1{font-size:32px;margin-bottom:8px;line-height:1.3}
+.subtitle{color:var(--muted);font-size:16px;margin-bottom:8px}
+.reading-time{display:inline-block;font-size:13px;color:var(--muted);margin-bottom:32px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
+.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:8px 0 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+.chapter-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:32px;font-size:14px}
+.chapter-nav a,.chapter-nav span{padding:6px 12px;border-radius:6px;transition:background .15s}
+.chapter-nav a{color:var(--accent)}
+.chapter-nav a:hover{background:rgba(37,99,235,.08);text-decoration:none}
+.chapter-nav .home{font-weight:600}
+.chapter-nav span{color:var(--muted);cursor:default}
+.topic-section{margin-bottom:48px;scroll-margin-top:24px}
+.topic-section>h2{font-size:24px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);color:var(--text)}
+.topic-section h3{font-size:18px;margin:24px 0 10px;color:var(--text)}
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;background:var(--card);transition:background .15s}
+.section-head:hover{background:rgba(0,0,0,.02)}
+.dark .section-head:hover{background:rgba(255,255,255,.03)}
+.section-head .toggle{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:auto}
+.section.open .section-head .toggle{transform:rotate(90deg)}
+.section-body{padding:0 18px 18px;display:none}
+.section.open .section-body{display:block}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;color:#fff;flex-shrink:0}
+.tag-goal{background:var(--accent)}.tag-concept{background:var(--concept)}.tag-code{background:var(--code)}.tag-caution{background:var(--warn)}.tag-quiz{background:var(--quiz)}
+.section-title-text{font-size:15px;font-weight:600}
+.goal-list{list-style:none;padding:0}
+.goal-list li{padding:6px 0 6px 22px;position:relative;color:var(--text)}
+.goal-list li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.callout{background:var(--callout-bg);border-left:3px solid var(--callout-border);padding:12px 16px;border-radius:6px;margin-top:12px;font-size:14px;color:var(--text)}
+.callout strong{color:var(--accent)}
+.definition{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:10px 0;border-left:3px solid var(--concept)}
+.definition strong{color:var(--concept);font-size:14px;display:block;margin-bottom:4px}
+.ascii-diagram{background:var(--diagram-bg);color:var(--diagram-text);padding:16px 20px;border-radius:8px;font-size:12.5px;line-height:1.5;overflow-x:auto;margin:12px 0;white-space:pre;font-family:"Cascadia Code","Fira Code",Consolas,monospace}
+.table-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);word-break:break-word;vertical-align:top}
+th{background:rgba(0,0,0,.04);font-weight:700;font-size:14px}
+.dark th{background:rgba(255,255,255,.04)}
+tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
+.dark tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+td{font-size:14px}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden;border:1px solid #334155}
+.code-block pre{margin:0;padding:14px 16px 14px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;white-space:pre;color:var(--code-var)}
+.code-block pre .key{color:var(--code-key)}
+.code-block pre .str{color:var(--code-str)}
+.code-block pre .fn{color:var(--code-fn)}
+.code-block pre .num{color:var(--code-num)}
+.code-block pre .com{color:var(--code-com);font-style:italic}
+.code-block pre .key2{color:var(--code-key2)}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);color:#e6edf3;border:none;padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;transition:background .15s}
+.copy-btn:hover{background:rgba(255,255,255,.16)}
+.code-block .highlight-line{border-left:3px solid var(--highlight);padding-left:11px;display:block;background:rgba(245,158,11,.05);margin:0 -14px 0 -14px;padding-right:14px;padding-top:1px;padding-bottom:1px}
+.misconception-table td:first-child{color:var(--warn);font-weight:600}
+.misconception-table td:nth-child(2){color:var(--ok);font-weight:600}
+.misconception-table td:nth-child(1)::first-letter,.misconception-table td:nth-child(2)::first-letter{font-size:1.1em}
+.warn-callout{background:rgba(220,38,38,.08);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;margin:10px 0;font-size:14px;color:var(--text)}
+.warn-callout strong{color:var(--warn)}
+.quiz-card{background:var(--quiz-bg);border-radius:8px;padding:14px 18px;margin:12px 0;border-left:3px solid var(--quiz)}
+.quiz-card .q-title{font-weight:600;margin-bottom:10px;color:var(--text);font-size:14px;line-height:1.6}
+.quiz-options{list-style:none;padding:0;margin:10px 0}
+.quiz-options li{padding:6px 10px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px;font-size:14px}
+.quiz-options li:hover{background:rgba(37,99,235,.08)}
+.quiz-options input[type=radio]{cursor:pointer;accent-color:var(--accent)}
+.quiz-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:6px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-submit{background:var(--accent);color:#fff}
+.btn-submit:hover{background:#1d4ed8}
+.btn-reset{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-reset:hover{background:rgba(0,0,0,.04)}
+.dark .btn-reset:hover{background:rgba(255,255,255,.04)}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:14px;display:none;line-height:1.6}
+.quiz-feedback.correct{background:rgba(22,163,74,.12);border-left:3px solid var(--ok);color:var(--text)}
+.quiz-feedback.wrong{background:rgba(220,38,38,.10);border-left:3px solid var(--warn);color:var(--text)}
+.quiz-feedback strong{color:var(--ok)}
+.quiz-feedback.wrong strong{color:var(--warn)}
+#to-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:80;transition:transform .2s}
+#to-top:hover{transform:translateY(-2px)}
+#to-top.show{display:flex}
+#dark-toggle{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--border);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;z-index:101;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#dark-toggle:hover{transform:scale(1.06)}
+.evidence{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-top:48px}
+.evidence h2{font-size:20px;margin-bottom:8px}
+.evidence .desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+.evidence table{font-size:13px}
+@media (max-width:1024px){
+  :root{--sidebar-width:220px}
+  #main-content{padding:32px 24px}
+}
+@media (max-width:768px){
+  #mobile-topbar{display:flex}
+  #sidebar{transform:translateX(-100%);transition:transform .25s;width:260px;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  #sidebar.open{transform:translateX(0)}
+  #main-content{margin-left:0;padding:20px 16px 80px;padding-top:68px}
+  #dark-toggle{top:5px;right:8px}
+  #main-content h1{font-size:24px}
+  .topic-section>h2{font-size:20px}
+  .chapter-nav{font-size:13px;padding:10px 12px}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:89;display:none}
+  #overlay.show{display:block}
+}
+@media print{
+  #progress-bar,#mobile-topbar,#sidebar,#dark-toggle,#to-top,.chapter-nav{display:none!important}
+  #main-content{margin-left:0;padding:0;max-width:none}
+  body{background:#fff;color:#000}
+  .section-body{display:block!important}
+  .section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">🌙</button>
+<header id="mobile-topbar">
+  <button id="hamburger" aria-label="打开目录">☰</button>
+  <span id="mobile-title">async 异步</span>
+</header>
+<div id="overlay"></div>
+
+<nav id="sidebar">
+  <div class="brand">FastAPI 核心</div>
+  <div class="brand-sub">阶段4 · 01_FastAPI核心<br>第四节 · async 异步</div>
+  <a href="#s1" class="nav-topic">第四节 · async 异步</a>
+  <a href="#s1-goal" class="nav-link">学习目标</a>
+  <a href="#s1-concept" class="nav-link">核心概念</a>
+  <a href="#s1-code" class="nav-link">代码示例</a>
+  <a href="#s1-caution" class="nav-link">常见误区</a>
+  <a href="#s1-quiz" class="nav-link">自测题</a>
+</nav>
+
+<main id="main-content">
+
+<nav class="chapter-nav" aria-label="阶段章节导航">
+  <a href="03-depends.html">← 上一章：依赖注入 Depends</a>
+  <a class="home" href="index.html">🏠 返回章节总览</a>
+  <a class="next" href="05-sqlalchemy.html">下一章：SQLAlchemy 异步集成 →</a>
+</nav>
+
+<h1>第四节 · async 异步</h1>
+<p class="subtitle">让程序在等待 IO 时不阻塞，去处理其他请求——FastAPI 路由的并发能力全部来自这里。</p>
+<div class="topic-desc">等数据库时不阻塞别的请求，用 async/await 撑住高并发。</div>
+<div class="reading-time">⏱️ 预估阅读 6 分钟</div>
+
+<section class="topic-section" id="s1">
+
+  <!-- 🎯 学习目标 -->
+  <div class="section open" id="s1-goal">
+    <div class="section-head">
+      <span class="tag tag-goal">🎯 学习目标</span>
+      <span class="section-title-text">本节你要带走什么</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <ul class="goal-list">
+        <li>理解「异步 = IO 等待期间不阻塞，去处理其他请求」</li>
+        <li>会用 <code>async def</code> + <code>await</code> 写异步函数</li>
+        <li>区分「必须 await 的 IO 场景」与「纯 CPU 计算不需 async」</li>
+        <li>识别「异步路由 + 同步驱动」这个最致命组合</li>
+        <li>理解事件循环与协程的关系</li>
+      </ul>
+      <div class="callout">
+        <strong>与后端开发的关联：</strong>异步是 FastAPI 高并发的核心机制。但 <code>async</code> 是个契约——一旦路由是 <code>async def</code>，它调用的所有 IO 库都必须是异步的（<code>asyncpg</code> / <code>aioredis</code> / <code>httpx</code>），否则整个事件循环被卡死，等于单线程。
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 核心概念 -->
+  <div class="section open" id="s1-concept">
+    <div class="section-head">
+      <span class="tag tag-concept">📖 核心概念</span>
+      <span class="section-title-text">同步 vs 异步 · 协程 · 事件循环</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="definition">
+        <strong>核心定义</strong>
+        <code>async def</code> 声明的函数是「协程」（coroutine），调用时返回协程对象，<code>await</code> 才真正执行。事件循环（event loop）负责在 IO 等待时切换去处理其他协程——这是「并发」不是「并行」。
+      </div>
+
+      <h3>1. 同步 vs 异步的执行流</h3>
+      <pre class="ascii-diagram">同步（blocking）：                    异步（non-blocking）：
+
+请求1: |==查 DB 100ms==|响应         请求1: |==查 DB........|
+请求2:          |==查 DB 100ms==|响应 请求2:        |==查 DB........|响应
+请求3:                   |==查 DB...| 请求3:               |==查 DB....|响应
+                                      事件循环在 DB 等待时切去处理下一个请求
+
+总耗时: 300ms  (串行)                  总耗时: ≈100ms (并发)</pre>
+
+      <h3>2. 协程三要素</h3>
+      <pre class="ascii-diagram">1. async def fetch_user(...):  ← 声明「这是一个协程函数」
+2. result = fetch_user(123)    ← 调用时返回协程对象（不执行）
+3. user = await result         ← await 触发执行并等待结果</pre>
+
+      <h3>3. 何时用 / 何时不用 async</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>场景</th><th>要求</th></tr></thead>
+        <tbody>
+          <tr><td>数据库查询（SQLAlchemy async）</td><td>必须 <code>await</code>，驱动必须是异步的（<code>aiosqlite</code>/<code>asyncpg</code>/<code>aiomysql</code>）</td></tr>
+          <tr><td>Redis 操作</td><td>必须 <code>await</code>（用 <code>redis.asyncio</code>）</td></tr>
+          <tr><td>HTTP 请求</td><td>必须 <code>await</code>（用 <code>httpx.AsyncClient</code>，不要用 <code>requests</code>）</td></tr>
+          <tr><td>文件 IO（大文件）</td><td>用 <code>aiofiles</code> + <code>await</code></td></tr>
+          <tr><td>纯 CPU 计算（循环/排序/JSON 序列化）</td><td>不需要 <code>async</code>，直接普通函数</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>4. FastAPI 的「async 容忍」机制</h3>
+      <p>FastAPI 路由 <code>async def</code> 可以 <code>await</code> 异步函数；如果你写的是普通 <code>def</code>，FastAPI 会自动放到线程池里跑，不会阻塞事件循环。但你必须清楚自己在哪种模式下——错了就有性能问题。</p>
+
+    </div>
+  </div>
+
+  <!-- 💻 代码示例 -->
+  <div class="section" id="s1-code">
+    <div class="section-head">
+      <span class="tag tag-code">💻 代码示例</span>
+      <span class="section-title-text">从 demo/app/database.py 异步引擎 + routers/items.py 摘录</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <h3>① 最小异步演示（来自 4.async异步.md）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">import</span> asyncio
+
+<span class="com"># async def 声明异步函数</span>
+<span class="key">async def</span> <span class="fn">fetch_user</span>(user_id: <span class="key">int</span>):
+    <span class="key">await</span> asyncio.<span class="fn">sleep</span>(<span class="num">0.1</span>)   <span class="com"># await = 等待这个 IO 操作，期间可处理其他事</span>
+    <span class="key">return</span> {<span class="str">"id"</span>: user_id}
+
+<span class="com"># FastAPI 路由：async def 路由 + await 调用异步函数</span>
+<span class="key2">@app</span>.<span class="fn">get</span>(<span class="str">"/users/{user_id}"</span>)
+<span class="key">async def</span> <span class="fn">get_user</span>(user_id: <span class="key">int</span>):
+    user = <span class="key">await</span> <span class="fn">fetch_user</span>(user_id)   <span class="com"># await 异步调用</span>
+    <span class="key">return</span> user</pre>
+      </div>
+
+      <h3>② 异步 SQLAlchemy 引擎配置（来自 database.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> sqlalchemy.ext.asyncio <span class="key">import</span> create_async_engine, AsyncSession, async_sessionmaker
+<span class="key">from</span> sqlalchemy.orm <span class="key">import</span> DeclarativeBase
+
+<span class="com"># 开发用 SQLite（无需安装 MySQL）</span>
+<span class="com"># 切换 MySQL：mysql+aiomysql://root:password@localhost:3306/fastapi_demo</span>
+DATABASE_URL = <span class="str">"sqlite+aiosqlite:///./fastapi_demo.db"</span>
+
+engine = <span class="fn">create_async_engine</span>(
+    DATABASE_URL,
+    echo=<span class="key">True</span>,   <span class="com"># 打印 SQL，学习阶段保留，生产改 False</span>
+)
+
+<span class="com"># expire_on_commit=False：避免 commit 后访问属性触发新查询（异步环境必须）</span>
+AsyncSessionLocal = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="key">False</span>)
+
+
+<span class="key">class</span> <span class="fn">Base</span>(DeclarativeBase):
+    <span class="key">pass</span></pre>
+      </div>
+
+      <h3>③ 路由里 await 异步查询（来自 routers/items.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> APIRouter, Depends, HTTPException
+<span class="key">from</span> sqlalchemy.ext.asyncio <span class="key">import</span> AsyncSession
+<span class="key">from</span> sqlalchemy <span class="key">import</span> select
+
+<span class="key">from</span> app.deps <span class="key">import</span> get_db
+<span class="key">from</span> app.models.item <span class="key">import</span> Item
+<span class="key">from</span> app.schemas <span class="key">import</span> ItemResponse
+
+router = <span class="fn">APIRouter</span>(prefix=<span class="str">"/items"</span>, tags=[<span class="str">"商品"</span>])
+
+<span class="com"># 查询列表：async 路由 + await 异步查询</span>
+<span class="key2">@router</span>.<span class="fn">get</span>(<span class="str">"/"</span>, response_model=<span class="key">list</span>[ItemResponse])
+<span class="key">async def</span> <span class="fn">list_items</span>(
+    skip: <span class="key">int</span> = <span class="num">0</span>,
+    limit: <span class="key">int</span> = <span class="num">10</span>,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    <span class="com"># await 让出控制权，期间事件循环可处理其他请求</span>
+    result = <span class="key">await</span> db.<span class="fn">execute</span>(<span class="fn">select</span>(Item).<span class="fn">offset</span>(skip).<span class="fn">limit</span>(limit))
+    <span class="key">return</span> result.<span class="fn">scalars</span>().<span class="fn">all</span>()
+
+<span class="com"># 创建：await commit + refresh</span>
+<span class="key2">@router</span>.<span class="fn">post</span>(<span class="str">"/"</span>, response_model=ItemResponse, status_code=<span class="num">201</span>)
+<span class="key">async def</span> <span class="fn">create_item</span>(
+    data: ItemCreate,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    db_item = <span class="fn">Item</span>(**data.<span class="fn">model_dump</span>())
+    db.<span class="fn">add</span>(db_item)
+    <span class="key">await</span> db.<span class="fn">commit</span>()           <span class="com"># 异步提交</span>
+    <span class="key">await</span> db.<span class="fn">refresh</span>(db_item)    <span class="com"># 异步拿自增 id</span>
+    <span class="key">return</span> db_item</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ⚠️ 常见误区 -->
+  <div class="section" id="s1-caution">
+    <div class="section-head">
+      <span class="tag tag-caution">⚠️ 常见误区</span>
+      <span class="section-title-text">最常踩的坑</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <div class="table-wrap">
+      <table class="misconception-table">
+        <thead><tr><th>❌ 误区</th><th>✅ 正确做法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>异步路由里调用同步数据库驱动 <code>pymysql.connect()</code> / <code>psycopg2.connect()</code>，请求来了直接卡死整个事件循环</td>
+            <td>异步路由必须用异步驱动：<code>asyncpg</code> / <code>aiomysql</code> / <code>aiosqlite</code>，配合 SQLAlchemy <code>AsyncSession</code></td>
+          </tr>
+          <tr>
+            <td>以为 <code>async def</code> 自动加速——结果没用 <code>await</code>，等于普通函数套了层壳</td>
+            <td>async 函数里必须有 <code>await</code> 才会真正让出控制权；纯计算不需要 async</td>
+          </tr>
+          <tr>
+            <td>用 <code>requests</code> 库（同步）发 HTTP 请求：<code>requests.get(...)</code></td>
+            <td>用 <code>httpx.AsyncClient</code> + <code>await client.get(...)</code></td>
+          </tr>
+          <tr>
+            <td><code>async def</code> 里调 <code>time.sleep(1)</code>——同步 sleep 也会阻塞事件循环 1 秒</td>
+            <td>用 <code>await asyncio.sleep(1)</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="warn-callout">
+        <strong>致命组合：</strong><code>async def</code> 路由 + 同步 IO 驱动 = 「假异步」。FastAPI 看起来在跑，但所有请求实际上串行排队，整个系统并发能力被一个 <code>requests.get()</code> 拉回单线程水平。压测才能发现，但生产已经爆炸。
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ 自测题 -->
+  <div class="section" id="s1-quiz">
+    <div class="section-head">
+      <span class="tag tag-quiz">✏️ 自测题</span>
+      <span class="section-title-text">4 道单选 · 检验理解</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="quiz-card" data-answer="C">
+        <div class="q-title">1. 异步编程的核心收益是？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q1" value="A"> A. 跑得更快，单个请求延迟一定降低</label></li>
+          <li><label><input type="radio" name="q1" value="B"> B. 利用多核 CPU 并行计算</label></li>
+          <li><label><input type="radio" name="q1" value="C"> C. IO 等待期间去处理其他请求，提高单位时间并发吞吐量</label></li>
+          <li><label><input type="radio" name="q1" value="D"> D. 自动加密传输</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="B">
+        <div class="q-title">2. 异步路由里调用 <code>requests.get(url)</code>（同步库）会发生什么？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q2" value="A"> A. 报错「不能在 async 里用 requests」</label></li>
+          <li><label><input type="radio" name="q2" value="B"> B. 阻塞事件循环，期间其他所有请求都被卡住，等同于同步接口</label></li>
+          <li><label><input type="radio" name="q2" value="C"> C. requests 自动转成异步</label></li>
+          <li><label><input type="radio" name="q2" value="D"> D. 请求被自动重试到异步</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="D">
+        <div class="q-title">3. 哪种数据库驱动应该配异步路由？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q3" value="A"> A. <code>pymysql</code></label></li>
+          <li><label><input type="radio" name="q3" value="B"> B. <code>psycopg2</code></label></li>
+          <li><label><input type="radio" name="q3" value="C"> C. <code>sqlite3</code>（标准库）</label></li>
+          <li><label><input type="radio" name="q3" value="D"> D. <code>asyncpg</code> / <code>aiomysql</code> / <code>aiosqlite</code></label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="A">
+        <div class="q-title">4. 纯 CPU 密集型计算（比如对 100 万元素排序）适合用 <code>async def</code> 吗？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q4" value="A"> A. 不适合。async 不加速 CPU 计算，反而增加协程调度开销。CPU 密集用 <code>ProcessPoolExecutor</code></label></li>
+          <li><label><input type="radio" name="q4" value="B"> B. 必须用 <code>async def</code>，否则会报错</label></li>
+          <li><label><input type="radio" name="q4" value="C"> C. async 让 CPU 计算并行 10 倍</label></li>
+          <li><label><input type="radio" name="q4" value="D"> D. 加 <code>async</code> 后能自动用 GPU</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- 证据追溯 -->
+<section class="evidence">
+  <h2>📎 证据追溯</h2>
+  <p class="desc">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+    <tbody>
+      <tr><td>async/await 的同步 vs 异步执行流对比</td><td><a href="../01_FastAPI核心/4.async异步.md">4.async异步.md</a></td><td>L3 / L7-10</td></tr>
+      <tr><td>必须 await 的场景表（db/redis/http）</td><td><a href="../01_FastAPI核心/4.async异步.md">4.async异步.md</a></td><td>L31-36</td></tr>
+      <tr><td>异步路由 + 同步驱动的致命组合</td><td><a href="../01_FastAPI核心/4.async异步.md">4.async异步.md</a></td><td>L39-52</td></tr>
+      <tr><td>异步 SQLAlchemy 引擎配置</td><td><a href="../01_FastAPI核心/demo/app/database.py">demo/app/database.py</a></td><td>L8-21</td></tr>
+      <tr><td>async 路由 + await 异步查询实战</td><td><a href="../01_FastAPI核心/demo/app/routers/items.py">demo/app/routers/items.py</a></td><td>L24-32 / L46-54</td></tr>
+      <tr><td>异步 session 工厂 + engine 配置（cheatsheet）</td><td><a href="../01_FastAPI核心/cheatsheet.md">cheatsheet.md</a></td><td>L46-57</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<button id="to-top" title="回到顶部">↑</button>
+
+<script>
+const bar=document.getElementById('progress-bar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;bar.style.width=pct+'%'});
+const topBtn=document.getElementById('to-top');
+window.addEventListener('scroll',()=>topBtn.classList.toggle('show',window.scrollY>300));
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+const toggle=document.getElementById('dark-toggle');
+const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+const savedMode=localStorage.getItem('theme');
+function applyMode(m){document.documentElement.classList.toggle('dark',m==='dark');toggle.textContent=m==='dark'?'☀️':'🌙'}
+if(savedMode){applyMode(savedMode)}else if(prefersDark){applyMode('dark')}else{applyMode('light')}
+toggle.addEventListener('click',()=>{const isDark=document.documentElement.classList.toggle('dark');localStorage.setItem('theme',isDark?'dark':'light');toggle.textContent=isDark?'☀️':'🌙'});
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('overlay');
+const hamburger=document.getElementById('hamburger');
+function closeSidebar(){sidebar.classList.remove('open');overlay.classList.remove('show');document.body.style.overflow=''}
+hamburger.addEventListener('click',()=>{const open=sidebar.classList.toggle('open');overlay.classList.toggle('show',open);document.body.style.overflow=open?'hidden':''});
+overlay.addEventListener('click',closeSidebar);
+sidebar.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeSidebar));
+window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar()});
+document.querySelectorAll('.section-head').forEach(h=>{h.addEventListener('click',()=>h.parentElement.classList.toggle('open'))});
+document.querySelectorAll('.copy-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const code=btn.parentElement.querySelector('pre code')||btn.parentElement.querySelector('pre');if(!code)return;try{await navigator.clipboard.writeText(code.innerText);btn.textContent='✅ 已复制';setTimeout(()=>btn.textContent='📋 复制',1500)}catch{btn.textContent='复制失败';setTimeout(()=>btn.textContent='📋 复制',1500)}})});
+const sections=document.querySelectorAll('.section[id],.topic-section[id]');
+const linkMap=new Map();
+document.querySelectorAll('#sidebar a').forEach(a=>{if(a.getAttribute('href')&&a.getAttribute('href').startsWith('#')){linkMap.set(a.getAttribute('href').slice(1),a)}});
+const navLinks=document.querySelectorAll('#sidebar .nav-link');
+const navTopics=document.querySelectorAll('#sidebar .nav-topic');
+function setActive(id){
+  navLinks.forEach(l=>l.classList.remove('active'));
+  navTopics.forEach(t=>t.classList.remove('active'));
+  const link=linkMap.get(id);
+  if(link&&link.classList.contains('nav-link')){
+    link.classList.add('active');
+    let prev=link.previousElementSibling;
+    while(prev&&!prev.classList.contains('nav-topic'))prev=prev.previousElementSibling;
+    if(prev)prev.classList.add('active');
+  }else if(link&&link.classList.contains('nav-topic')){link.classList.add('active')}
+}
+const obs=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);if(visible[0])setActive(visible[0].target.id)},{rootMargin:'-20% 0px -60% 0px',threshold:[0,.25,.5,.75,1]});
+sections.forEach(s=>obs.observe(s));
+const EXPLANATIONS={
+  q1:'async 的核心是 <strong>IO 等待期间切换</strong>，单位时间处理的请求数更多。但单个请求的延迟不一定变低（await 还是要等的）。CPU 多核需要 <code>multiprocessing</code>。',
+  q2:'<code>requests</code> 是同步的，调用时阻塞整个线程。事件循环是单线程，被卡住就什么都不能干。改用 <code>httpx.AsyncClient</code> + <code>await</code>。',
+  q3:'<code>asyncpg</code> / <code>aiomysql</code> / <code>aiosqlite</code> 都是原生异步驱动，配 SQLAlchemy <code>AsyncSession</code> + <code>create_async_engine</code>。<code>pymysql</code>/<code>psycopg2</code>/标准库 <code>sqlite3</code> 是同步的。',
+  q4:'async 是为 IO 而生，CPU 密集型计算用 <code>async def</code> 没有任何收益——协程切换是开销不是加速。这种场景用 <code>ProcessPoolExecutor</code> 走多进程，或 C 扩展（numpy）。'
+};
+document.querySelectorAll('.quiz-card').forEach(card=>{
+  const submit=card.querySelector('.btn-submit');
+  const reset=card.querySelector('.btn-reset');
+  const fb=card.querySelector('.quiz-feedback');
+  submit.addEventListener('click',()=>{
+    const name=card.querySelector('input[type=radio]').name;
+    const checked=card.querySelector('input[type=radio]:checked');
+    if(!checked){fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>未作答</strong> 请先选择一个选项。';return}
+    const correct=card.dataset.answer;
+    if(checked.value===correct){fb.className='quiz-feedback correct';fb.style.display='block';fb.innerHTML='<strong>✅ 回答正确！</strong> '+EXPLANATIONS[name]}
+    else{fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>❌ 回答错误。</strong>正确答案 '+correct+'。'+EXPLANATIONS[name]}
+  });
+  reset.addEventListener('click',()=>{card.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);fb.style.display='none';fb.className='quiz-feedback'});
+});
+</script>
+</body>
+</html>

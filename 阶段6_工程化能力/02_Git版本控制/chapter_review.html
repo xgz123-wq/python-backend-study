@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git 版本控制 - 学习页面</title>
+<style>
+:root{--accent:#2563eb;--accent-light:rgba(37,99,235,0.1);--purple:#7c3aed;--cyan:#0284c7;--red:#dc2626;--orange:#d97706;--green:#16a34a;--bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--text-muted:#64748b;--code-bg:#1e293b;--sidebar-width:260px;--callout-warn-border:#dc2626;--quiz-bg:#fffbeb}
+.dark{--accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--code-bg:#0d1117;--callout-warn-border:#f85149;--quiz-bg:rgba(217,119,6,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg)}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0%;z-index:1000;transition:width .1s}
+#dark-toggle{position:fixed;top:16px;right:16px;z-index:500;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#dark-toggle:hover{background:var(--border)}
+.layout{display:flex;max-width:1100px;margin:0 auto;min-height:100vh}
+#sidebar{width:var(--sidebar-width);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-right:1px solid var(--border);background:var(--card)}
+#sidebar nav{display:flex;flex-direction:column;gap:4px}
+#sidebar .nav-topic{font-size:12.5px;font-weight:bold;color:var(--text-muted);padding:6px 8px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-topic:hover,#sidebar .nav-topic.active{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link{font-size:13.5px;color:var(--text);padding:4px 8px 4px 20px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-link:hover{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link.active{color:var(--accent);font-weight:600}
+main{flex:1;padding:32px 40px;max-width:800px;margin:0 auto}
+.article-title{font-size:28px;font-weight:800;margin-bottom:8px;color:var(--text)}
+.read-time{color:var(--text-muted);font-size:13px;margin-bottom:32px;display:flex;align-items:center;gap:6px}
+.topic{margin-bottom:56px;scroll-margin-top:24px}
+.topic-header{margin-bottom:20px}
+.topic-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.topic-divider{height:1px;background:var(--border);margin-top:12px}
+.section{margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)}
+.section-header{display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;user-select:none;transition:background .15s}
+.section-header:hover{background:var(--accent-light)}
+.section-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;color:#fff;flex-shrink:0}
+.badge-goal{background:var(--accent)}.badge-concept{background:var(--purple)}.badge-code{background:var(--cyan)}.badge-caution{background:var(--red)}.badge-quiz{background:var(--orange)}
+.section-arrow{margin-left:auto;font-size:12px;transition:transform .2s;color:var(--text-muted)}
+.section.open .section-arrow{transform:rotate(180deg)}
+.section-body{display:none;padding:16px 20px}
+.section.open .section-body{display:block}
+.section-content ul{margin:8px 0 8px 20px}
+.section-content li{margin-bottom:6px}
+.section-content p{margin-bottom:10px}
+.section-content h4{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--text)}
+.callout{padding:10px 14px;border-radius:6px;margin:12px 0;font-size:13.5px;border-left:3px solid}
+.callout-blue{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.callout-warn{background:rgba(220,38,38,0.08);border-color:var(--callout-warn-border);color:var(--callout-warn-border)}
+.section-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+.section-content th,.section-content td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+.section-content th{background:var(--bg);font-weight:600}
+.section-content tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark .section-content tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden}
+.code-block pre{padding:16px;overflow-x:auto;font-size:12.5px;line-height:1.6;color:#e2e8f0;font-family:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace}
+.code-block .copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#e2e8f0;border:none;border-radius:4px;cursor:pointer;transition:background .2s}
+.code-block .copy-btn:hover{background:rgba(255,255,255,0.2)}
+.code-block .copy-btn.copied{color:#4ade80}
+.key-line{border-left:3px solid #f59e0b!important;margin-left:-3px}
+.comparison-table{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:12px 0;font-size:13.5px}
+.comparison-table .left,.comparison-table .right{padding:10px 14px}
+.comparison-table .left{background:rgba(220,38,38,0.06);color:var(--red)}
+.comparison-table .right{background:rgba(22,163,74,0.06);color:var(--green)}
+.quiz-question{margin-bottom:16px}
+.quiz-question h4{font-size:14px;margin-bottom:8px;background:var(--quiz-bg);padding:8px 12px;border-left:3px solid var(--orange);border-radius:4px}
+.quiz-options{display:flex;flex-direction:column;gap:6px}
+.quiz-option{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:background .15s}
+.quiz-option:hover{background:var(--accent-light)}
+.quiz-option input{accent-color:var(--accent)}
+.quiz-submit{margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer}
+.quiz-submit:hover{opacity:.9}
+.quiz-result{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:13.5px;display:none}
+.quiz-result.correct{background:rgba(22,163,74,0.1);color:var(--green);border:1px solid var(--green)}
+.quiz-result.incorrect{background:rgba(220,38,38,0.1);color:var(--red);border:1px solid var(--red)}
+.quiz-reset{margin-top:8px;padding:6px 14px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-size:13px;cursor:pointer}
+#evidence{margin-top:64px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+#evidence h2{font-size:16px;margin-bottom:16px}
+#evidence table{width:100%;border-collapse:collapse;font-size:13px}
+#evidence th,#evidence td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+#evidence th{background:var(--bg);font-weight:600}
+#evidence tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark #evidence tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+#back-to-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:opacity .2s}
+#back-to-top.show{display:flex}
+#mobile-nav{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:400;padding:0 16px;align-items:center;gap:12px}
+#mobile-nav .nav-title{flex:1;font-weight:600;font-size:15px}
+#hamburger{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450}
+@media(max-width:768px){
+#sidebar{position:fixed;left:-280px;top:0;height:100vh;z-index:500;width:280px;transition:left .3s}
+#sidebar.open{left:0}
+#sidebar-overlay.show{display:block}
+#mobile-nav{display:flex}
+main{padding:60px 20px 20px}
+}
+@media print{
+#sidebar,#dark-toggle,#progress-bar,#back-to-top,#mobile-nav{display:none!important}
+.layout{display:block}
+main{max-width:100%;padding:0}
+.section .section-body{display:block!important}
+}
+.ascii-diagram{background:var(--code-bg);padding:14px;border-radius:6px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12px;color:#e2e8f0;overflow-x:auto;white-space:pre}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">☀️</button>
+<div id="mobile-nav">
+<button id="hamburger" onclick="toggleSidebar()">☰</button>
+<span class="nav-title">Git 版本控制</span>
+</div>
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="layout">
+<aside id="sidebar">
+<nav>
+<a class="nav-topic" href="#s1">第一节 · Git基础操作</a>
+<a class="nav-link" href="#s1-goal">学习目标</a>
+<a class="nav-link" href="#s1-concept">核心概念</a>
+<a class="nav-link" href="#s1-code">代码示例</a>
+<a class="nav-link" href="#s1-caution">常见误区</a>
+<a class="nav-link" href="#s1-quiz">自测题</a>
+<a class="nav-topic" href="#s2">第二节 · 分支管理与Git Flow</a>
+<a class="nav-link" href="#s2-goal">学习目标</a>
+<a class="nav-link" href="#s2-concept">核心概念</a>
+<a class="nav-link" href="#s2-code">代码示例</a>
+<a class="nav-link" href="#s2-caution">常见误区</a>
+<a class="nav-link" href="#s2-quiz">自测题</a>
+</nav>
+</aside>
+<main>
+<h1 class="article-title">Git 版本控制</h1>
+<p class="read-time">⏱️ 预估阅读 25 分钟</p>
+
+<!-- 第一节 -->
+<section class="topic" id="s1">
+<div class="topic-header">
+<h2 class="topic-title">第一节 · Git基础操作</h2>
+<div class="topic-divider"></div>
+</div>
+
+<div class="section open" id="s1-goal">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-goal">🎯</span>学习目标<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+<ul>
+<li>理解 Git 分布式版本控制系统的核心理念</li>
+<li>掌握工作区、暂存区、本地仓库、远程仓库四级模型</li>
+<li>熟练使用 init、add、commit、log、status、diff 命令</li>
+<li>理解 .gitignore 的作用与规则</li>
+<li>掌握远程仓库 push、pull、fetch 的差异</li>
+</ul>
+<div class="callout callout-blue">Git 是后端开发的必备工具。代码管理、团队协作、版本回溯、CI/CD 流水线都建立在 Git 之上。</div>
+</div>
+</div>
+</div>
+
+<div class="section open" id="s1-concept">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-concept">📖</span>核心概念<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>什么是 Git</h4>
+<p>Git 是 2005 年由 Linus Torvalds 创建的<strong>分布式版本控制系统</strong>（DVCS）。每个开发者本地都有一份<strong>完整的仓库副本</strong>，包括全部历史记录。这意味着：</p>
+<ul>
+<li>无网络也能查看历史、提交代码、创建分支</li>
+<li>不存在单点故障，任何副本都能恢复完整项目</li>
+<li>分支和合并操作极其轻量，几乎瞬间完成</li>
+</ul>
+
+<h4>四级工作模型</h4>
+<pre class="ascii-diagram">工作区 (Working Directory)
+   │
+   │  git add
+   ▼
+暂存区 (Staging Area / Index)
+   │
+   │  git commit
+   ▼
+本地仓库 (Local Repository)
+   │
+   │  git push
+   ▼
+远程仓库 (Remote Repository)</pre>
+
+<h4>文件状态</h4>
+<table>
+<tr><th>状态</th><th>含义</th></tr>
+<tr><td>未跟踪 (Untracked)</td><td>新创建但还没 git add 的文件</td></tr>
+<tr><td>已修改 (Modified)</td><td>已跟踪文件被修改，还没 add</td></tr>
+<tr><td>已暂存 (Staged)</td><td>已 add，等待下一次 commit</td></tr>
+<tr><td>已提交 (Committed)</td><td>已保存到本地仓库</td></tr>
+</table>
+
+<h4>HEAD 与分支</h4>
+<p><code>HEAD</code> 是一个特殊指针，指向<strong>当前所在的 commit</strong>。通常它指向某个分支名（如 <code>main</code>），而分支名又指向最新的 commit：</p>
+<pre class="ascii-diagram">HEAD → main → commit_c → commit_b → commit_a</pre>
+
+<h4>.gitignore 核心规则</h4>
+<ul>
+<li><code>*.log</code> — 忽略所有 .log 文件</li>
+<li><code>build/</code> — 忽略 build 目录</li>
+<li><code>!important.log</code> — 不忽略 important.log（取反）</li>
+<li><code>/TODO</code> — 只忽略根目录的 TODO</li>
+</ul>
+<div class="callout callout-warn">重要：.gitignore 只能忽略<strong>未跟踪</strong>的文件。已 add 的文件需先 <code>git rm --cached file</code> 才能被忽略。</div>
+
+<h4>fetch vs pull</h4>
+<table>
+<tr><th>命令</th><th>做了什么</th><th>安全性</th></tr>
+<tr><td>git fetch</td><td>只下载远程新提交，<strong>不修改你的代码</strong></td><td>安全</td></tr>
+<tr><td>git pull</td><td>fetch + merge，<strong>直接修改你的代码</strong></td><td>可能产生冲突</td></tr>
+</table>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-code">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-code">💻</span>代码示例<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>初始化与克隆</h4>
+<div class="code-block"><pre>git init                                    # 在当前目录初始化仓库
+git clone https://github.com/user/repo.git  # 克隆远程仓库
+git clone https://github.com/user/repo.git my_folder  # 克隆到指定目录</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>首次配置（必须！）</h4>
+<div class="code-block key-line"><pre>git config --global user.name "你的名字"
+git config --global user.email "your@email.com"</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>查看状态与历史</h4>
+<div class="code-block"><pre>git status                    # 查看工作区和暂存区状态（最常用！）
+git status -s                 # 简洁模式
+git log                       # 查看提交历史
+git log --oneline --graph     # 单行 + 图形化分支图
+git log -3                    # 最近 3 次提交
+git show &lt;commit-hash&gt;       # 查看某次提交的改动</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>暂存与提交</h4>
+<div class="code-block"><pre>git add file.py               # 暂存单个文件
+git add .                     # 暂存所有改动
+git add src/                  # 暂存某个目录
+git commit -m "feat: 添加用户注册"  # 提交
+git commit -am "fix: 修复Bug"      # 跳过暂存区（已跟踪文件）
+git commit --amend -m "新信息"     # 修改上一次的提交信息</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>查看差异</h4>
+<div class="code-block"><pre>git diff                      # 工作区 vs 暂存区
+git diff --staged             # 暂存区 vs 最新提交
+git diff abc123 def456        # 两个 commit 之间的差异
+git diff main feature/login   # 两个分支的差异</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>典型 .gitignore</h4>
+<div class="code-block"><pre># 忽略日志和缓存
+*.log
+__pycache__/
+*.pyc
+
+# 忽略敏感信息
+.env
+
+# 忽略 IDE 配置
+.vscode/
+.idea/
+
+# 忽略 build 产物
+build/
+dist/
+
+# 但不忽略 important.log
+!important.log</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>远程仓库</h4>
+<div class="code-block"><pre>git remote -v                              # 查看远程仓库
+git remote add origin https://github.com/user/repo.git  # 关联远程
+git push -u origin main                    # 首次推送（-u 建立追踪）
+git push                                   # 之后直接推送
+git pull                                   # 拉取并合并（= fetch + merge）
+git fetch origin                           # 只拉取，不合并（更安全）</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>日常开发节奏</h4>
+<div class="code-block key-line"><pre># 早上开始工作，先拉取最新代码
+git pull
+
+# 改完一个功能
+git status
+git diff
+
+# 确认没问题，提交
+git add .
+git commit -m "feat: 添加用户登录接口"
+
+# 推送到远程
+git push</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-caution">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-caution">⚠️</span>常见误区<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="comparison-table">
+<div class="left">❌ 首次提交时没配 user.name/email</div>
+<div class="right">✅ 用 git config --global 配置一次</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ .gitignore 对已跟踪文件无效</div>
+<div class="right">✅ 先 git rm --cached file 再忽略</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ git add . 误提交大文件或敏感文件</div>
+<div class="right">✅ 还没 push 就 reset，已 push 用 revert</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ pull 时遇到冲突不知如何处理</div>
+<div class="right">✅ 先 stash 暂存 → pull → stash pop 再解冲突</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ commit message 写错了直接 push</div>
+<div class="right">✅ amend 改信息，push 用 --force-with-lease</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 习惯性直接 git pull</div>
+<div class="right">✅ 不确定时先 git fetch 看看，再决定 merge</div>
+</div>
+
+<div class="callout callout-warn">安全提示：<code>git push --force</code> 会覆盖远程历史，极端危险。推荐用 <code>--force-with-lease</code>，会先检查远程是否有新提交。</div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-quiz">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-quiz">✏️</span>自测题<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="quiz-question" data-answer="B">
+<h4>1. git 仓库的四级工作模型中，文件从工作区到本地仓库的顺序是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q1" value="A"> A. 工作区 → 本地仓库 → 暂存区 → 远程仓库</label>
+<label class="quiz-option"><input type="radio" name="q1" value="B"> B. 工作区 → 暂存区 → 本地仓库 → 远程仓库</label>
+<label class="quiz-option"><input type="radio" name="q1" value="C"> C. 工作区 → 远程仓库 → 暂存区 → 本地仓库</label>
+<label class="quiz-option"><input type="radio" name="q1" value="D"> D. 工作区 → 暂存区 → 远程仓库 → 本地仓库</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>2. `git pull` 实际做了什么？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q2" value="A"> A. 只拉取远程新提交</label>
+<label class="quiz-option"><input type="radio" name="q2" value="B"> B. 删除远程提交</label>
+<label class="quiz-option"><input type="radio" name="q2" value="C"> C. fetch + merge</label>
+<label class="quiz-option"><input type="radio" name="q2" value="D"> D. 直接覆盖本地文件</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>3. 想要忽略已经被 git add 过的文件，正确做法是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q3" value="A"> A. 直接加入 .gitignore 即可</label>
+<label class="quiz-option"><input type="radio" name="q3" value="B"> B. 先 git rm --cached file，再加入 .gitignore</label>
+<label class="quiz-option"><input type="radio" name="q3" value="C"> C. 删除该文件后重新创建</label>
+<label class="quiz-option"><input type="radio" name="q3" value="D"> D. 修改 .gitignore 后执行 git add .</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>4. 修改最近一次 commit 的提交信息，正确的命令是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q4" value="A"> A. git commit -m "新信息"</label>
+<label class="quiz-option"><input type="radio" name="q4" value="B"> B. git log --amend</label>
+<label class="quiz-option"><input type="radio" name="q4" value="C"> C. git commit --amend -m "新信息"</label>
+<label class="quiz-option"><input type="radio" name="q4" value="D"> D. git reset HEAD~1</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- 第二节 -->
+<section class="topic" id="s2">
+<div class="topic-header">
+<h2 class="topic-title">第二节 · 分支管理与 Git Flow</h2>
+<div class="topic-divider"></div>
+</div>
+
+<div class="section open" id="s2-goal">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-goal">🎯</span>学习目标<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+<ul>
+<li>理解分支的本质（指向 commit 的可移动指针）</li>
+<li>掌握 branch、checkout、merge 的基础操作</li>
+<li>理解 Git Flow 的 5 种分支角色与工作流</li>
+<li>掌握冲突的产生原因和解决步骤</li>
+<li>理解 rebase 与 merge 的差异及黄金法则</li>
+</ul>
+<div class="callout callout-blue">分支是协作的核心。多人并行开发、代码审查、版本发布——所有规范的工作流都建立在分支管理之上。</div>
+</div>
+</div>
+</div>
+
+<div class="section open" id="s2-concept">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-concept">📖</span>核心概念<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>什么是分支</h4>
+<p>分支就是一个<strong>指向某个 commit 的可移动指针</strong>。创建分支只是创建新指针，<strong>极其轻量</strong>（不像 SVN 需要复制目录）。</p>
+<pre class="ascii-diagram">        commit_a ← commit_b ← commit_c  (main)
+                            ↖
+                              commit_d ← commit_e  (feature/login)</pre>
+
+<h4>为什么需要分支</h4>
+<ul>
+<li><strong>隔离开发</strong>：新功能不影响主分支稳定性</li>
+<li><strong>并行工作</strong>：多人可同时在不同分支上工作</li>
+<li><strong>代码审查</strong>：通过 PR 在合并前审查代码</li>
+<li><strong>实验性开发</strong>：失败的实验直接删除</li>
+</ul>
+
+<h4>fast-forward vs no-ff 合并</h4>
+<pre class="ascii-diagram"># fast-forward（默认）：直接把 main 指针移过去
+main → A → B → C → D → E
+
+# --no-ff：创建合并 commit，保留分支历史
+main → A → B ──────── F
+              ↗      ↗
+      feature → C → D</pre>
+
+<h4>Git Flow 五种分支</h4>
+<table>
+<tr><th>分支</th><th>从哪创建</th><th>合并到哪</th><th>用途</th></tr>
+<tr><td>main</td><td>—</td><td>—</td><td>生产代码，只接受 release/hotfix</td></tr>
+<tr><td>develop</td><td>—</td><td>—</td><td>开发主分支，集成所有功能</td></tr>
+<tr><td>feature/*</td><td>develop</td><td>develop</td><td>开发新功能</td></tr>
+<tr><td>release/*</td><td>develop</td><td>main + develop</td><td>准备发布，只修 bug</td></tr>
+<tr><td>hotfix/*</td><td>main</td><td>main + develop</td><td>紧急修复生产 Bug</td></tr>
+</table>
+
+<h4>冲突的产生</h4>
+<p>当<strong>两个分支修改了同一个文件的同一部分</strong>，Git 无法自动决定保留哪个版本，就产生冲突。冲突标记：</p>
+<div class="code-block"><pre>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD          # 当前分支的内容
+DB_HOST = 'production'
+=======                  # 分隔线
+DB_HOST = 'localhost'
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature       # 要合并分支的内容</pre></div>
+
+<h4>Merge vs Rebase</h4>
+<table>
+<tr><th>维度</th><th>Merge</th><th>Rebase</th></tr>
+<tr><td>结果</td><td>创建合并 commit，保留完整历史</td><td>把提交"重新接"到最新之后</td></tr>
+<tr><td>优点</td><td>历史真实、安全</td><td>历史线性、干净</td></tr>
+<tr><td>缺点</td><td>历史可能杂乱</td><td>改写历史，公共分支危险</td></tr>
+<tr><td>适用</td><td>合并到主分支</td><td>个人分支同步主分支更新</td></tr>
+</table>
+<div class="callout callout-warn">黄金法则：<strong>绝对不要在公共分支（别人也在用的分支）上 rebase！</strong></div>
+
+<h4>GitHub Flow（轻量替代）</h4>
+<p>只有两种分支：</p>
+<ul>
+<li><code>main</code>：始终保持可部署状态</li>
+<li><code>feature/*</code>：从 main 创建，PR 合并回 main</li>
+</ul>
+<p>适合持续部署的 Web 应用。</p>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-code">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-code">💻</span>代码示例<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>分支创建与切换</h4>
+<div class="code-block"><pre>git branch                          # 查看本地分支
+git branch -a                       # 查看所有分支（含远程）
+git branch feature/login            # 创建新分支
+git checkout feature/login          # 切换分支（旧语法）
+git switch feature/login            # 切换分支（Git 2.23+）
+git checkout -b feature/login       # 创建并切换（最常用）
+git switch -c feature/login         # 同上（新语法）
+git branch -d feature/login         # 删除已合并分支
+git branch -D feature/login         # 强制删除未合并分支</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>合并分支</h4>
+<div class="code-block key-line"><pre>git checkout main
+git merge feature/login             # 默认（可能 fast-forward）
+git merge --no-ff feature/login     # 强制创建合并 commit
+git merge --abort                   # 放弃合并（搞砸时救命）</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>Rebase</h4>
+<div class="code-block"><pre>git checkout feature
+git rebase main                     # 在自己的分支上 rebase
+git push --force-with-lease         # 推送 rebase 后的分支</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>冲突解决</h4>
+<div class="code-block"><pre>git mergetool                       # 打开图形化工具（VS Code 等）
+# 手动解决步骤：
+# 1. 打开冲突文件，删除冲突标记，保留正确内容
+# 2. git add &lt;file&gt;               # 标记冲突已解决
+# 3. git commit                     # 完成合并
+
+git merge --abort                   # 放弃整个合并</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>Git Flow 完整工作流</h4>
+<div class="code-block"><pre># 1. 开始新功能
+git checkout develop
+git pull origin develop
+git checkout -b feature/user-auth
+
+# 2. 开发并提交
+git add .
+git commit -m "feat: 添加登录页面"
+git commit -m "feat: 实现 JWT 验证"
+
+# 3. 合并回 develop
+git checkout develop
+git merge --no-ff feature/user-auth
+git branch -d feature/user-auth
+git push origin develop
+
+# 4. 准备发布 v1.2.0
+git checkout -b release/1.2.0 develop
+git commit -m "fix: 修复发布前发现的Bug"
+
+# 5. 发布到 main
+git checkout main
+git merge --no-ff release/1.2.0
+git tag -a v1.2.0 -m "Release v1.2.0"
+
+# 6. 同步 release 改动到 develop
+git checkout develop
+git merge --no-ff release/1.2.0
+git branch -d release/1.2.0
+
+# 7. 紧急修复
+git checkout -b hotfix/fix-crash main
+git commit -m "fix: 修复崩溃"
+git checkout main
+git merge --no-ff hotfix/fix-crash
+git tag -a v1.2.1 -m "Hotfix v1.2.1"
+git checkout develop
+git merge --no-ff hotfix/fix-crash
+git branch -d hotfix/fix-crash</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>Tag 标签管理</h4>
+<div class="code-block key-line"><pre>git tag v1.0.0                                 # 轻量标签
+git tag -a v1.0.0 -m "Release v1.0.0"          # 附注标签（推荐）
+git tag -l                                     # 查看所有标签
+git show v1.0.0                                # 查看标签信息
+
+git push origin v1.0.0                         # 推送单个标签
+git push origin --tags                         # 推送所有标签
+git tag -d v1.0.0                              # 删除本地标签
+git push origin --delete v1.0.0                # 删除远程标签
+
+# 基于旧标签创建修复分支
+git checkout -b hotfix/v1.0.1 v1.0.0</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>误操作恢复</h4>
+<div class="code-block"><pre>git stash                       # 暂存当前改动
+git checkout feature            # 切到正确分支
+git stash pop                   # 恢复改动
+
+git log main..feature/abandoned # 查看分支独有的提交
+git reset --hard ORIG_HEAD      # 回到合并之前的状态
+
+git push --force-with-lease     # 推送 rebase 后的分支（比 --force 安全）</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-caution">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-caution">⚠️</span>常见误区<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="comparison-table">
+<div class="left">❌ 在错误的分支上开发了</div>
+<div class="right">✅ 用 stash 暂存 → 切到正确分支 → pop 恢复</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 删除分支提示 "not fully merged"</div>
+<div class="right">✅ 用 -D 强制删除（确认改动不需要）</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ rebase 之后 push 不上去</div>
+<div class="right">✅ 用 --force-with-lease（比 --force 安全）</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 合并冲突解决错了且已 commit</div>
+<div class="right">✅ 还没 push 就 reset --hard ORIG_HEAD</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 分支命名混乱（中文、随机字符）</div>
+<div class="right">✅ feature/user-login、fix/login-crash 清晰规范</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 在公共分支上 rebase</div>
+<div class="right">✅ 永远只在自己的分支上 rebase 主分支</div>
+</div>
+
+<div class="callout callout-warn">安全提示：<code>git push --force</code> 会覆盖远程历史，可能丢同事的提交。务必用 <code>--force-with-lease</code>，它会先检查远程是否有新提交。</div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-quiz">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-quiz">✏️</span>自测题<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="quiz-question" data-answer="B">
+<h4>1. 创建一个新分支并立即切换过去，最简洁的命令是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q5" value="A"> A. git branch feature && git checkout feature</label>
+<label class="quiz-option"><input type="radio" name="q5" value="B"> B. git checkout -b feature</label>
+<label class="quiz-option"><input type="radio" name="q5" value="C"> C. git switch feature</label>
+<label class="quiz-option"><input type="radio" name="q5" value="D"> D. git create feature</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>2. `git merge --no-ff` 的作用是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q6" value="A"> A. 强制快进合并</label>
+<label class="quiz-option"><input type="radio" name="q6" value="B"> B. 删除被合并的分支</label>
+<label class="quiz-option"><input type="radio" name="q6" value="C"> C. 创建合并 commit，保留分支历史</label>
+<label class="quiz-option"><input type="radio" name="q6" value="D"> D. 合并后自动推送到远程</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="D">
+<h4>3. 关于 rebase 的黄金法则是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q7" value="A"> A. 永远用 rebase 不用 merge</label>
+<label class="quiz-option"><input type="radio" name="q7" value="B"> B. 永远用 merge 不用 rebase</label>
+<label class="quiz-option"><input type="radio" name="q7" value="C"> C. rebase 后必须用 git push --force</label>
+<label class="quiz-option"><input type="radio" name="q7" value="D"> D. 永远不要在公共分支上 rebase</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>4. 合并搞砸了想放弃，应该用？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q8" value="A"> A. git reset --hard</label>
+<label class="quiz-option"><input type="radio" name="q8" value="B"> B. git revert HEAD</label>
+<label class="quiz-option"><input type="radio" name="q8" value="C"> C. git merge --abort</label>
+<label class="quiz-option"><input type="radio" name="q8" value="D"> D. git branch -D</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- 证据追溯区 -->
+<div id="evidence">
+<h2>📎 证据追溯</h2>
+<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+<table>
+<tr>
+<th>结论摘要</th>
+<th>来源文件</th>
+<th>位置（章节/行号）</th>
+</tr>
+<tr>
+<td>Git 是 2005 年由 Linus Torvalds 创建的分布式版本控制系统</td>
+<td>1.Git基础操作.md</td>
+<td>第一节 / 1.1</td>
+</tr>
+<tr>
+<td>工作区 → 暂存区 → 本地仓库 → 远程仓库 四级模型</td>
+<td>1.Git基础操作.md</td>
+<td>第二节 / 2.1</td>
+</tr>
+<tr>
+<td>git pull = fetch + merge</td>
+<td>1.Git基础操作.md</td>
+<td>第四节 / 4.6</td>
+</tr>
+<tr>
+<td>.gitignore 只能忽略未跟踪文件</td>
+<td>1.Git基础操作.md</td>
+<td>第四节 / 4.5</td>
+</tr>
+<tr>
+<td>git rm --cached 用于从缓存移除已跟踪文件</td>
+<td>1.Git基础操作.md</td>
+<td>第五节 / 坑2</td>
+</tr>
+<tr>
+<td>git push --force-with-lease 比 --force 更安全</td>
+<td>1.Git基础操作.md</td>
+<td>第五节 / 坑5</td>
+</tr>
+<tr>
+<td>分支是指向 commit 的可移动指针</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第一节 / 1.1</td>
+</tr>
+<tr>
+<td>Git Flow 定义 5 种分支：main/develop/feature/release/hotfix</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第三节</td>
+</tr>
+<tr>
+<td>合并冲突由两个分支修改同一文件的同一部分产生</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第四节 / 4.1</td>
+</tr>
+<tr>
+<td>绝对不要在公共分支上 rebase</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第五节 / 黄金法则</td>
+</tr>
+<tr>
+<td>git merge --abort 放弃合并</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第四节</td>
+</tr>
+<tr>
+<td>Tag 标签默认 push 不会推送</td>
+<td>2.分支管理与Git_Flow.md</td>
+<td>第六节</td>
+</tr>
+</table>
+</div>
+
+</main>
+</div>
+<button id="back-to-top" onclick="scrollToTop()">↑</button>
+<script>
+(function(){
+  var dark=localStorage.getItem('dark-mode');
+  if(dark==='true'||(!dark&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+    document.body.classList.add('dark');
+    document.getElementById('dark-toggle').textContent='🌙';
+  }else{
+    document.getElementById('dark-toggle').textContent='☀️';
+  }
+  document.getElementById('dark-toggle').addEventListener('click',function(){
+    document.body.classList.toggle('dark');
+    var isDark=document.body.classList.contains('dark');
+    localStorage.setItem('dark-mode',isDark);
+    this.textContent=isDark?'🌙':'☀️';
+  });
+  window.addEventListener('scroll',function(){
+    var s=document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    document.getElementById('progress-bar').style.width=(s/h*100)+'%';
+    document.getElementById('back-to-top').classList.toggle('show',s>300);
+  });
+  window.toggleSection=function(el){
+    el.parentElement.classList.toggle('open');
+  };
+  window.scrollToTop=function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+  var links=document.querySelectorAll('.nav-link');
+  var sections=document.querySelectorAll('.topic, .section[id]');
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var id=e.target.id;
+        links.forEach(function(l){
+          l.classList.toggle('active',l.getAttribute('href')==='#'+id);
+        });
+        var section=document.getElementById(id);
+        if(section){
+          var parent=section.closest('.topic');
+          if(parent){
+            var topicLink=document.querySelector('.nav-topic[href="#'+parent.id+'"]');
+            if(topicLink) topicLink.classList.add('active');
+          }
+        }
+      }
+    });
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(function(s){observer.observe(s);});
+  window.copyCode=function(btn){
+    var pre=btn.parentElement.querySelector('pre');
+    var text=pre.textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent='✅ 已复制';
+      btn.classList.add('copied');
+      setTimeout(function(){
+        btn.textContent='📋 复制';
+        btn.classList.remove('copied');
+      },1500);
+    });
+  };
+  window.checkQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    var answer=q.getAttribute('data-answer');
+    var selected=q.querySelector('input[name]:checked');
+    var result=q.querySelector('.quiz-result');
+    if(!selected){alert('请选择一个选项');return;}
+    if(selected.value===answer){
+      result.textContent='✅ 回答正确！';
+      result.className='quiz-result correct';
+    }else{
+      result.textContent='❌ 回答错误，正确答案是 '+answer;
+      result.className='quiz-result incorrect';
+    }
+    result.style.display='block';
+  };
+  window.resetQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    q.querySelectorAll('input[name]').forEach(function(r){r.checked=false;});
+    var result=q.querySelector('.quiz-result');
+    result.style.display='none';
+    result.className='quiz-result';
+  };
+  window.toggleSidebar=function(){
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('show');
+  };
+})();
+</script>
+</body>
+</html>

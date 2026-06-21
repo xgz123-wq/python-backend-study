@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_learn
+    ports:
+      - "6379:6379"
+    # 启用 AOF 持久化 + 混合持久化，方便观察持久化效果
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --aof-use-rdb-preamble yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis_data:

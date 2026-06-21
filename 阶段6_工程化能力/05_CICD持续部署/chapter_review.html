@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD 持续部署 · 学习复习</title>
+<style>
+/* ========================= CSS 变量 ========================= */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --border: #e3e8ef;
+  --text: #1e293b;
+  --muted: #64748b;
+
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --cyan: #0284c7;
+  --red: #dc2626;
+  --orange: #d97706;
+  --green: #16a34a;
+
+  --code-bg: #1e293b;
+  --code-fg: #e2e8f0;
+  --code-keyword: #f472b6;
+  --code-string: #86efac;
+  --code-comment: #94a3b8;
+  --code-number: #fbbf24;
+  --code-function: #60a5fa;
+
+  --ascii-bg: #0f172a;
+
+  --shadow: 0 1px 4px rgba(0,0,0,.08);
+  --shadow-strong: 0 4px 12px rgba(0,0,0,.12);
+
+  --tag-blue-bg: #dbeafe;
+  --tag-purple-bg: #ede9fe;
+  --tag-cyan-bg: #cffafe;
+  --tag-red-bg: #fee2e2;
+  --tag-orange-bg: #fef3c7;
+
+  --callout-blue-bg: #eff6ff;
+  --callout-red-bg: #fef2f2;
+  --callout-yellow-bg: #fffbeb;
+}
+.dark {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --cyan: #79c0ff;
+  --red: #f85149;
+  --orange: #f0883e;
+  --green: #3fb950;
+
+  --code-bg: #010409;
+  --ascii-bg: #010409;
+
+  --shadow: 0 1px 4px rgba(0,0,0,.4);
+  --shadow-strong: 0 4px 12px rgba(0,0,0,.5);
+
+  --tag-blue-bg: rgba(88,166,255,.15);
+  --tag-purple-bg: rgba(188,140,255,.15);
+  --tag-cyan-bg: rgba(121,192,255,.15);
+  --tag-red-bg: rgba(248,81,73,.15);
+  --tag-orange-bg: rgba(240,136,62,.15);
+
+  --callout-blue-bg: rgba(88,166,255,.1);
+  --callout-red-bg: rgba(248,81,73,.1);
+  --callout-yellow-bg: rgba(240,136,62,.1);
+}
+
+/* ========================= 基础 ========================= */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  background: var(--bg);
+  color: var(--text);
+  transition: background .2s, color .2s;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ========================= 进度条 ========================= */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--blue); width: 0%;
+  z-index: 1001; transition: width .1s;
+}
+
+/* ========================= 顶部栏 ========================= */
+header.page-header {
+  max-width: 980px; margin: 0 auto;
+  padding: 32px 24px 16px;
+  text-align: center;
+}
+header.page-header h1 {
+  font-size: 28px; margin: 0 0 8px;
+  color: var(--text);
+}
+header.page-header .subtitle {
+  color: var(--muted); font-size: 14px;
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+}
+.read-time::before { content: "⏱️ "; }
+
+/* ========================= 深色切换 ========================= */
+#theme-toggle {
+  position: fixed; top: 16px; right: 16px;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--card);
+  cursor: pointer; font-size: 18px; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+#theme-toggle:hover { box-shadow: var(--shadow-strong); }
+
+/* ========================= 回到顶部 ========================= */
+#back-top {
+  position: fixed; right: 20px; bottom: 24px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--blue); color: #fff;
+  border: none; cursor: pointer; font-size: 20px;
+  display: none; z-index: 999;
+  box-shadow: var(--shadow-strong);
+}
+#back-top.show { display: flex; align-items: center; justify-content: center; }
+
+/* ========================= 主体布局 ========================= */
+.layout {
+  display: flex; max-width: 1180px;
+  margin: 0 auto; gap: 24px;
+  padding: 16px 24px 80px;
+}
+
+/* ========================= 侧栏 ========================= */
+aside.sidebar {
+  position: sticky; top: 24px; align-self: flex-start;
+  width: 260px; flex-shrink: 0; max-height: calc(100vh - 48px);
+  overflow-y: auto; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; box-shadow: var(--shadow);
+}
+aside.sidebar h2 {
+  font-size: 14px; margin: 0 0 12px;
+  color: var(--muted); letter-spacing: .03em;
+}
+aside.sidebar a.nav-topic {
+  display: block; font-size: 12.5px; font-weight: 700;
+  color: var(--text); padding: 8px 8px; border-radius: 6px;
+  margin-top: 6px; transition: all .15s;
+}
+aside.sidebar a.nav-topic:hover { background: var(--bg); text-decoration: none; }
+aside.sidebar a.nav-topic.active { color: var(--blue); background: var(--tag-blue-bg); }
+aside.sidebar a.nav-link {
+  display: block; font-size: 13.5px; font-weight: 400;
+  color: var(--muted); padding: 5px 8px 5px 20px;
+  border-radius: 6px; border-left: 2px solid transparent;
+  transition: all .15s;
+}
+aside.sidebar a.nav-link:hover { color: var(--text); text-decoration: none; }
+aside.sidebar a.nav-link.active {
+  color: var(--blue); border-left-color: var(--blue);
+  background: var(--tag-blue-bg);
+}
+
+/* ========================= 主内容 ========================= */
+main.content {
+  flex: 1; min-width: 0; max-width: 760px;
+}
+main.content section.topic {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px 28px;
+  margin-bottom: 20px; box-shadow: var(--shadow);
+  scroll-margin-top: 24px;
+}
+main.content section.topic h2.topic-title {
+  font-size: 22px; margin: 0 0 16px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
+  color: var(--text);
+}
+main.content h3 {
+  font-size: 17px; margin: 18px 0 10px; color: var(--text);
+}
+main.content p { margin: 8px 0; }
+main.content ul, main.content ol { padding-left: 24px; margin: 8px 0; }
+main.content li { margin: 4px 0; }
+main.content code:not(pre code) {
+  background: var(--bg); padding: 2px 6px; border-radius: 4px;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 13px; color: var(--cyan);
+  border: 1px solid var(--border);
+}
+
+/* ========================= 五区块 section.section ========================= */
+.section {
+  margin-top: 18px; border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+.section-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; cursor: pointer;
+  background: var(--bg); user-select: none;
+  transition: background .15s;
+}
+.section-header:hover { background: var(--tag-blue-bg); }
+.section-header .tag {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px; color: #fff;
+}
+.tag-blue { background: var(--blue); }
+.tag-purple { background: var(--purple); }
+.tag-cyan { background: var(--cyan); }
+.tag-red { background: var(--red); }
+.tag-orange { background: var(--orange); }
+.section-header .label {
+  flex: 1; font-weight: 600; font-size: 15px;
+}
+.section-header .arrow {
+  font-size: 12px; color: var(--muted);
+  transition: transform .2s;
+}
+.section.open .section-header .arrow { transform: rotate(90deg); }
+.section-body {
+  display: none; padding: 16px 20px 20px;
+  background: var(--card);
+}
+.section.open .section-body { display: block; }
+
+/* ========================= Callout ========================= */
+.callout {
+  border-left: 4px solid var(--blue);
+  background: var(--callout-blue-bg);
+  padding: 10px 14px; border-radius: 6px;
+  margin: 10px 0; font-size: 14px;
+}
+.callout-red { border-left-color: var(--red); background: var(--callout-red-bg); }
+.callout-yellow { border-left-color: var(--orange); background: var(--callout-yellow-bg); }
+
+/* ========================= 表格 ========================= */
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%; border-collapse: collapse;
+  table-layout: fixed; word-break: break-word;
+  font-size: 13.5px;
+}
+th, td {
+  padding: 8px 12px; border: 1px solid var(--border);
+  text-align: left; vertical-align: top;
+}
+th {
+  background: var(--bg); font-weight: 700; color: var(--text);
+}
+tbody tr:nth-child(even) { background: var(--bg); }
+
+/* ========================= ASCII / 代码块 ========================= */
+pre.ascii-diagram,
+pre.code-block {
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12.5px; line-height: 1.55;
+  background: var(--ascii-bg); color: var(--code-fg);
+  padding: 14px 16px; border-radius: 8px;
+  white-space: pre; overflow-x: auto;
+  margin: 12px 0; position: relative;
+}
+pre.ascii-diagram { border-left: 3px solid var(--purple); }
+pre.code-block { border-left: 3px solid var(--cyan); }
+
+/* 代码高亮 */
+.tok-key { color: var(--code-keyword); font-weight: 600; }
+.tok-str { color: var(--code-string); }
+.tok-com { color: var(--code-comment); font-style: italic; }
+.tok-num { color: var(--code-number); }
+.tok-fn  { color: var(--code-function); }
+.tok-mark { border-left: 3px solid #f59e0b; padding-left: 8px; display: inline-block; }
+
+/* 复制按钮 */
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(255,255,255,.1); color: #fff;
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 3px 9px; border-radius: 4px;
+  cursor: pointer; font-size: 12px;
+  font-family: inherit;
+}
+.copy-btn:hover { background: rgba(255,255,255,.2); }
+
+/* ========================= details 折叠 ========================= */
+details.principle {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 12px; margin: 8px 0;
+}
+details.principle > summary {
+  cursor: pointer; font-weight: 600; color: var(--purple);
+  padding: 4px 0;
+}
+details.principle[open] > summary { margin-bottom: 8px; }
+details.principle > .content { padding-top: 6px; font-size: 14px; }
+
+/* ========================= 自测题 ========================= */
+.quiz {
+  background: var(--callout-yellow-bg);
+  border-left: 3px solid var(--orange);
+  padding: 12px 14px; border-radius: 6px;
+  margin: 10px 0;
+}
+.quiz .q-title { font-weight: 700; margin-bottom: 8px; }
+.quiz .options { display: flex; flex-direction: column; gap: 6px; }
+.quiz .option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 4px;
+  cursor: pointer; transition: background .15s;
+}
+.quiz .option:hover { background: var(--tag-blue-bg); }
+.quiz .option input { margin: 0; }
+.quiz .actions { margin-top: 10px; display: flex; gap: 8px; }
+.quiz button {
+  padding: 6px 14px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--card);
+  color: var(--text); cursor: pointer; font-size: 13px;
+  font-family: inherit;
+}
+.quiz button:hover { background: var(--tag-blue-bg); }
+.quiz .result { margin-top: 8px; padding: 8px 10px; border-radius: 6px; display: none; font-size: 13.5px; }
+.quiz .result.correct { background: rgba(22,163,74,.12); color: var(--green); border: 1px solid var(--green); }
+.quiz .result.wrong { background: rgba(220,38,38,.12); color: var(--red); border: 1px solid var(--red); }
+
+/* ========================= 误区表格 ========================= */
+table.pitfall th.col-bad { background: rgba(220,38,38,.12); color: var(--red); }
+table.pitfall th.col-good { background: rgba(22,163,74,.12); color: var(--green); }
+
+/* ========================= 证据追溯区 ========================= */
+.evidence {
+  margin-top: 32px; padding: 20px 24px;
+  background: var(--bg); border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+.evidence h2 { font-size: 18px; margin: 0 0 8px; }
+.evidence p.note { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+
+/* ========================= 移动端 ========================= */
+.mobile-bar {
+  display: none; position: fixed; top: 0; left: 0; right: 0;
+  height: 48px; background: var(--card); border-bottom: 1px solid var(--border);
+  z-index: 999; align-items: center; padding: 0 16px; gap: 10px;
+}
+.mobile-bar .chap { flex: 1; font-weight: 700; font-size: 15px; }
+.mobile-bar .menu-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  font-size: 16px; color: var(--text);
+}
+.sidebar-mask {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 998;
+}
+.sidebar-mask.show { display: block; }
+
+@media (max-width: 768px) {
+  .layout { padding: 64px 12px 80px; gap: 0; }
+  aside.sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 260px; max-height: 100vh;
+    border-radius: 0; z-index: 1000;
+    transform: translateX(-100%); transition: transform .2s;
+    box-shadow: var(--shadow-strong);
+  }
+  aside.sidebar.open { transform: translateX(0); }
+  .mobile-bar { display: flex; }
+  #theme-toggle { top: 4px; right: 8px; }
+  header.page-header { padding-top: 16px; }
+  main.content section.topic { padding: 18px 16px; }
+  pre.ascii-diagram, pre.code-block { font-size: 11.5px; }
+}
+
+/* ========================= 打印 ========================= */
+@media print {
+  #progress-bar, #theme-toggle, #back-top,
+  aside.sidebar, .mobile-bar, .sidebar-mask { display: none !important; }
+  body { background: #fff; color: #000; }
+  .section-body { display: block !important; }
+  main.content section.topic { box-shadow: none; border-color: #ccc; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="theme-toggle" title="切换深色模式">🌙</button>
+<button id="back-top" title="回到顶部">↑</button>
+
+<div class="mobile-bar">
+  <span class="chap">CI/CD 持续部署</span>
+  <button class="menu-btn" id="mobile-menu">☰</button>
+</div>
+<div class="sidebar-mask" id="sidebar-mask"></div>
+
+<header class="page-header">
+  <h1>🚀 CI/CD 持续部署</h1>
+  <div class="subtitle">
+    <span class="read-time">预估阅读 18 分钟</span>
+    <span>· 阶段 6 工程化能力</span>
+    <span>· 05_CICD持续部署</span>
+  </div>
+</header>
+
+<div class="layout">
+
+<!-- ========================= 侧栏 ========================= -->
+<aside class="sidebar" id="sidebar">
+  <h2>📑 本章目录</h2>
+
+  <a class="nav-topic" href="#s1">第一节 · CI/CD 概念与流程</a>
+  <a class="nav-link" href="#s1-goal">🎯 学习目标</a>
+  <a class="nav-link" href="#s1-concept">📖 核心概念</a>
+  <a class="nav-link" href="#s1-code">💻 代码示例</a>
+  <a class="nav-link" href="#s1-pitfall">⚠️ 常见误区</a>
+  <a class="nav-link" href="#s1-quiz">✏️ 自测题</a>
+
+  <a class="nav-topic" href="#s2">第二节 · GitHub Actions 实战</a>
+  <a class="nav-link" href="#s2-goal">🎯 学习目标</a>
+  <a class="nav-link" href="#s2-concept">📖 核心概念</a>
+  <a class="nav-link" href="#s2-code">💻 代码示例</a>
+  <a class="nav-link" href="#s2-pitfall">⚠️ 常见误区</a>
+  <a class="nav-link" href="#s2-quiz">✏️ 自测题</a>
+
+  <a class="nav-topic" href="#s3">第三节 · 端到端流水线与部署脚本</a>
+  <a class="nav-link" href="#s3-goal">🎯 学习目标</a>
+  <a class="nav-link" href="#s3-concept">📖 核心概念</a>
+  <a class="nav-link" href="#s3-code">💻 代码示例</a>
+  <a class="nav-link" href="#s3-pitfall">⚠️ 常见误区</a>
+  <a class="nav-link" href="#s3-quiz">✏️ 自测题</a>
+</aside>
+
+<!-- ========================= 主内容 ========================= -->
+<main class="content">
+
+<!-- ==================== 第一节 ==================== -->
+<section class="topic" id="s1">
+<h2 class="topic-title">第一节 · CI/CD 概念与流程</h2>
+
+<!-- 1.1 学习目标 -->
+<div class="section open" id="s1-goal">
+  <div class="section-header">
+    <span class="tag tag-blue">🎯</span>
+    <span class="label">学习目标</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <ul>
+      <li>区分 CI 与 CD（持续交付 vs 持续部署）</li>
+      <li>掌握 Pipeline / Job / Step / Trigger / Runner 概念</li>
+      <li>理解「快速失败」原则的工程价值</li>
+      <li>能对比 GitHub Actions / GitLab CI / Jenkins 选型</li>
+      <li>能识别 CI/CD 上线后 7 类常见坑</li>
+    </ul>
+    <div class="callout">
+      <strong>与后端开发的关联：</strong>后端服务的发布频率最高（每日多次），CI/CD 是把 Git commit 变成线上可访问接口的「最后一公里」自动化通道。
+    </div>
+  </div>
+</div>
+
+<!-- 1.2 核心概念 -->
+<div class="section open" id="s1-concept">
+  <div class="section-header">
+    <span class="tag tag-purple">📖</span>
+    <span class="label">核心概念</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1. CI（持续集成）</h3>
+    <p>开发人员频繁（通常每天多次）将代码合并到主干，每次合并自动触发：</p>
+    <ul>
+      <li><strong>代码拉取</strong>：从 VCS 获取最新代码</li>
+      <li><strong>依赖安装</strong>：自动安装第三方库</li>
+      <li><strong>静态检查</strong>：lint / 类型检查</li>
+      <li><strong>自动测试</strong>：单元测试 + 集成测试</li>
+    </ul>
+    <p><strong>核心目标</strong>：尽早发现问题，修复成本最低。</p>
+
+    <h3>2. CD（持续交付 / 持续部署）</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>层次</th><th>英文</th><th>关键差异</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>持续交付</td><td>Continuous Delivery</td><td>代码始终「可发布」，但<strong>需要人工点击</strong>发布</td></tr>
+        <tr><td>持续部署</td><td>Continuous Deployment</td><td>测试通过后<strong>全自动</strong>部署到生产</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>两者差在「最后一步是否需要人工」。持续部署 = 持续交付 + 自动发布。</p>
+
+    <h3>3. CI/CD 全景</h3>
+<pre class="ascii-diagram">代码提交 → 自动测试 → 构建打包 → 预发布验证 → 生产部署
+  push     pytest     docker       staging       prod</pre>
+
+    <h3>4. Pipeline / Job / Step / Trigger / Runner / Artifact</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>组件</th><th>角色</th><th>典型配置</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Pipeline</strong></td><td>顶层容器，一个完整流程</td><td>.github/workflows/ci.yml</td></tr>
+        <tr><td><strong>Trigger</strong></td><td>启动 Pipeline 的事件</td><td>push / pull_request / schedule / workflow_dispatch</td></tr>
+        <tr><td><strong>Job</strong></td><td>独立执行单元</td><td>默认并行，<code>needs</code> 串行</td></tr>
+        <tr><td><strong>Step</strong></td><td>Job 内最小动作</td><td><code>uses</code>（Action）或 <code>run</code>（shell）</td></tr>
+        <tr><td><strong>Runner</strong></td><td>执行 Job 的机器</td><td>GitHub-hosted（ubuntu-latest）或自托管</td></tr>
+        <tr><td><strong>Artifact</strong></td><td>Job 产物（报告、镜像）</td><td>upload-artifact / download-artifact</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <details class="principle">
+      <summary>📐 为什么默认并行？</summary>
+      <div class="content">
+        GitHub Actions 设计为「Job 独立运行在不同 Runner」，每个 Job 启动新虚拟机、互相隔离。并行能节省总耗时，<code>needs</code> 才是显式声明依赖。
+      </div>
+    </details>
+
+    <h3>5. 工具选型对比</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>特性</th><th>GitHub Actions</th><th>GitLab CI</th><th>Jenkins</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>托管方式</td><td>GitHub 云端</td><td>云端/自托管</td><td>完全自托管</td></tr>
+        <tr><td>配置格式</td><td>YAML</td><td>YAML</td><td>Groovy / Jenkinsfile</td></tr>
+        <tr><td>学习曲线</td><td>低</td><td>中</td><td>高</td></tr>
+        <tr><td>生态市场</td><td>Actions Marketplace 丰富</td><td>内置模板</td><td>插件多但陈旧</td></tr>
+        <tr><td>免费额度</td><td>公开免费 / 私有 2000 min/月</td><td>400 min/月</td><td>服务器自付费</td></tr>
+        <tr><td>适合场景</td><td>中小项目 / 开源</td><td>全规模</td><td>大型企业复杂流水线</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><strong>学习路线推荐 GitHub Actions</strong>：零基础设施、YAML 简单、与 GitHub 原生集成、个人学习免费额度充足。</p>
+
+    <h3>6. DORA 量化收益</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>指标</th><th>使用 CI/CD 后的提升</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>部署频率</td><td>高 208 倍</td></tr>
+        <tr><td>变更前置时间</td><td>快 106 倍</td></tr>
+        <tr><td>变更失败率</td><td>低 7 倍</td></tr>
+        <tr><td>故障恢复时间</td><td>快 2604 倍</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>（数据来源：DORA DevOps Research and Assessment 报告）</p>
+
+  </div>
+</div>
+
+<!-- 1.3 代码示例 -->
+<div class="section" id="s1-code">
+  <div class="section-header">
+    <span class="tag tag-cyan">💻</span>
+    <span class="label">代码示例</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1) Python 后端 API 完整 Pipeline（概念示意）</h3>
+    <p>下面是从 push 到生产部署的 4 个 Job 串行执行：</p>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-com"># .github/workflows/backend.yml —— 概念示意</span>
+<span class="tok-key">jobs:</span>
+  <span class="tok-fn">test</span>:
+    <span class="tok-fn">runs-on</span>: ubuntu-latest
+    <span class="tok-fn">steps</span>:
+      - <span class="tok-fn">uses</span>: actions/checkout@v4
+      - <span class="tok-fn">uses</span>: actions/setup-python@v5
+        <span class="tok-fn">with</span>:
+          python-version: <span class="tok-str">'3.11'</span>
+      - <span class="tok-fn">run</span>: pip install -r requirements.txt
+      - <span class="tok-fn">run</span>: pytest --cov=app
+
+  <span class="tok-fn">build</span>:
+    <span class="tok-fn">needs</span>: test          <span class="tok-com"># 串行：等 test 通过</span>
+    <span class="tok-fn">steps</span>:
+      - <span class="tok-fn">run</span>: docker build -t app:${{ github.sha }} .
+
+  <span class="tok-fn">deploy-staging</span>:
+    <span class="tok-fn">needs</span>: build
+    <span class="tok-fn">steps</span>:
+      - <span class="tok-fn">run</span>: ssh staging "docker compose up -d"</span></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>输入命令</th><th>预期输出（成功场景）</th></tr></thead>
+      <tbody>
+        <tr><td><code>git push origin main</code></td><td>test ✓ → build ✓ → deploy-staging ✓</td></tr>
+        <tr><td>PR 修改 <code>src/api/users.py</code> 后 push</td><td>仅触发 test Job，PR 显示 ✅ 状态</td></tr>
+        <tr><td>只改 <code>README.md</code> 后 push</td><td>若配置了 paths 过滤，则<strong>不触发</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>2) 并行 Job + needs 依赖</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-key">jobs:</span>
+  <span class="tok-fn">lint</span>:
+    <span class="tok-fn">runs-on</span>: ubuntu-latest
+    <span class="tok-fn">steps</span>: [- <span class="tok-fn">run</span>: ruff check .]
+
+  <span class="tok-fn">test</span>:
+    <span class="tok-fn">runs-on</span>: ubuntu-latest
+    <span class="tok-fn">steps</span>: [- <span class="tok-fn">run</span>: pytest]
+
+  <span class="tok-fn">security-scan</span>:
+    <span class="tok-fn">runs-on</span>: ubuntu-latest
+    <span class="tok-fn">steps</span>: [- <span class="tok-fn">run</span>: bandit -r src/]
+
+  <span class="tok-fn">build</span>:
+    <span class="tok-fn">needs</span>: [lint, test, security-scan]   <span class="tok-com"># 等三者都过</span>
+    <span class="tok-fn">steps</span>: [- <span class="tok-fn">run</span>: docker build .]</span></pre>
+    <p>lint / test / security-scan 三个 Job <strong>同时启动</strong>，build 在它们都完成后才执行 → 总耗时 = max(三个) + build。</p>
+
+    <h3>3) demo/1_cicd_concept.py 核心结构</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-key">class</span> <span class="tok-fn">StageStatus</span>(<span class="tok-fn">Enum</span>):
+    PENDING  = <span class="tok-str">"pending"</span>
+    RUNNING  = <span class="tok-str">"running"</span>
+    PASSED   = <span class="tok-str">"passed"</span>
+    FAILED   = <span class="tok-str">"failed"</span>
+    SKIPPED  = <span class="tok-str">"skipped"</span>   <span class="tok-com"># 前序失败时本阶段的状态</span>
+
+<span class="tok-key">class</span> <span class="tok-fn">CICDPipeline</span>:
+    <span class="tok-key">def</span> <span class="tok-fn">run</span>(<span class="tok-key">self</span>, force_fail_stage=<span class="tok-key">None</span>) -&gt; <span class="tok-fn">bool</span>:
+        <span class="tok-com"># 关键逻辑：前序失败 → 后续全部 SKIPPED</span>
+        <span class="tok-key">for</span> i, stage <span class="tok-key">in</span> <span class="tok-fn">enumerate</span>(<span class="tok-key">self</span>.stages):
+            <span class="tok-key">if not</span> all_passed:
+                stage.status = StageStatus.SKIPPED
+                <span class="tok-key">continue</span>
+            <span class="tok-key">if not</span> <span class="tok-key">self</span>._simulate_stage(stage):
+                all_passed = <span class="tok-key">False</span>      <span class="tok-com"># 标记失败，下一轮全部 SKIPPED</span></span></pre>
+    <p>这个 30 行核心逻辑就是真实 CI/CD 系统的简化模型：<strong>任意阶段失败 → 立即终止 → 后续阶段被跳过</strong>。</p>
+
+  </div>
+</div>
+
+<!-- 1.4 误区 -->
+<div class="section" id="s1-pitfall">
+  <div class="section-header">
+    <span class="tag tag-red">⚠️</span>
+    <span class="label">常见误区</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <div class="table-wrap">
+    <table class="pitfall">
+      <thead>
+        <tr>
+          <th class="col-bad" style="width:50%">❌ 误区</th>
+          <th class="col-good">✅ 纠正</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>「上了 CI/CD 就不用管代码质量」</td>
+          <td>CI/CD 只是工具。测试覆盖率 10% 时绿色勾毫无意义</td>
+        </tr>
+        <tr>
+          <td>Pipeline 跑 30 分钟，团队开始绕过测试</td>
+          <td>用 cache 缓存依赖、拆分并行 Job、区分冒烟 vs 回归</td>
+        </tr>
+        <tr>
+          <td>把数据库密码写在 YAML 里</td>
+          <td>用 Settings → Secrets 注入，<code>${{ secrets.DB_PASS }}</code></td>
+        </tr>
+        <tr>
+          <td>「在我机器上能跑」</td>
+          <td>用 Docker 固化构建环境；锁死 Python 与依赖版本</td>
+        </tr>
+        <tr>
+          <td>部署没有回滚机制</td>
+          <td>每次构建打 git SHA 标签，保留最近 N 个镜像</td>
+        </tr>
+        <tr>
+          <td>所有 Job 串行执行</td>
+          <td>无依赖的 Job 默认并行，<code>needs</code> 声明串行</td>
+        </tr>
+        <tr>
+          <td>Pipeline 悄悄失败没人发现</td>
+          <td>配置 Slack/邮件/钉钉告警</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout callout-red">
+      <strong>🔐 安全提醒：</strong>Secrets 绝不能 commit 到代码仓库。即便私有仓库，泄露后影响范围极广。GitHub 提供了三级作用域（Organization / Repository / Environment），建议敏感凭证只用最低作用域。
+    </div>
+  </div>
+</div>
+
+<!-- 1.5 自测题 -->
+<div class="section" id="s1-quiz">
+  <div class="section-header">
+    <span class="tag tag-orange">✏️</span>
+    <span class="label">自测题</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <div class="quiz" data-answer="B">
+      <div class="q-title">Q1. 持续部署（Continuous Deployment）与持续交付（Continuous Delivery）的关键差异是？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q1" value="A"> A. 是否包含自动化测试</label>
+        <label class="option"><input type="radio" name="q1" value="B"> B. 发布到生产环境是否需要人工点击</label>
+        <label class="option"><input type="radio" name="q1" value="C"> C. 是否使用 Docker</label>
+        <label class="option"><input type="radio" name="q1" value="D"> D. 是否在 GitHub 上</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="C">
+      <div class="q-title">Q2. 关于 GitHub Actions 的 Job，下列说法正确的是？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q2" value="A"> A. Job 之间默认串行执行</label>
+        <label class="option"><input type="radio" name="q2" value="B"> B. 一个 Job 失败会自动取消其他 Job</label>
+        <label class="option"><input type="radio" name="q2" value="C"> C. Job 默认并行，需要 <code>needs</code> 关键字声明依赖</label>
+        <label class="option"><input type="radio" name="q2" value="D"> D. 同一个 Job 内的所有 Step 共享文件系统</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="A">
+      <div class="q-title">Q3. 根据 DORA 报告，使用 CI/CD 的团队「故障恢复时间」相比传统方式快多少倍？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q3" value="A"> A. 2604 倍</label>
+        <label class="option"><input type="radio" name="q3" value="B"> B. 208 倍</label>
+        <label class="option"><input type="radio" name="q3" value="C"> C. 106 倍</label>
+        <label class="option"><input type="radio" name="q3" value="D"> D. 7 倍</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ==================== 第二节 ==================== -->
+<section class="topic" id="s2">
+<h2 class="topic-title">第二节 · GitHub Actions 实战</h2>
+
+<!-- 2.1 学习目标 -->
+<div class="section open" id="s2-goal">
+  <div class="section-header">
+    <span class="tag tag-blue">🎯</span>
+    <span class="label">学习目标</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <ul>
+      <li>能读懂 Workflow YAML 的 name / on / jobs / steps 结构</li>
+      <li>配置 push / pull_request / schedule / workflow_dispatch 四种触发器</li>
+      <li>用 <code>env</code>、<code>secrets</code>、<code>outputs</code> 在 Job 间传递数据</li>
+      <li>用 matrix 矩阵构建实现多版本 Python 并行测试</li>
+      <li>用 <code>needs</code>/<code>if</code>/<code>concurrency</code> 控制 Job 编排</li>
+    </ul>
+    <div class="callout">
+      <strong>与后端开发的关联：</strong>YAML 本身就是后端工程师日常要读写的格式（docker-compose、K8s manifest），学会 GitHub Actions 的语法可以无缝迁移到其他声明式工具。
+    </div>
+  </div>
+</div>
+
+<!-- 2.2 核心概念 -->
+<div class="section open" id="s2-concept">
+  <div class="section-header">
+    <span class="tag tag-purple">📖</span>
+    <span class="label">核心概念</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1. 核心架构</h3>
+<pre class="ascii-diagram">┌────────────────────────────── Workflow (.github/workflows/*.yml) ──────────────────────────────┐
+│                                                                                                  │
+│  ┌────────── on: Event ───────────┐                                                             │
+│  │  push / pull_request /         │     ┌────────── Runner ──────────┐                          │
+│  │  schedule / workflow_dispatch  │ ──▶ │  GitHub 虚拟机 / 自托管     │                          │
+│  └────────────────────────────────┘     │  ubuntu / windows / macOS  │                          │
+│                                        └────────────────────────────┘                          │
+│  ┌────── jobs ──────┐    ┌────── jobs (needs: job1) ──────┐                                     │
+│  │ runs-on          │    │ runs-on                        │                                     │
+│  │  ├─ step uses    │    │  ├─ step run  docker build     │                                     │
+│  │  └─ step run     │    │  └─ step uses upload-artifact  │                                     │
+│  └──────────────────┘    └────────────────────────────────┘                                     │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘</pre>
+
+    <h3>2. 五大组件对照</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>组件</th><th>说明</th><th>类比</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Workflow</strong></td><td>.github/workflows/ 下的 YAML</td><td>菜谱</td></tr>
+        <tr><td><strong>Event</strong></td><td>触发 Workflow 的事件</td><td>点菜</td></tr>
+        <tr><td><strong>Job</strong></td><td>独立任务</td><td>一道菜的制作</td></tr>
+        <tr><td><strong>Step</strong></td><td>Job 内单步操作</td><td>切菜、炒菜、装盘</td></tr>
+        <tr><td><strong>Runner</strong></td><td>执行 Job 的环境</td><td>厨房</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>3. 完整 Workflow YAML 骨架</h3>
+<pre class="ascii-diagram">name:        CI/CD Pipeline          # 显示在 GitHub Actions 页面
+on:          push / PR / cron / 手动  # 触发条件
+env:         PYTHON_VERSION=3.11      # 全局环境变量
+concurrency: group: ...               # 同分支只保留最新一次运行
+jobs:
+  job-id:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [other-job]                # 依赖关系（可选）
+    if: <条件表达式>                   # 条件执行（可选）
+    env: { JOB_VAR: x }               # Job 级别环境变量
+    steps:
+      - name: <Step 名>
+        uses: actions/checkout@v4     # 引用预定义 Action
+      - name: <Step 名>
+        run: echo hello               # 执行 shell
+        env: { STEP_VAR: y }          # Step 级别环境变量</pre>
+
+    <h3>4. 触发器分类</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>触发器</th><th>用途</th><th>典型场景</th></tr></thead>
+      <tbody>
+        <tr><td><code>push</code></td><td>代码推送时</td><td>提交后自动测试</td></tr>
+        <tr><td><code>pull_request</code></td><td>PR 创建/更新时</td><td>合并前自动验证</td></tr>
+        <tr><td><code>schedule</code></td><td>定时 cron</td><td>每天凌晨跑回归</td></tr>
+        <tr><td><code>workflow_dispatch</code></td><td>手动触发</td><td>紧急部署、调试</td></tr>
+        <tr><td><code>release</code></td><td>发布版本时</td><td>发版到 PyPI</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>5. 环境变量三级作用域</h3>
+<pre class="ascii-diagram">env:        GLOBAL_VAR = "hello"     ← 所有 Job 共享
+jobs:
+  job1:
+    env:    JOB_VAR = "world"        ← 当前 Job 共享
+    steps:
+      - env: STEP_VAR = "foo"        ← 仅当前 Step 可见
+        run: echo $GLOBAL_VAR $JOB_VAR $STEP_VAR</pre>
+
+    <h3>6. Secrets 三级作用域</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>作用域</th><th>作用范围</th></tr></thead>
+      <tbody>
+        <tr><td>Organization Secrets</td><td>组织内所有仓库</td></tr>
+        <tr><td>Repository Secrets</td><td>当前仓库所有 Workflow</td></tr>
+        <tr><td>Environment Secrets</td><td>只限特定环境（如 prod），支持审批</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>日志中 Secrets 自动遮蔽为 <code>***</code>。</p>
+
+    <h3>7. 矩阵构建（Matrix）</h3>
+    <p>同一份代码在多个 Python 版本 / 操作系统上并行测试：</p>
+<pre class="ascii-diagram">strategy:
+  matrix:
+    python-version: ['3.10', '3.11', '3.12']
+    os: [ubuntu-latest, windows-latest]
+  exclude:                            # 排除
+    - python-version: '3.10'
+      os: windows-latest
+→ 生成 3×2-1 = 5 个并行 Job
+   py3.10/ubuntu, py3.11/ubuntu+windows, py3.12/ubuntu+windows</pre>
+
+    <h3>8. Job 间依赖与数据传递</h3>
+<pre class="ascii-diagram">jobs:
+  test:
+    outputs:                          # ① 当前 Job 定义输出
+      result: ${{ steps.t.outputs.result }}
+    steps:
+      - id: t
+        run: echo "result=passed" &gt;&gt; $GITHUB_OUTPUT
+
+  build:
+    needs: test                       # ② 显式声明依赖
+    steps:
+      - run: echo "${{ needs.test.outputs.result }}"   # ③ 读取上游输出</pre>
+
+  </div>
+</div>
+
+<!-- 2.3 代码示例 -->
+<div class="section" id="s2-code">
+  <div class="section-header">
+    <span class="tag tag-cyan">💻</span>
+    <span class="label">代码示例</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1) Workflow 触发条件配置</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-key">on:</span>
+  <span class="tok-fn">push</span>:
+    <span class="tok-fn">branches</span>: [main, develop]
+    <span class="tok-fn">paths</span>:                  <span class="tok-com"># 只监听这些路径变更</span>
+      - <span class="tok-str">'src/**'</span>
+      - <span class="tok-str">'!docs/**'</span>           <span class="tok-com"># 感叹号取反</span>
+
+  <span class="tok-fn">pull_request</span>:
+    <span class="tok-fn">branches</span>: [main]
+    <span class="tok-fn">types</span>: [opened, synchronize]
+
+  <span class="tok-fn">schedule</span>:
+    - <span class="tok-fn">cron</span>: <span class="tok-str">'0 2 * * *'</span>   <span class="tok-com"># 每天 02:00 UTC</span>
+
+  <span class="tok-fn">workflow_dispatch</span>:       <span class="tok-com"># 手动触发</span>
+    <span class="tok-fn">inputs</span>:
+      environment:
+        <span class="tok-fn">type</span>: choice
+        <span class="tok-fn">options</span>: [staging, production]
+        <span class="tok-fn">default</span>: staging</span></pre>
+
+    <h3>2) 常用预定义 Actions</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-com"># 检出代码 —— 几乎每个 Workflow 第一步</span>
+- <span class="tok-fn">uses</span>: actions/checkout@v4
+
+<span class="tok-com"># 设置 Python 环境，自动缓存 pip</span>
+- <span class="tok-fn">uses</span>: actions/setup-python@v5
+  <span class="tok-fn">with</span>:
+    python-version: <span class="tok-str">'3.11'</span>
+    cache: <span class="tok-str">'pip'</span>
+
+<span class="tok-com"># 手动缓存（精细控制）</span>
+- <span class="tok-fn">uses</span>: actions/cache@v4
+  <span class="tok-fn">with</span>:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+<span class="tok-com"># SSH 远程执行（部署）</span>
+- <span class="tok-fn">uses</span>: appleboy/ssh-action@v1
+  <span class="tok-fn">with</span>:
+    host: ${{ secrets.SERVER_HOST }}
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: cd /app &amp;&amp; docker compose up -d</span></pre>
+
+    <h3>3) demo/2_github_actions.py —— 动态生成 Workflow</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-key">class</span> <span class="tok-fn">WorkflowGenerator</span>:
+    <span class="tok-key">def</span> <span class="tok-fn">__init__</span>(<span class="tok-key">self</span>, name: <span class="tok-fn">str</span>):
+        <span class="tok-key">self</span>.workflow = {
+            <span class="tok-str">"name"</span>: name,
+            <span class="tok-str">"on"</span>: {},
+            <span class="tok-str">"env"</span>: {},
+            <span class="tok-str">"jobs"</span>: {},
+        }
+
+    <span class="tok-key">def</span> <span class="tok-fn">add_trigger_push</span>(<span class="tok-key">self</span>, branches: <span class="tok-fn">list</span> | <span class="tok-key">None</span> = <span class="tok-key">None</span>):
+        <span class="tok-key">self</span>.workflow[<span class="tok-str">"on"</span>][<span class="tok-str">"push"</span>] = (
+            {<span class="tok-str">"branches"</span>: branches} <span class="tok-key">if</span> branches <span class="tok-key">else</span> <span class="tok-key">None</span>
+        )
+
+    <span class="tok-key">def</span> <span class="tok-fn">to_yaml</span>(<span class="tok-key">self</span>) -&gt; <span class="tok-fn">str</span>:
+        <span class="tok-key">return</span> yaml.dump(<span class="tok-key">self</span>.workflow, sort_keys=<span class="tok-key">False</span>, allow_unicode=<span class="tok-key">True</span>)
+
+<span class="tok-com"># 调用</span>
+gen = <span class="tok-fn">WorkflowGenerator</span>(<span class="tok-str">"Python Backend CI/CD"</span>)
+gen.<span class="tok-fn">add_trigger_push</span>(branches=[<span class="tok-str">"main"</span>])
+print(gen.<span class="tok-fn">to_yaml</span>())   <span class="tok-com"># 替代手写 YAML，避免缩进错误</span></span></pre>
+    <p>用 Python 字典构建 Workflow 比手写 YAML 更安全：不会出现缩进 / 拼写错误，也方便按环境动态生成。</p>
+
+    <h3>4) Secrets 注入演示</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-com"># SecretsDemo.simulate_secret_injection() 核心逻辑</span>
+secrets_store = {
+    <span class="tok-str">"DATABASE_URL"</span>: <span class="tok-str">"postgresql://user:***@db:5432/prod"</span>,
+    <span class="tok-str">"SSH_PRIVATE_KEY"</span>: <span class="tok-str">"-----BEGIN RSA PRIVATE KEY-----\n***"</span>,
+}
+
+<span class="tok-com"># ① GitHub 加密存储</span>
+<span class="tok-key">for</span> name <span class="tok-key">in</span> secrets_store:
+    <span class="tok-fn">print</span>(<span class="tok-str">f"{name} = ***（已加密）"</span>)
+
+<span class="tok-com"># ② 注入为环境变量（真实值）</span>
+<span class="tok-key">for</span> name, value <span class="tok-key">in</span> secrets_store.<span class="tok-fn">items</span>():
+    <span class="tok-fn">print</span>(<span class="tok-str">f"export {name}=\"{value}\""</span>)
+
+<span class="tok-com"># ③ 日志自动遮蔽：echo $DATABASE_URL 输出 ***</span></span></pre>
+
+    <h3>5) 完整 Python 后端 CI/CD（实战片段）</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-key">name:</span> Python Backend CI/CD
+<span class="tok-key">on:</span>
+  <span class="tok-fn">push</span>: {<span class="tok-fn">branches</span>: [main, develop]}
+  <span class="tok-fn">pull_request</span>: {<span class="tok-fn">branches</span>: [main]}
+
+<span class="tok-key">jobs:</span>
+  <span class="tok-fn">test</span>:
+    <span class="tok-fn">runs-on</span>: ubuntu-latest
+    <span class="tok-fn">strategy</span>:
+      <span class="tok-fn">matrix</span>:
+        python-version: [<span class="tok-str">'3.10'</span>, <span class="tok-str">'3.11'</span>, <span class="tok-str">'3.12'</span>]
+    <span class="tok-fn">steps</span>:
+      - <span class="tok-fn">uses</span>: actions/checkout@v4
+      - <span class="tok-fn">uses</span>: actions/setup-python@v5
+        <span class="tok-fn">with</span>:
+          python-version: ${{ matrix.python-version }}
+          cache: <span class="tok-str">'pip'</span>
+      - <span class="tok-fn">run</span>: pytest tests/ --cov=app
+
+  <span class="tok-fn">deploy</span>:
+    <span class="tok-fn">needs</span>: test
+    <span class="tok-fn">if</span>: github.ref == <span class="tok-str">'refs/heads/main'</span>
+    <span class="tok-fn">environment</span>: { <span class="tok-fn">name</span>: production }    <span class="tok-com"># 触发审批</span>
+    <span class="tok-fn">steps</span>:
+      - <span class="tok-fn">uses</span>: appleboy/ssh-action@v1
+        <span class="tok-fn">with</span>:
+          host: ${{ secrets.SERVER_HOST }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: docker compose up -d</span></pre>
+
+  </div>
+</div>
+
+<!-- 2.4 误区 -->
+<div class="section" id="s2-pitfall">
+  <div class="section-header">
+    <span class="tag tag-red">⚠️</span>
+    <span class="label">常见误区</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <div class="table-wrap">
+    <table class="pitfall">
+      <thead>
+        <tr><th class="col-bad" style="width:50%">❌ 误区 / 坑</th><th class="col-good">✅ 正确做法</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>YAML 混用 Tab 和空格缩进</td>
+          <td>统一 2 空格缩进，禁用 Tab</td>
+        </tr>
+        <tr>
+          <td>忘记 <code>actions/checkout@v4</code></td>
+          <td>每个 Job 几乎都需要，第一步先 checkout</td>
+        </tr>
+        <tr>
+          <td>把密钥写在 YAML 明文里</td>
+          <td>用 <code>${{ secrets.NAME }}</code> 引用，存入 Settings → Secrets</td>
+        </tr>
+        <tr>
+          <td>缓存 key 写死（如 <code>pip-cache</code>）</td>
+          <td>用 <code>hashFiles('requirements.txt')</code> 让依赖变更新缓存</td>
+        </tr>
+        <tr>
+          <td>缺少 <code>.dockerignore</code>，构建上下文过大</td>
+          <td>排除 <code>.git</code>、<code>__pycache__</code>、<code>venv/</code> 等</td>
+        </tr>
+        <tr>
+          <td>不设 <code>timeout-minutes</code></td>
+          <td>显式设置合理超时，避免挂起耗尽额度</td>
+        </tr>
+        <tr>
+          <td>Fork 仓库的 PR 访问不到 Secrets</td>
+          <td>用 mock 数据 / 跳过依赖 secrets 的步骤</td>
+        </tr>
+        <tr>
+          <td>多人同时 push 触发多个 Workflow 部署</td>
+          <td>用 <code>concurrency</code> + <code>cancel-in-progress: true</code></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout callout-red">
+      <strong>🔐 安全提醒：</strong>来自 fork 仓库的 PR <strong>无法访问仓库 Secrets</strong>，这是 GitHub 的安全设计。如果你的测试需要数据库密码，要么用 SQLite 内存库，要么在 PR 上跳过敏感步骤。
+    </div>
+  </div>
+</div>
+
+<!-- 2.5 自测题 -->
+<div class="section" id="s2-quiz">
+  <div class="section-header">
+    <span class="tag tag-orange">✏️</span>
+    <span class="label">自测题</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <div class="quiz" data-answer="D">
+      <div class="q-title">Q1. 想让 Workflow 同时在 Python 3.10、3.11、3.12 上跑测试，应该用哪个特性？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q4" value="A"> A. <code>jobs.parallel</code></label>
+        <label class="option"><input type="radio" name="q4" value="B"> B. <code>jobs.matrix</code></label>
+        <label class="option"><input type="radio" name="q4" value="C"> C. <code>jobs.&lt;name&gt;.needs</code></label>
+        <label class="option"><input type="radio" name="q4" value="D"> D. <code>jobs.&lt;name&gt;.strategy.matrix</code></label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="B">
+      <div class="q-title">Q2. 关于 Workflow 中的 Secrets，下列说法错误的是？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q5" value="A"> A. 来自 fork 的 PR 无法访问仓库 Secrets</label>
+        <label class="option"><input type="radio" name="q5" value="B"> B. Secrets 在日志中以明文显示方便排查</label>
+        <label class="option"><input type="radio" name="q5" value="C"> C. 可以在 Organization / Repository / Environment 三级配置</label>
+        <label class="option"><input type="radio" name="q5" value="D"> D. Environment Secrets 可配置审批流程</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="A">
+      <div class="q-title">Q3. cron 表达式 <code>'0 2 * * *'</code> 表示什么含义（UTC 时间）？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q6" value="A"> A. 每天凌晨 2 点</label>
+        <label class="option"><input type="radio" name="q6" value="B"> B. 每周一 2 点</label>
+        <label class="option"><input type="radio" name="q6" value="C"> C. 每月 2 日 0 点</label>
+        <label class="option"><input type="radio" name="q6" value="D"> D. 每小时的第 2 分钟</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ==================== 第三节 ==================== -->
+<section class="topic" id="s3">
+<h2 class="topic-title">第三节 · 端到端流水线与部署脚本</h2>
+
+<!-- 3.1 学习目标 -->
+<div class="section open" id="s3-goal">
+  <div class="section-header">
+    <span class="tag tag-blue">🎯</span>
+    <span class="label">学习目标</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <ul>
+      <li>能串联 GitHub Actions + 部署脚本实现端到端发布</li>
+      <li>掌握健康检查 + 自动回滚的部署策略</li>
+      <li>理解并发控制、镜像标签、SSH 部署等关键点</li>
+    </ul>
+    <div class="callout">
+      <strong>与后端开发的关联：</strong>真正「上线」不只是 <code>docker compose up -d</code>，还要回答「上线失败怎么办？」「怎么回滚到上一个稳定版本？」，这一节把生产级部署的完整套路串起来。
+    </div>
+  </div>
+</div>
+
+<!-- 3.2 核心概念 -->
+<div class="section open" id="s3-concept">
+  <div class="section-header">
+    <span class="tag tag-purple">📖</span>
+    <span class="label">核心概念</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1. 端到端发布链路</h3>
+<pre class="ascii-diagram">┌──────────┐  push   ┌──────────────────┐  ssh   ┌──────────────────┐
+│  GitHub  │ ──────▶ │  GitHub Actions  │ ──────▶ │  生产服务器      │
+│  仓库    │         │  (CI/CD)         │        │  deploy.sh       │
+└──────────┘         └──────────────────┘        └──────────────────┘
+                              │                          │
+                              ▼                          ▼
+                       ┌──────────────┐           ┌──────────────┐
+                       │ 构建 Docker  │           │ 健康检查失败 │
+                       │ 镜像 + 推仓库 │           │ → 自动回滚   │
+                       └──────────────┘           └──────────────┘</pre>
+
+    <h3>2. 部署脚本六阶段</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>阶段</th><th>动作</th><th>失败处理</th></tr></thead>
+      <tbody>
+        <tr><td>1. 拉取代码</td><td><code>git fetch &amp;&amp; git reset --hard origin/main</code></td><td>直接退出</td></tr>
+        <tr><td>2. 安装依赖</td><td><code>pip install -r requirements.txt</code></td><td>直接退出</td></tr>
+        <tr><td>3. 跑测试</td><td><code>pytest -x -q</code></td><td>终止部署</td></tr>
+        <tr><td>4. 构建镜像</td><td><code>docker build -t app:${SHA}-${ts} .</code></td><td>直接退出</td></tr>
+        <tr><td>5. 启动服务</td><td><code>docker compose up -d</code></td><td>进入健康检查</td></tr>
+        <tr><td>6. 健康检查</td><td><code>curl /health</code> 重试 N 次</td><td>自动 <code>rollback()</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>3. 自动回滚原理</h3>
+    <ul>
+      <li>每次部署成功后，把 <code>image_tag</code> + <code>commit_sha</code> 写入 <code>.deploy_info</code></li>
+      <li>健康检查失败时，读取 <code>.deploy_info</code> 的上一版本</li>
+      <li><code>docker compose down &amp;&amp; IMAGE_TAG=旧版 docker compose up -d</code></li>
+      <li>回滚后再次健康检查，仍失败则人工介入</li>
+    </ul>
+
+    <h3>4. 关键工程策略</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>策略</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>镜像标签 = <code>${commit_sha}-${ts}</code></td><td>每次构建唯一可追溯</td></tr>
+        <tr><td>保留最近 N 个镜像</td><td>回滚有目标</td></tr>
+        <tr><td>健康检查重试 N 次</td><td>容忍服务冷启动</td></tr>
+        <tr><td><code>set -euo pipefail</code></td><td>任一命令失败立即终止</td></tr>
+        <tr><td><code>concurrency: cancel-in-progress</code></td><td>同分支只保留最新一次运行</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- 3.3 代码示例 -->
+<div class="section" id="s3-code">
+  <div class="section-header">
+    <span class="tag tag-cyan">💻</span>
+    <span class="label">代码示例</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <h3>1) deploy.sh 主流程（节选）</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-com">#!/usr/bin/env bash</span>
+<span class="tok-fn">set</span> -euo pipefail   <span class="tok-com"># 任一命令失败立即退出</span>
+
+APP_NAME=<span class="tok-str">"my-python-backend"</span>
+APP_DIR=<span class="tok-str">"/opt/app"</span>
+HEALTH_URL=<span class="tok-str">"http://localhost:8000/health"</span>
+HEALTH_RETRIES=10
+
+<span class="tok-fn">log_info</span>() { <span class="tok-fn">echo</span> -e <span class="tok-str">"\033[0;34m[INFO]\033[0m $(date '+%F %T') $*"</span>; }
+
+<span class="tok-com"># 1. 拉取代码</span>
+<span class="tok-fn">cd</span> ${APP_DIR}
+git fetch origin main
+git reset --hard origin/main
+<span class="tok-fn">local</span> commit_sha=$(git rev-parse --short HEAD)
+
+<span class="tok-com"># 2. 装依赖</span>
+python3 -m venv venv 2&gt;/dev/null || <span class="tok-key">true</span>
+source venv/bin/activate
+pip install -q -r requirements.txt
+
+<span class="tok-com"># 3. 跑测试（-x 遇到失败即停）</span>
+pytest tests/ -x -q || { <span class="tok-fn">log_error</span> <span class="tok-str">"测试失败"</span>; <span class="tok-fn">exit</span> 1; }
+
+<span class="tok-com"># 4. 构建镜像（带 commit SHA 标签）</span>
+<span class="tok-fn">local</span> tag=<span class="tok-str">"${commit_sha}-$(date +%Y%m%d%H%M%S)"</span>
+docker build -t ${APP_NAME}:${tag} \
+             --build-arg COMMIT_SHA=${commit_sha} .
+
+<span class="tok-com"># 5. 启服务 + 6. 健康检查</span>
+docker compose -f docker-compose.yml up -d
+<span class="tok-key">if</span> health_check; <span class="tok-key">then</span>
+    save_deploy_info ${tag} ${commit_sha}    <span class="tok-com"># 记录当前版本</span>
+<span class="tok-key">else</span>
+    rollback                              <span class="tok-com"># 自动回滚到上一版</span>
+<span class="tok-key">fi</span></span></pre>
+
+    <h3>2) 健康检查函数</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-fn">health_check</span>() {
+    <span class="tok-fn">local</span> attempt=1
+    <span class="tok-key">while</span> [[ ${attempt} -le ${HEALTH_RETRIES} ]]; <span class="tok-key">do</span>
+        <span class="tok-fn">local</span> code
+        code=$(curl -s -o /dev/null -w <span class="tok-str">"%{http_code}"</span> ${HEALTH_URL} 2&gt;/dev/null || <span class="tok-fn">echo</span> 000)
+        <span class="tok-key">if</span> [[ ${code} == <span class="tok-str">"200"</span> ]]; <span class="tok-key">then</span>
+            <span class="tok-fn">return</span> 0   <span class="tok-com"># 通过</span>
+        <span class="tok-key">fi</span>
+        <span class="tok-fn">sleep</span> ${HEALTH_INTERVAL}
+        attempt=$((attempt + 1))
+    <span class="tok-key">done</span>
+    <span class="tok-fn">return</span> 1   <span class="tok-com"># 失败</span>
+}</span></pre>
+
+    <h3>3) 自动回滚函数</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-fn">rollback</span>() {
+    <span class="tok-fn">local</span> prev_tag
+    prev_tag=$(read_prev_deploy_info)   <span class="tok-com"># 从 .deploy_info 读上一版</span>
+    [[ -z ${prev_tag} ]] &amp;&amp; { <span class="tok-fn">log_error</span> <span class="tok-str">"无上一版"</span>; <span class="tok-fn">exit</span> 1; }
+
+    <span class="tok-fn">log_warn</span> <span class="tok-str">"回滚到 ${prev_tag}"</span>
+    docker compose down --timeout 30
+    IMAGE_TAG=${prev_tag} docker compose up -d
+
+    <span class="tok-com"># 回滚后再次健康检查</span>
+    <span class="tok-key">if</span> health_check; <span class="tok-key">then</span>
+        <span class="tok-fn">log_success</span> <span class="tok-str">"回滚成功"</span>
+    <span class="tok-key">else</span>
+        <span class="tok-fn">log_error</span> <span class="tok-str">"回滚后仍失败，请人工介入"</span>
+        <span class="tok-fn">exit</span> 1
+    <span class="tok-key">fi</span>
+}</span></pre>
+
+    <h3>4) 端到端 Workflow（部署 Job 片段）</h3>
+<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">📋 复制</button><span class="tok-fn">deploy</span>:
+  <span class="tok-fn">needs</span>: [lint, test, build]
+  <span class="tok-fn">if</span>: github.ref == <span class="tok-str">'refs/heads/main'</span>
+  <span class="tok-fn">environment</span>:
+    <span class="tok-fn">name</span>: production
+    <span class="tok-fn">url</span>: https://api.example.com
+  <span class="tok-fn">steps</span>:
+    - <span class="tok-fn">name</span>: Deploy
+      <span class="tok-fn">uses</span>: appleboy/ssh-action@v1
+      <span class="tok-fn">with</span>:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        <span class="tok-fn">script</span>: |
+          cd /opt/app
+          ./deploy.sh
+          <span class="tok-com"># 内部已含健康检查 + 自动回滚</span></span></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>场景</th><th>deploy.sh 行为</th></tr></thead>
+      <tbody>
+        <tr><td>测试失败</td><td>第 3 阶段退出，不构建、不部署</td></tr>
+        <tr><td>健康检查通过</td><td>保存 .deploy_info，清理旧镜像</td></tr>
+        <tr><td>健康检查失败</td><td>自动回滚到 .deploy_info 中的上一版</td></tr>
+        <tr><td>回滚后仍失败</td><td>退出码 1，GitHub Actions 显示红色 ✗</td></tr>
+        <tr><td>手动 <code>--rollback</code></td><td>跳过所有阶段，直接回滚</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- 3.4 误区 -->
+<div class="section" id="s3-pitfall">
+  <div class="section-header">
+    <span class="tag tag-red">⚠️</span>
+    <span class="label">常见误区</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+    <div class="table-wrap">
+    <table class="pitfall">
+      <thead><tr><th class="col-bad" style="width:50%">❌ 误区 / 坑</th><th class="col-good">✅ 正确做法</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>部署成功就完事，没有回滚脚本</td>
+          <td>每次保存 <code>.deploy_info</code>，失败时自动 rollback</td>
+        </tr>
+        <tr>
+          <td>镜像全部打 <code>latest</code> 标签</td>
+          <td>用 <code>${commit_sha}-${ts}</code> 唯一标识</td>
+        </tr>
+        <tr>
+          <td>部署后立刻判定成功</td>
+          <td>等容器冷启动，<code>curl /health</code> 重试 N 次</td>
+        </tr>
+        <tr>
+          <td>多人同时 push 导致部署冲突</td>
+          <td><code>concurrency.cancel-in-progress: true</code></td>
+        </tr>
+        <tr>
+          <td>部署脚本不写 <code>set -e</code></td>
+          <td>开 <code>set -euo pipefail</code>，任一失败即终止</td>
+        </tr>
+        <tr>
+          <td>所有镜像都堆积在服务器上</td>
+          <td>保留最近 N 个（如 3 个），定期清理</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout callout-yellow">
+      <strong>💡 进阶：</strong>生产环境强烈建议配合 <strong>blue-green</strong>（蓝绿部署）或 <strong>canary</strong>（金丝雀发布），先把新版本挂到 5% 流量观察，再逐步切流。Kubernetes 的 Deployment 配合 Service / Ingress 天然支持。
+    </div>
+  </div>
+</div>
+
+<!-- 3.5 自测题 -->
+<div class="section" id="s3-quiz">
+  <div class="section-header">
+    <span class="tag tag-orange">✏️</span>
+    <span class="label">自测题</span>
+    <span class="arrow">▶</span>
+  </div>
+  <div class="section-body">
+
+    <div class="quiz" data-answer="C">
+      <div class="q-title">Q1. 生产环境部署时，健康检查失败后脚本应该？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q7" value="A"> A. 继续运行其他服务</label>
+        <label class="option"><input type="radio" name="q7" value="B"> B. 发送告警后退出</label>
+        <label class="option"><input type="radio" name="q7" value="C"> C. 自动回滚到上一版本</label>
+        <label class="option"><input type="radio" name="q7" value="D"> D. 重启服务器</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="B">
+      <div class="q-title">Q2. 想让同一分支多次 push 只保留最新一次 Workflow 运行，应配置？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q8" value="A"> A. <code>jobs.if</code></label>
+        <label class="option"><input type="radio" name="q8" value="B"> B. <code>concurrency.cancel-in-progress: true</code></label>
+        <label class="option"><input type="radio" name="q8" value="C"> C. <code>timeout-minutes</code></label>
+        <label class="option"><input type="radio" name="q8" value="D"> D. <code>schedule</code></label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="quiz" data-answer="D">
+      <div class="q-title">Q3. Bash 脚本头部 <code>set -euo pipefail</code> 的作用是？</div>
+      <div class="options">
+        <label class="option"><input type="radio" name="q9" value="A"> A. 开启调试模式</label>
+        <label class="option"><input type="radio" name="q9" value="B"> B. 启用彩色输出</label>
+        <label class="option"><input type="radio" name="q9" value="C"> C. 记录日志到文件</label>
+        <label class="option"><input type="radio" name="q9" value="D"> D. 任一命令失败立即终止整个脚本</label>
+      </div>
+      <div class="actions">
+        <button onclick="checkQuiz(this)">提交</button>
+        <button onclick="resetQuiz(this)">再次作答</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ==================== 证据追溯 ==================== -->
+<section class="evidence">
+  <h2>📎 证据追溯</h2>
+  <p class="note">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th style="width:35%">结论摘要</th><th style="width:35%">来源文件</th><th>位置</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>持续交付 vs 持续部署差在「最后一步是否需要人工」</td><td>1.CICD概念与流程.md</td><td>第 1 节 CD</td></tr>
+      <tr><td>DORA 量化收益（部署频率 208 倍等）</td><td>1.CICD概念与流程.md</td><td>第 2 节量化收益</td></tr>
+      <tr><td>三大工具对比表（GitHub Actions / GitLab CI / Jenkins）</td><td>1.CICD概念与流程.md</td><td>第 5 节</td></tr>
+      <tr><td>7 个常见坑（Pipeline 慢、Secrets 硬编码等）</td><td>1.CICD概念与流程.md</td><td>第 6 节</td></tr>
+      <tr><td>Workflow 五组件对照表（Workflow/Event/Job/Step/Runner）</td><td>2.GitHub_Actions实战.md</td><td>第 1 节核心架构</td></tr>
+      <tr><td>环境变量三级作用域（global / job / step）</td><td>2.GitHub_Actions实战.md</td><td>第 4.4 节</td></tr>
+      <tr><td>Secrets 三级作用域（Org / Repo / Environment）</td><td>2.GitHub_Actions实战.md</td><td>第 4.4 节最佳实践</td></tr>
+      <tr><td>矩阵构建 matrix 配置语法</td><td>2.GitHub_Actions实战.md</td><td>第 4.5 节</td></tr>
+      <tr><td>Job 间依赖 needs + outputs 用法</td><td>2.GitHub_Actions实战.md</td><td>第 4.6 节</td></tr>
+      <tr><td>实战完整 Python 后端 CI/CD YAML</td><td>2.GitHub_Actions实战.md</td><td>第 4.7 节</td></tr>
+      <tr><td>8 个常见坑（YAML 缩进、checkout 遗漏等）</td><td>2.GitHub_Actions实战.md</td><td>第 5 节</td></tr>
+      <tr><td>CICDPipeline.run() 核心逻辑（前序失败 → SKIPPED）</td><td>demo/1_cicd_concept.py</td><td>run() 方法</td></tr>
+      <tr><td>WorkflowGenerator.to_yaml() 用 PyYAML 序列化</td><td>demo/2_github_actions.py</td><td>WorkflowGenerator 类</td></tr>
+      <tr><td>Secrets 模拟注入（加密 → 环境变量 → 日志遮蔽）</td><td>demo/2_github_actions.py</td><td>SecretsDemo.simulate_secret_injection</td></tr>
+      <tr><td>deploy.sh 6 阶段流程 + 自动回滚</td><td>demo/deploy.sh</td><td>main() 函数 1-6 阶段</td></tr>
+      <tr><td>健康检查重试 N 次逻辑</td><td>demo/deploy.sh</td><td>health_check() 函数</td></tr>
+      <tr><td>完整 Workflow YAML（lint/test/build/deploy 四 Job）</td><td>demo/.github/workflows/ci.yml</td><td>全文</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ========================= 深色模式 =========================
+const themeBtn = document.getElementById('theme-toggle');
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+    themeBtn.textContent = '☀️';
+  } else {
+    document.documentElement.classList.remove('dark');
+    themeBtn.textContent = '🌙';
+  }
+  try { localStorage.setItem('cicd05-theme', theme); } catch (e) {}
+}
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('cicd05-theme'); } catch (e) {}
+  if (saved) { applyTheme(saved); }
+  else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+  } else {
+    applyTheme('light');
+  }
+})();
+themeBtn.addEventListener('click', () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  applyTheme(isDark ? 'light' : 'dark');
+});
+
+// ========================= 进度条 =========================
+const progressBar = document.getElementById('progress-bar');
+function updateProgress() {
+  const h = document.documentElement;
+  const total = h.scrollHeight - h.clientHeight;
+  const pct = total > 0 ? (h.scrollTop / total) * 100 : 0;
+  progressBar.style.width = pct + '%';
+}
+window.addEventListener('scroll', updateProgress);
+updateProgress();
+
+// ========================= 回到顶部 =========================
+const backTop = document.getElementById('back-top');
+window.addEventListener('scroll', () => {
+  backTop.classList.toggle('show', window.scrollY > 300);
+});
+backTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ========================= 折叠展开（纯 CSS 类控制） =========================
+document.querySelectorAll('.section-header').forEach(h => {
+  h.addEventListener('click', () => {
+    h.parentElement.classList.toggle('open');
+  });
+});
+
+// ========================= 复制按钮 =========================
+function copyCode(btn) {
+  const pre = btn.parentElement;
+  // 克隆去掉按钮再取文本
+  const clone = pre.cloneNode(true);
+  clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+  const text = clone.innerText;
+  const done = () => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => {
+      fallbackCopy(text); done();
+    });
+  } else {
+    fallbackCopy(text); done();
+  }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+// ========================= 侧栏高亮 + 联动父级 =========================
+const navLinks = document.querySelectorAll('aside.sidebar a.nav-link');
+const navTopics = document.querySelectorAll('aside.sidebar a.nav-topic');
+const targets = Array.from(navLinks).map(a => {
+  const id = a.getAttribute('href').slice(1);
+  return { link: a, el: document.getElementById(id) };
+}).filter(t => t.el);
+
+function clearActive() {
+  navLinks.forEach(a => a.classList.remove('active'));
+  navTopics.forEach(a => a.classList.remove('active'));
+}
+function setActive(link) {
+  link.classList.add('active');
+  // 联动父级：向前找最近的 a.nav-topic
+  let prev = link.previousElementSibling;
+  while (prev && !prev.classList.contains('nav-topic')) {
+    prev = prev.previousElementSibling;
+  }
+  if (prev) prev.classList.add('active');
+}
+
+const io = new IntersectionObserver((entries) => {
+  // 找到最靠近顶部的可见 section
+  let best = null;
+  for (const e of entries) {
+    if (e.isIntersecting) {
+      if (!best || e.boundingClientRect.top < best.boundingClientRect.top) {
+        best = e;
+      }
+    }
+  }
+  if (best) {
+    const id = best.target.id;
+    const match = targets.find(t => t.el.id === id);
+    if (match) {
+      clearActive();
+      setActive(match.link);
+    }
+  }
+}, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+
+targets.forEach(t => io.observe(t.el));
+
+// ========================= 移动端侧栏 =========================
+const sidebar = document.getElementById('sidebar');
+const sidebarMask = document.getElementById('sidebar-mask');
+const mobileMenu = document.getElementById('mobile-menu');
+function openSidebar() { sidebar.classList.add('open'); sidebarMask.classList.add('show'); }
+function closeSidebar() { sidebar.classList.remove('open'); sidebarMask.classList.remove('show'); }
+mobileMenu && mobileMenu.addEventListener('click', openSidebar);
+sidebarMask.addEventListener('click', closeSidebar);
+navLinks.forEach(a => a.addEventListener('click', () => {
+  if (window.innerWidth <= 768) closeSidebar();
+}));
+
+// ========================= 自测题 =========================
+function checkQuiz(btn) {
+  const quiz = btn.closest('.quiz');
+  const correct = quiz.getAttribute('data-answer');
+  const checked = quiz.querySelector('input[type="radio"]:checked');
+  const result = quiz.querySelector('.result');
+  if (!checked) {
+    result.className = 'result wrong';
+    result.style.display = 'block';
+    result.textContent = '⚠️ 请先选择一个选项';
+    return;
+  }
+  if (checked.value === correct) {
+    result.className = 'result correct';
+    result.style.display = 'block';
+    result.innerHTML = '✅ 回答正确！选项 ' + correct + ' 是正确答案。';
+  } else {
+    result.className = 'result wrong';
+    result.style.display = 'block';
+    result.innerHTML = '❌ 回答错误。正确答案是 ' + correct + '。请思考为什么 ' + correct + ' 才是对的，再试一次。';
+  }
+}
+function resetQuiz(btn) {
+  const quiz = btn.closest('.quiz');
+  quiz.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  const result = quiz.querySelector('.result');
+  result.className = 'result';
+  result.style.display = 'none';
+  result.textContent = '';
+}
+</script>
+</body>
+</html>

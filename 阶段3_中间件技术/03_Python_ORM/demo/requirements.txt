@@ -1,0 +1,10 @@
+# SQLAlchemy 同步（Demo 1）
+sqlalchemy
+pymysql
+cryptography    # pymysql 连接 MySQL 8.0 时需要
+
+# Tortoise ORM 异步（Demo 2）
+tortoise-orm
+
+# Alembic 迁移（Demo 3）
+alembic

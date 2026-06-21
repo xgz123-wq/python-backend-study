@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第五节 · SQLAlchemy 异步集成 · FastAPI 核心</title>
+<style>
+:root{
+  --sidebar-width:260px;
+  --bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--quiz-bg:#fffbeb;
+  --accent:#2563eb;--concept:#7c3aed;--code:#0284c7;--warn:#dc2626;--quiz:#d97706;--ok:#16a34a;
+  --code-bg:#1e293b;--code-key:#c084fc;--code-str:#86efac;--code-fn:#93c5fd;--code-num:#fcd34d;--code-com:#64748b;--code-var:#e6edf3;--code-key2:#f472b6;
+  --diagram-bg:#0f172a;--diagram-text:#e2e8f0;--highlight:#f59e0b;--callout-bg:#eff6ff;--callout-border:#3b82f6;
+}
+.dark{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--quiz-bg:rgba(217,119,6,0.1);
+  --accent:#58a6ff;--concept:#a78bfa;--code:#38bdf8;--warn:#f87171;--quiz:#fbbf24;--ok:#4ade80;
+  --code-bg:#0d1117;--code-key:#d8b4fe;--code-str:#7ee787;--code-fn:#79c0ff;--code-num:#ffa657;--code-com:#8b949e;--code-var:#e6edf3;--code-key2:#ff7b72;
+  --diagram-bg:#010409;--diagram-text:#c9d1d9;--callout-bg:rgba(56,139,253,0.15);--callout-border:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;margin:0;transition:background .25s,color .25s}
+code,pre{font-family:"Cascadia Code","Fira Code","JetBrains Mono",Consolas,monospace}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:1000;transition:width .1s}
+#mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:99;align-items:center;padding:0 16px;gap:12px}
+#hamburger{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px}
+#mobile-title{font-weight:600;font-size:15px;flex:1}
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-width);background:var(--card);border-right:1px solid var(--border);padding:24px 16px;overflow-y:auto;z-index:90}
+#sidebar .brand{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--accent)}
+#sidebar .brand-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.nav-topic{display:block;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--text);padding:14px 8px 4px;border-top:1px solid var(--border);margin-top:6px}
+.nav-topic:first-child{border-top:none;margin-top:0}
+.nav-link{display:block;font-size:13.5px;font-weight:400;color:var(--muted);padding:5px 8px 5px 18px;border-left:2px solid transparent;border-radius:0 4px 4px 0;transition:all .15s}
+.nav-link:hover{background:rgba(37,99,235,.08);color:var(--text);text-decoration:none}
+.nav-link.active{color:var(--accent);border-left-color:var(--accent);background:rgba(37,99,235,.08);font-weight:600}
+.nav-topic.active{color:var(--accent)}
+#main-content{margin-left:var(--sidebar-width);padding:48px 56px 80px;min-height:100vh;max-width:none}
+#main-content h1{font-size:32px;margin-bottom:8px;line-height:1.3}
+.subtitle{color:var(--muted);font-size:16px;margin-bottom:8px}
+.reading-time{display:inline-block;font-size:13px;color:var(--muted);margin-bottom:32px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
+.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:8px 0 16px;line-height:1.6;padding-left:12px;border-left:3px solid var(--accent)}
+.chapter-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:32px;font-size:14px}
+.chapter-nav a,.chapter-nav span{padding:6px 12px;border-radius:6px;transition:background .15s}
+.chapter-nav a{color:var(--accent)}
+.chapter-nav a:hover{background:rgba(37,99,235,.08);text-decoration:none}
+.chapter-nav .home{font-weight:600}
+.chapter-nav span{color:var(--muted);cursor:default}
+.topic-section{margin-bottom:48px;scroll-margin-top:24px}
+.topic-section>h2{font-size:24px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);color:var(--text)}
+.topic-section h3{font-size:18px;margin:24px 0 10px;color:var(--text)}
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;background:var(--card);transition:background .15s}
+.section-head:hover{background:rgba(0,0,0,.02)}
+.dark .section-head:hover{background:rgba(255,255,255,.03)}
+.section-head .toggle{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:auto}
+.section.open .section-head .toggle{transform:rotate(90deg)}
+.section-body{padding:0 18px 18px;display:none}
+.section.open .section-body{display:block}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;color:#fff;flex-shrink:0}
+.tag-goal{background:var(--accent)}.tag-concept{background:var(--concept)}.tag-code{background:var(--code)}.tag-caution{background:var(--warn)}.tag-quiz{background:var(--quiz)}
+.section-title-text{font-size:15px;font-weight:600}
+.goal-list{list-style:none;padding:0}
+.goal-list li{padding:6px 0 6px 22px;position:relative;color:var(--text)}
+.goal-list li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.callout{background:var(--callout-bg);border-left:3px solid var(--callout-border);padding:12px 16px;border-radius:6px;margin-top:12px;font-size:14px;color:var(--text)}
+.callout strong{color:var(--accent)}
+.definition{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:10px 0;border-left:3px solid var(--concept)}
+.definition strong{color:var(--concept);font-size:14px;display:block;margin-bottom:4px}
+.ascii-diagram{background:var(--diagram-bg);color:var(--diagram-text);padding:16px 20px;border-radius:8px;font-size:12.5px;line-height:1.5;overflow-x:auto;margin:12px 0;white-space:pre;font-family:"Cascadia Code","Fira Code",Consolas,monospace}
+.table-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);word-break:break-word;vertical-align:top}
+th{background:rgba(0,0,0,.04);font-weight:700;font-size:14px}
+.dark th{background:rgba(255,255,255,.04)}
+tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
+.dark tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+td{font-size:14px}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden;border:1px solid #334155}
+.code-block pre{margin:0;padding:14px 16px 14px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;white-space:pre;color:var(--code-var)}
+.code-block pre .key{color:var(--code-key)}
+.code-block pre .str{color:var(--code-str)}
+.code-block pre .fn{color:var(--code-fn)}
+.code-block pre .num{color:var(--code-num)}
+.code-block pre .com{color:var(--code-com);font-style:italic}
+.code-block pre .key2{color:var(--code-key2)}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);color:#e6edf3;border:none;padding:4px 10px;border-radius:5px;font-size:12px;cursor:pointer;transition:background .15s}
+.copy-btn:hover{background:rgba(255,255,255,.16)}
+.code-block .highlight-line{border-left:3px solid var(--highlight);padding-left:11px;display:block;background:rgba(245,158,11,.05);margin:0 -14px 0 -14px;padding-right:14px;padding-top:1px;padding-bottom:1px}
+.misconception-table td:first-child{color:var(--warn);font-weight:600}
+.misconception-table td:nth-child(2){color:var(--ok);font-weight:600}
+.misconception-table td:nth-child(1)::first-letter,.misconception-table td:nth-child(2)::first-letter{font-size:1.1em}
+.warn-callout{background:rgba(220,38,38,.08);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;margin:10px 0;font-size:14px;color:var(--text)}
+.warn-callout strong{color:var(--warn)}
+.quiz-card{background:var(--quiz-bg);border-radius:8px;padding:14px 18px;margin:12px 0;border-left:3px solid var(--quiz)}
+.quiz-card .q-title{font-weight:600;margin-bottom:10px;color:var(--text);font-size:14px;line-height:1.6}
+.quiz-options{list-style:none;padding:0;margin:10px 0}
+.quiz-options li{padding:6px 10px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px;font-size:14px}
+.quiz-options li:hover{background:rgba(37,99,235,.08)}
+.quiz-options input[type=radio]{cursor:pointer;accent-color:var(--accent)}
+.quiz-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:6px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-submit{background:var(--accent);color:#fff}
+.btn-submit:hover{background:#1d4ed8}
+.btn-reset{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-reset:hover{background:rgba(0,0,0,.04)}
+.dark .btn-reset:hover{background:rgba(255,255,255,.04)}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:14px;display:none;line-height:1.6}
+.quiz-feedback.correct{background:rgba(22,163,74,.12);border-left:3px solid var(--ok);color:var(--text)}
+.quiz-feedback.wrong{background:rgba(220,38,38,.10);border-left:3px solid var(--warn);color:var(--text)}
+.quiz-feedback strong{color:var(--ok)}
+.quiz-feedback.wrong strong{color:var(--warn)}
+#to-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:80;transition:transform .2s}
+#to-top:hover{transform:translateY(-2px)}
+#to-top.show{display:flex}
+#dark-toggle{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--border);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;z-index:101;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#dark-toggle:hover{transform:scale(1.06)}
+.evidence{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-top:48px}
+.evidence h2{font-size:20px;margin-bottom:8px}
+.evidence .desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+.evidence table{font-size:13px}
+@media (max-width:1024px){
+  :root{--sidebar-width:220px}
+  #main-content{padding:32px 24px}
+}
+@media (max-width:768px){
+  #mobile-topbar{display:flex}
+  #sidebar{transform:translateX(-100%);transition:transform .25s;width:260px;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  #sidebar.open{transform:translateX(0)}
+  #main-content{margin-left:0;padding:20px 16px 80px;padding-top:68px}
+  #dark-toggle{top:5px;right:8px}
+  #main-content h1{font-size:24px}
+  .topic-section>h2{font-size:20px}
+  .chapter-nav{font-size:13px;padding:10px 12px}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:89;display:none}
+  #overlay.show{display:block}
+}
+@media print{
+  #progress-bar,#mobile-topbar,#sidebar,#dark-toggle,#to-top,.chapter-nav{display:none!important}
+  #main-content{margin-left:0;padding:0;max-width:none}
+  body{background:#fff;color:#000}
+  .section-body{display:block!important}
+  .section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">🌙</button>
+<header id="mobile-topbar">
+  <button id="hamburger" aria-label="打开目录">☰</button>
+  <span id="mobile-title">SQLAlchemy 异步集成</span>
+</header>
+<div id="overlay"></div>
+
+<nav id="sidebar">
+  <div class="brand">FastAPI 核心</div>
+  <div class="brand-sub">阶段4 · 01_FastAPI核心<br>第五节 · SQLAlchemy 异步集成</div>
+  <a href="#s1" class="nav-topic">第五节 · SQLAlchemy 异步集成</a>
+  <a href="#s1-goal" class="nav-link">学习目标</a>
+  <a href="#s1-concept" class="nav-link">核心概念</a>
+  <a href="#s1-code" class="nav-link">代码示例</a>
+  <a href="#s1-caution" class="nav-link">常见误区</a>
+  <a href="#s1-quiz" class="nav-link">自测题</a>
+</nav>
+
+<main id="main-content">
+
+<nav class="chapter-nav" aria-label="阶段章节导航">
+  <a href="04-async.html">← 上一章：async 异步</a>
+  <a class="home" href="index.html">🏠 返回章节总览</a>
+  <a class="next" href="06-middleware.html">下一章：中间件与异常处理 →</a>
+</nav>
+
+<h1>第五节 · SQLAlchemy 异步集成</h1>
+<p class="subtitle">把 SQLAlchemy 2.0 的 ORM + 异步引擎 + AsyncSession 拼到 FastAPI 上，让数据真正落库且不阻塞事件循环。</p>
+<div class="topic-desc">给 ORM 换上异步引擎，FastAPI 才能真正并发访问数据库。</div>
+<div class="reading-time">⏱️ 预估阅读 8 分钟</div>
+
+<section class="topic-section" id="s1">
+
+  <!-- 🎯 学习目标 -->
+  <div class="section open" id="s1-goal">
+    <div class="section-head">
+      <span class="tag tag-goal">🎯 学习目标</span>
+      <span class="section-title-text">本节你要带走什么</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <ul class="goal-list">
+        <li>理解 <code>create_async_engine</code> + <code>async_sessionmaker</code> 的角色</li>
+        <li>会用 SQLAlchemy 2.0 新语法 <code>Mapped</code> + <code>mapped_column</code> 定义模型</li>
+        <li>掌握异步 CRUD 四件套：<code>execute</code> / <code>get</code> / <code>add</code> + <code>commit</code> + <code>refresh</code></li>
+        <li>知道 <code>expire_on_commit=False</code> 在异步环境必须设置</li>
+        <li>会用 <code>lifespan</code> 在启动时建表</li>
+      </ul>
+      <div class="callout">
+        <strong>与后端开发的关联：</strong>SQLAlchemy 是 Python 后端事实标准的 ORM。FastAPI 异步 + SQLAlchemy 2.0 异步 = 现代 Python 后端的「标准装配」。生产环境的 MySQL/PostgreSQL 接入只需换连接串，代码 0 改动。
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 核心概念 -->
+  <div class="section open" id="s1-concept">
+    <div class="section-head">
+      <span class="tag tag-concept">📖 核心概念</span>
+      <span class="section-title-text">三层架构 + 异步 CRUD</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="definition">
+        <strong>核心定义</strong>
+        <code>AsyncEngine</code>（连接池） → <code>async_sessionmaker</code>（session 工厂） → <code>AsyncSession</code>（单次请求的会话）。路由通过 <code>Depends(get_db)</code> 拿一个 session 做事。
+      </div>
+
+      <h3>1. 三层架构</h3>
+      <pre class="ascii-diagram">Engine          进程级单例：连接池，复用 TCP 连接
+   ↓
+async_sessionmaker(engine)   工厂：每次调用造一个新 session
+   ↓
+AsyncSession      请求级：从工厂拿，用完关
+   ↓
+db.execute(...)  真正执行 SQL（await 让出控制权）</pre>
+
+      <h3>2. 异步 CRUD 模板</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作</th><th>异步写法</th></tr></thead>
+        <tbody>
+          <tr><td>查全部</td><td><code>result = await db.execute(select(Item)); items = result.scalars().all()</code></td></tr>
+          <tr><td>按主键查</td><td><code>item = await db.get(Item, item_id)</code></td></tr>
+          <tr><td>按条件查单个</td><td><code>result = await db.execute(select(Item).where(Item.name == n)); item = result.scalar_one_or_none()</code></td></tr>
+          <tr><td>创建</td><td><code>db.add(item); await db.commit(); await db.refresh(item)</code></td></tr>
+          <tr><td>更新</td><td><code>item.x = y; await db.commit()</code></td></tr>
+          <tr><td>删除</td><td><code>await db.delete(item); await db.commit()</code></td></tr>
+          <tr><td>分页</td><td><code>await db.execute(select(Item).offset(skip).limit(limit))</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>3. SQLAlchemy 2.0 新模型声明</h3>
+      <pre class="ascii-diagram">老写法（1.x）：                新写法（2.0）：
+
+class Item(Base):              class Item(Base):
+    __tablename__ = "items"       __tablename__ = "items"
+    id = Column(                  id: Mapped[int] = mapped_column(
+        Integer, primary_key=True)      primary_key=True)
+    name = Column(               name: Mapped[str] = mapped_column(
+        String, nullable=False)         nullable=False)
+    price = Column(Float)         price: Mapped[float]
+
+↑ 类型和字段定义分离              ↑ 类型注解 = 字段类型，一行搞定</pre>
+
+      <h3>4. <code>expire_on_commit=False</code> 的作用</h3>
+      <p>默认情况下，<code>commit()</code> 后 ORM 对象的所有属性会"过期"，下次访问就会触发新查询（重新从 db 加载）。在异步环境里，对象可能已经 detach，触发查询会报错 <code>DetachedInstanceError</code>。设置 <code>expire_on_commit=False</code> 关闭这个机制。</p>
+
+    </div>
+  </div>
+
+  <!-- 💻 代码示例 -->
+  <div class="section" id="s1-code">
+    <div class="section-head">
+      <span class="tag tag-code">💻 代码示例</span>
+      <span class="section-title-text">从 database.py / models/item.py / routers/items.py 摘录</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <h3>① 异步引擎 + Session 工厂（来自 database.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> sqlalchemy.ext.asyncio <span class="key">import</span> create_async_engine, AsyncSession, async_sessionmaker
+<span class="key">from</span> sqlalchemy.orm <span class="key">import</span> DeclarativeBase
+
+<span class="com"># 开发用 SQLite（无需安装 MySQL）</span>
+<span class="com"># 切换 MySQL：mysql+aiomysql://root:password@localhost:3306/fastapi_demo</span>
+DATABASE_URL = <span class="str">"sqlite+aiosqlite:///./fastapi_demo.db"</span>
+
+engine = <span class="fn">create_async_engine</span>(
+    DATABASE_URL,
+    echo=<span class="key">True</span>,   <span class="com"># 打印 SQL，学习阶段保留，生产改 False</span>
+)
+
+<span class="com"># expire_on_commit=False：避免 commit 后访问属性触发新查询（异步环境必须）</span>
+AsyncSessionLocal = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="key">False</span>)
+
+
+<span class="key">class</span> <span class="fn">Base</span>(DeclarativeBase):
+    <span class="key">pass</span>
+
+
+<span class="key">async def</span> <span class="fn">init_db</span>():
+    <span class="str">"""建表（main.py startup 事件调用）"""</span>
+    <span class="key">async with</span> engine.<span class="fn">begin</span>() <span class="key">as</span> conn:
+        <span class="key">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.<span class="fn">create_all</span>)</pre>
+      </div>
+
+      <h3>② ORM 模型（来自 models/item.py，SQLAlchemy 2.0 风格）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> sqlalchemy.orm <span class="key">import</span> Mapped, mapped_column
+<span class="key">from</span> app.database <span class="key">import</span> Base
+
+
+<span class="key">class</span> <span class="fn">Item</span>(Base):
+    __tablename__ = <span class="str">"items"</span>
+
+    id: <span class="key">Mapped</span>[<span class="key">int</span>] = <span class="fn">mapped_column</span>(primary_key=<span class="key">True</span>, index=<span class="key">True</span>)
+    name: <span class="key">Mapped</span>[<span class="key">str</span>] = <span class="fn">mapped_column</span>(nullable=<span class="key">False</span>)
+    price: <span class="key">Mapped</span>[<span class="key">float</span>] = <span class="fn">mapped_column</span>(nullable=<span class="key">False</span>)
+    description: <span class="key">Mapped</span>[<span class="key">str</span> | <span class="key">None</span>] = <span class="fn">mapped_column</span>(nullable=<span class="key">True</span>)</pre>
+      </div>
+
+      <h3>③ 路由里的异步 CRUD（来自 routers/items.py）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> fastapi <span class="key">import</span> APIRouter, Depends, HTTPException
+<span class="key">from</span> sqlalchemy.ext.asyncio <span class="key">import</span> AsyncSession
+<span class="key">from</span> sqlalchemy <span class="key">import</span> select
+
+<span class="key">from</span> app.deps <span class="key">import</span> get_db
+<span class="key">from</span> app.models.item <span class="key">import</span> Item
+<span class="key">from</span> app.schemas <span class="key">import</span> ItemCreate, ItemUpdate, ItemResponse
+
+router = <span class="fn">APIRouter</span>(prefix=<span class="str">"/items"</span>, tags=[<span class="str">"商品"</span>])
+
+
+<span class="com"># 查列表</span>
+<span class="key2">@router</span>.<span class="fn">get</span>(<span class="str">"/"</span>, response_model=<span class="key">list</span>[ItemResponse])
+<span class="key">async def</span> <span class="fn">list_items</span>(
+    skip: <span class="key">int</span> = <span class="num">0</span>,
+    limit: <span class="key">int</span> = <span class="num">10</span>,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    result = <span class="key">await</span> db.<span class="fn">execute</span>(<span class="fn">select</span>(Item).<span class="fn">offset</span>(skip).<span class="fn">limit</span>(limit))
+    <span class="key">return</span> result.<span class="fn">scalars</span>().<span class="fn">all</span>()
+
+
+<span class="com"># 查单个</span>
+<span class="key2">@router</span>.<span class="fn">get</span>(<span class="str">"/{item_id}"</span>, response_model=ItemResponse)
+<span class="key">async def</span> <span class="fn">get_item</span>(item_id: <span class="key">int</span>, db: AsyncSession = <span class="fn">Depends</span>(get_db)):
+    item = <span class="key">await</span> db.<span class="fn">get</span>(Item, item_id)
+    <span class="key">if not</span> item:
+        <span class="key">raise</span> <span class="fn">HTTPException</span>(status_code=<span class="num">404</span>, detail=<span class="str">f"Item {item_id} not found"</span>)
+    <span class="key">return</span> item
+
+
+<span class="com"># 创建</span>
+<span class="key2">@router</span>.<span class="fn">post</span>(<span class="str">"/"</span>, response_model=ItemResponse, status_code=<span class="num">201</span>)
+<span class="key">async def</span> <span class="fn">create_item</span>(
+    data: ItemCreate,
+    db: AsyncSession = <span class="fn">Depends</span>(get_db),
+):
+    db_item = <span class="fn">Item</span>(**data.<span class="fn">model_dump</span>())
+    db.<span class="fn">add</span>(db_item)
+    <span class="key">await</span> db.<span class="fn">commit</span>()
+    <span class="key">await</span> db.<span class="fn">refresh</span>(db_item)   <span class="com"># 刷新拿到数据库生成的 id</span>
+    <span class="key">return</span> db_item
+
+
+<span class="com"># 部分更新</span>
+<span class="key2">@router</span>.<span class="fn">patch</span>(<span class="str">"/{item_id}"</span>, response_model=ItemResponse)
+<span class="key">async def</span> <span class="fn">update_item</span>(item_id: <span class="key">int</span>, data: ItemUpdate, db: AsyncSession = <span class="fn">Depends</span>(get_db)):
+    item = <span class="key">await</span> db.<span class="fn">get</span>(Item, item_id)
+    <span class="key">if not</span> item:
+        <span class="key">raise</span> <span class="fn">HTTPException</span>(status_code=<span class="num">404</span>, detail=<span class="str">f"Item {item_id} not found"</span>)
+
+    <span class="com"># exclude_unset=True：只更新请求里实际传了值的字段</span>
+    update_data = data.<span class="fn">model_dump</span>(exclude_unset=<span class="key">True</span>)
+    <span class="key">for</span> field, value <span class="key">in</span> update_data.<span class="fn">items</span>():
+        <span class="fn">setattr</span>(item, field, value)
+
+    <span class="key">await</span> db.<span class="fn">commit</span>()
+    <span class="key">await</span> db.<span class="fn">refresh</span>(item)
+    <span class="key">return</span> item
+
+
+<span class="com"># 删除</span>
+<span class="key2">@router</span>.<span class="fn">delete</span>(<span class="str">"/{item_id}"</span>, status_code=<span class="num">204</span>)
+<span class="key">async def</span> <span class="fn">delete_item</span>(item_id: <span class="key">int</span>, db: AsyncSession = <span class="fn">Depends</span>(get_db)):
+    item = <span class="key">await</span> db.<span class="fn">get</span>(Item, item_id)
+    <span class="key">if not</span> item:
+        <span class="key">raise</span> <span class="fn">HTTPException</span>(status_code=<span class="num">404</span>, detail=<span class="str">f"Item {item_id} not found"</span>)
+    <span class="key">await</span> db.<span class="fn">delete</span>(item)
+    <span class="key">await</span> db.<span class="fn">commit</span>()</pre>
+      </div>
+
+      <h3>④ 启动时建表（main.py 的 lifespan）</h3>
+      <div class="code-block">
+        <button class="copy-btn">📋 复制</button>
+<pre><code><span class="key">from</span> contextlib <span class="key">import</span> asynccontextmanager
+<span class="key">from</span> fastapi <span class="key">import</span> FastAPI
+<span class="key">from</span> app.database <span class="key">import</span> init_db
+<span class="key">from</span> app.routers.items <span class="key">import</span> router <span class="key">as</span> items_router
+
+
+<span class="com"># 生命周期管理（替代已废弃的 on_event）</span>
+<span class="key2">@asynccontextmanager</span>
+<span class="key">async def</span> <span class="fn">lifespan</span>(app: FastAPI):
+    <span class="com"># 启动时建表</span>
+    <span class="key">await</span> <span class="fn">init_db</span>()
+    <span class="key">yield</span>
+    <span class="com"># 关闭时可做清理</span>
+
+
+app = <span class="fn">FastAPI</span>(title=<span class="str">"FastAPI 学习 Demo"</span>, lifespan=lifespan)
+app.<span class="fn">include_router</span>(items_router)</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ⚠️ 常见误区 -->
+  <div class="section" id="s1-caution">
+    <div class="section-head">
+      <span class="tag tag-caution">⚠️ 常见误区</span>
+      <span class="section-title-text">最常踩的坑</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+      <div class="table-wrap">
+      <table class="misconception-table">
+        <thead><tr><th>❌ 误区</th><th>✅ 正确做法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>忘了 <code>expire_on_commit=False</code>，<code>commit</code> 后访问 ORM 属性报 <code>DetachedInstanceError</code></td>
+            <td>异步 session 工厂必须传 <code>expire_on_commit=False</code></td>
+          </tr>
+          <tr>
+            <td>用老的 <code>query()</code> 写法：<code>db.query(Item).filter(...).all()</code>（1.x 风格）</td>
+            <td>用 2.0 风格 <code>await db.execute(select(Item).where(...))</code>，可配合 <code>async with</code> 和显式 <code>await</code></td>
+          </tr>
+          <tr>
+            <td>用 <code>sessionmaker</code> 而不是 <code>async_sessionmaker</code>，造出的是同步 session</td>
+            <td>异步项目必须 <code>from sqlalchemy.ext.asyncio import async_sessionmaker</code></td>
+          </tr>
+          <tr>
+            <td>用废弃的 <code>@app.on_event("startup")</code>，FastAPI 0.110+ 已弃用</td>
+            <td>用 <code>@asynccontextmanager</code> + <code>lifespan</code> 参数</td>
+          </tr>
+          <tr>
+            <td><code>create</code> 之后忘了 <code>await db.refresh(item)</code>，返回的 ORM 对象没有数据库生成的 id</td>
+            <td>commit 后必须 refresh，才能拿到自增 id、默认值等数据库侧生成字段</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="warn-callout">
+        <strong>驱动不匹配：</strong>连接串里协议名要带异步驱动前缀：<code>sqlite+aiosqlite</code> / <code>postgresql+asyncpg</code> / <code>mysql+aiomysql</code>。写成 <code>sqlite:///./app.db</code> 用的是同步驱动，<code>create_async_engine</code> 会报错。
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ 自测题 -->
+  <div class="section" id="s1-quiz">
+    <div class="section-head">
+      <span class="tag tag-quiz">✏️ 自测题</span>
+      <span class="section-title-text">4 道单选 · 检验理解</span>
+      <span class="toggle">▶</span>
+    </div>
+    <div class="section-body">
+
+      <div class="quiz-card" data-answer="B">
+        <div class="q-title">1. SQLAlchemy 异步 Session 工厂为什么要传 <code>expire_on_commit=False</code>？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q1" value="A"> A. 提升性能，少做一次 COMMIT</label></li>
+          <li><label><input type="radio" name="q1" value="B"> B. 防止 commit 后对象属性过期、访问时触发新查询导致 <code>DetachedInstanceError</code></label></li>
+          <li><label><input type="radio" name="q1" value="C"> C. 让 commit 变成同步操作</label></li>
+          <li><label><input type="radio" name="q1" value="D"> D. 让 Pydantic 自动验证</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="A">
+        <div class="q-title">2. 异步项目里连接 MySQL 应该用什么连接串？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q2" value="A"> A. <code>mysql+aiomysql://user:pass@host:3306/db</code></label></li>
+          <li><label><input type="radio" name="q2" value="B"> B. <code>mysql://user:pass@host:3306/db</code></label></li>
+          <li><label><input type="radio" name="q2" value="C"> C. <code>pymysql://user:pass@host:3306/db</code></label></li>
+          <li><label><input type="radio" name="q2" value="D"> D. <code>sqlite+aiosqlite:///./db</code></label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="C">
+        <div class="q-title">3. <code>db.add(item); await db.commit()</code> 之后，<code>item.id</code> 是 None，怎么拿到数据库生成的自增 id？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q3" value="A"> A. 重新 <code>db.add</code> 一次</label></li>
+          <li><label><input type="radio" name="q3" value="B"> B. 查 <code>db.execute(select(func.max(Item.id)))</code></label></li>
+          <li><label><input type="radio" name="q3" value="C"> C. <code>await db.refresh(item)</code>，从数据库重新加载这个对象，<code>id</code> 就有值了</label></li>
+          <li><label><input type="radio" name="q3" value="D"> D. 改用同步 session 就有 id</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="D">
+        <div class="q-title">4. SQLAlchemy 2.0 声明模型用 <code>Mapped[int] = mapped_column(...)</code> 相比老写法 <code>Column(Integer, ...)</code> 的优势？</div>
+        <ul class="quiz-options">
+          <li><label><input type="radio" name="q4" value="A"> A. 性能提升 10 倍</label></li>
+          <li><label><input type="radio" name="q4" value="B"> B. 不再需要写 Base</label></li>
+          <li><label><input type="radio" name="q4" value="C"> C. 自动生成 SQL 文件</label></li>
+          <li><label><input type="radio" name="q4" value="D"> D. 类型注解 = 字段类型，编辑器能静态检查（mypy/Pyright），少写一次类型声明</label></li>
+        </ul>
+        <div class="quiz-actions"><button class="btn btn-submit">提交</button><button class="btn btn-reset">再次作答</button></div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- 证据追溯 -->
+<section class="evidence">
+  <h2>📎 证据追溯</h2>
+  <p class="desc">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+    <tbody>
+      <tr><td>异步引擎 + expire_on_commit 必要性</td><td><a href="../01_FastAPI核心/5.SQLAlchemy异步集成.md">5.SQLAlchemy异步集成.md</a></td><td>L13-21 / L65-67</td></tr>
+      <tr><td>建表方式（run_sync create_all）</td><td><a href="../01_FastAPI核心/5.SQLAlchemy异步集成.md">5.SQLAlchemy异步集成.md</a></td><td>L57-63</td></tr>
+      <tr><td>SQLAlchemy 2.0 异步引擎代码</td><td><a href="../01_FastAPI核心/demo/app/database.py">demo/app/database.py</a></td><td>L8-31</td></tr>
+      <tr><td>ORM 模型（Mapped / mapped_column）</td><td><a href="../01_FastAPI核心/demo/app/models/item.py">demo/app/models/item.py</a></td><td>L8-14</td></tr>
+      <tr><td>异步 CRUD 四件套（execute/get/add+commit+refresh）</td><td><a href="../01_FastAPI核心/demo/app/routers/items.py">demo/app/routers/items.py</a></td><td>L24-82</td></tr>
+      <tr><td>main.py 中 lifespan 启动建表</td><td><a href="../01_FastAPI核心/demo/app/main.py">demo/app/main.py</a></td><td>L24-37</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<button id="to-top" title="回到顶部">↑</button>
+
+<script>
+const bar=document.getElementById('progress-bar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;bar.style.width=pct+'%'});
+const topBtn=document.getElementById('to-top');
+window.addEventListener('scroll',()=>topBtn.classList.toggle('show',window.scrollY>300));
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+const toggle=document.getElementById('dark-toggle');
+const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+const savedMode=localStorage.getItem('theme');
+function applyMode(m){document.documentElement.classList.toggle('dark',m==='dark');toggle.textContent=m==='dark'?'☀️':'🌙'}
+if(savedMode){applyMode(savedMode)}else if(prefersDark){applyMode('dark')}else{applyMode('light')}
+toggle.addEventListener('click',()=>{const isDark=document.documentElement.classList.toggle('dark');localStorage.setItem('theme',isDark?'dark':'light');toggle.textContent=isDark?'☀️':'🌙'});
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('overlay');
+const hamburger=document.getElementById('hamburger');
+function closeSidebar(){sidebar.classList.remove('open');overlay.classList.remove('show');document.body.style.overflow=''}
+hamburger.addEventListener('click',()=>{const open=sidebar.classList.toggle('open');overlay.classList.toggle('show',open);document.body.style.overflow=open?'hidden':''});
+overlay.addEventListener('click',closeSidebar);
+sidebar.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeSidebar));
+window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar()});
+document.querySelectorAll('.section-head').forEach(h=>{h.addEventListener('click',()=>h.parentElement.classList.toggle('open'))});
+document.querySelectorAll('.copy-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const code=btn.parentElement.querySelector('pre code')||btn.parentElement.querySelector('pre');if(!code)return;try{await navigator.clipboard.writeText(code.innerText);btn.textContent='✅ 已复制';setTimeout(()=>btn.textContent='📋 复制',1500)}catch{btn.textContent='复制失败';setTimeout(()=>btn.textContent='📋 复制',1500)}})});
+const sections=document.querySelectorAll('.section[id],.topic-section[id]');
+const linkMap=new Map();
+document.querySelectorAll('#sidebar a').forEach(a=>{if(a.getAttribute('href')&&a.getAttribute('href').startsWith('#')){linkMap.set(a.getAttribute('href').slice(1),a)}});
+const navLinks=document.querySelectorAll('#sidebar .nav-link');
+const navTopics=document.querySelectorAll('#sidebar .nav-topic');
+function setActive(id){
+  navLinks.forEach(l=>l.classList.remove('active'));
+  navTopics.forEach(t=>t.classList.remove('active'));
+  const link=linkMap.get(id);
+  if(link&&link.classList.contains('nav-link')){
+    link.classList.add('active');
+    let prev=link.previousElementSibling;
+    while(prev&&!prev.classList.contains('nav-topic'))prev=prev.previousElementSibling;
+    if(prev)prev.classList.add('active');
+  }else if(link&&link.classList.contains('nav-topic')){link.classList.add('active')}
+}
+const obs=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);if(visible[0])setActive(visible[0].target.id)},{rootMargin:'-20% 0px -60% 0px',threshold:[0,.25,.5,.75,1]});
+sections.forEach(s=>obs.observe(s));
+const EXPLANATIONS={
+  q1:'默认 <code>expire_on_commit=True</code>：commit 后所有属性过期，下次访问会触发新查询。同步环境这能拿最新值，<strong>异步环境 session 已 detach</strong>，再查就报 <code>DetachedInstanceError</code>。',
+  q2:'连接串协议名决定驱动：<code>mysql+aiomysql</code> = 异步 MySQL 驱动。<code>mysql://</code> 默认是同步的 <code>PyMySQL</code>，<code>pymysql://</code> 显式同步，<code>sqlite+aiosqlite</code> 是 SQLite 异步。',
+  q3:'<code>commit</code> 只是把 SQL 提交到数据库，<code>item.id</code> 这个 Python 对象属性还是 <code>None</code>。<code>refresh(item)</code> 会重新从 db 加载这个对象，自增 id 就有了。',
+  q4:'2.0 新写法的核心收益是 <strong>类型注解驱动</strong>：<code>Mapped[int]</code> 直接告诉 mypy 字段是 <code>int</code>，不用再单独声明。老写法 <code>Column(Integer)</code> + 实例属性是 <code>Any</code>，编辑器完全帮不上忙。'
+};
+document.querySelectorAll('.quiz-card').forEach(card=>{
+  const submit=card.querySelector('.btn-submit');
+  const reset=card.querySelector('.btn-reset');
+  const fb=card.querySelector('.quiz-feedback');
+  submit.addEventListener('click',()=>{
+    const name=card.querySelector('input[type=radio]').name;
+    const checked=card.querySelector('input[type=radio]:checked');
+    if(!checked){fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>未作答</strong> 请先选择一个选项。';return}
+    const correct=card.dataset.answer;
+    if(checked.value===correct){fb.className='quiz-feedback correct';fb.style.display='block';fb.innerHTML='<strong>✅ 回答正确！</strong> '+EXPLANATIONS[name]}
+    else{fb.className='quiz-feedback wrong';fb.style.display='block';fb.innerHTML='<strong>❌ 回答错误。</strong>正确答案 '+correct+'。'+EXPLANATIONS[name]}
+  });
+  reset.addEventListener('click',()=>{card.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);fb.style.display='none';fb.className='quiz-feedback'});
+});
+</script>
+</body>
+</html>

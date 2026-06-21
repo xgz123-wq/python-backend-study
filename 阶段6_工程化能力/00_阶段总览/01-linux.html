@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>01 Linux | 阶段6 工程化能力</title><style>:root{--sidebar-width:260px;--bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;--accent:#2563eb;--blue:#2563eb;--purple:#7c3aed;--cyan:#0284c7;--red:#dc2626;--orange:#d97706;--code-bg:#1e293b;--code-text:#e2e8f0;--quiz-bg:#fffbeb;--shadow:0 1px 4px rgba(0,0,0,.08);--radius:10px}.dark{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--blue:#58a6ff;--code-bg:#0d1117;--quiz-bg:rgba(217,119,6,.1);--shadow:0 1px 4px rgba(0,0,0,.5)}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}.progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:1000}.theme-toggle{position:fixed;top:12px;right:16px;z-index:1001;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer}#sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-width);overflow:auto;background:var(--card);border-right:1px solid var(--border);padding:20px 0;z-index:900}.side-title{padding:0 18px 14px;border-bottom:1px solid var(--border);font-weight:800}.nav-topic{display:block;padding:12px 18px 4px;color:var(--muted);font-size:12.5px;font-weight:800;text-decoration:none}.nav-link{display:block;padding:6px 18px 6px 32px;color:var(--muted);font-size:13.5px;text-decoration:none;border-left:3px solid transparent}.nav-link.active{color:var(--accent);border-left-color:var(--accent)}#main-content{margin-left:var(--sidebar-width);min-height:100vh;padding:40px 32px;display:flex;flex-direction:column;align-items:center}#main-content>*{max-width:820px;width:100%}h1{font-size:32px;margin-bottom:8px}.subtitle,.reading-time{color:var(--muted);margin-bottom:12px}.chapter-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);box-shadow:var(--shadow);font-size:13.5px}.chapter-nav a,.chapter-nav span{flex:1;color:var(--muted);text-decoration:none}.chapter-nav a{color:var(--accent);font-weight:700}.chapter-nav .home{text-align:center}.chapter-nav .next{text-align:right}.topic-section{margin:28px 0}.topic-section>h2{font-size:24px;margin-bottom:14px}.section{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);margin:12px 0;overflow:hidden;box-shadow:var(--shadow)}.section-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;font-weight:800}.section-body{display:none;padding:16px;border-top:1px solid var(--border)}.section.open .section-body{display:block}.tag{display:inline-block;color:#fff;border-radius:999px;padding:3px 10px;font-size:12px}.goal .tag{background:var(--blue)}.concept .tag{background:var(--purple)}.code .tag{background:var(--cyan)}.caution .tag{background:var(--red)}.quiz .tag{background:var(--orange)}.callout{border-left:4px solid var(--accent);background:rgba(37,99,235,.08);padding:10px 12px;border-radius:8px;margin:10px 0}.table-wrap{overflow-x:auto;margin:10px 0}.table-wrap table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word}.table-wrap th,.table-wrap td{border:1px solid var(--border);padding:8px;text-align:left;vertical-align:top}.table-wrap th{background:rgba(37,99,235,.08)}.ascii-diagram,.code-block{background:var(--code-bg);color:var(--code-text);border-radius:8px;padding:14px;overflow:auto;white-space:pre;font-family:Consolas,"Cascadia Code",monospace;font-size:12.5px}.quiz-item{background:var(--quiz-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin:10px 0}.trace{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:30px 0}.trace a{color:var(--accent)}.back-top{position:fixed;right:24px;bottom:24px;display:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:20px;cursor:pointer}.back-top.show{display:block}@media(max-width:768px){#sidebar{transform:translateX(-100%)}#main-content{margin-left:0;padding:20px 16px}.chapter-nav{flex-direction:column;align-items:stretch}.chapter-nav .home,.chapter-nav .next{text-align:left}}@media print{#sidebar,.theme-toggle,.progress-bar,.back-top{display:none}#main-content{margin-left:0}}
+/* Unified chapter navigation: clear targets, fewer misclicks */
+.chapter-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin: 0 0 28px !important;
+    padding: 14px !important;
+    border: 1px solid var(--border, #30363d) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(180deg, rgba(37, 99, 235, .08), rgba(37, 99, 235, .025)), var(--card, var(--surface, #161b22)) !important;
+    box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)) !important;
+    font-size: 14px !important;
+}
+.chapter-nav a,
+.chapter-nav span {
+    min-height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid transparent !important;
+    text-decoration: none !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+}
+.chapter-nav a {
+    color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .10) !important;
+    font-weight: 800 !important;
+}
+.chapter-nav a:hover {
+    transform: translateY(-1px) !important;
+    border-color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .18) !important;
+    text-decoration: none !important;
+}
+.chapter-nav .home {
+    justify-content: center !important;
+    min-width: 180px !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .24) !important;
+}
+.chapter-nav .next {
+    justify-content: flex-end !important;
+    text-align: right !important;
+}
+.chapter-nav .chapter-nav-disabled,
+.chapter-nav span:not(.home):not(.next) {
+    color: var(--muted, #8b949e) !important;
+    background: rgba(148, 163, 184, .10) !important;
+    cursor: not-allowed !important;
+    opacity: .72 !important;
+}
+.chapter-nav .chapter-nav-disabled.next,
+.chapter-nav span.next {
+    justify-content: flex-end !important;
+}
+@media (max-width: 768px) {
+    .chapter-nav {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+    .chapter-nav a,
+    .chapter-nav span,
+    .chapter-nav .home,
+    .chapter-nav .next {
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+        width: 100% !important;
+    }
+}
+.chapter-overview{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:18px 22px;margin:0 0 32px;box-shadow:var(--shadow)}.chapter-overview .overview-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px}.chapter-overview p{color:var(--text);font-size:14px;line-height:1.7;margin:0 0 12px}.chapter-overview table{width:100%;border-collapse:collapse;font-size:13.5px}.chapter-overview th,.chapter-overview td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}.chapter-overview th{background:rgba(37,99,235,.08);font-weight:700}.topic-desc{color:var(--muted);font-style:italic;font-size:14.5px;margin:0 0 16px;line-height:1.6;padding:6px 0 6px 12px;border-left:3px solid var(--accent)}
+</style></head><body><div class="progress-bar" id="progressBar"></div><button class="theme-toggle" id="themeToggle">🌙</button><nav id="sidebar"><div class="side-title">📑 Linux</div><a href="#s1" class="nav-topic">第一节 · 基础命令</a><a href="#s1-goal" class="nav-link">学习目标</a><a href="#s1-concept" class="nav-link">核心概念</a><a href="#s1-code" class="nav-link">代码示例</a><a href="#s1-caution" class="nav-link">常见误区</a><a href="#s1-quiz" class="nav-link">自测题</a><a href="#s2" class="nav-topic">第二节 · 权限用户</a><a href="#s2-goal" class="nav-link">学习目标</a><a href="#s2-concept" class="nav-link">核心概念</a><a href="#s2-code" class="nav-link">代码示例</a><a href="#s2-caution" class="nav-link">常见误区</a><a href="#s2-quiz" class="nav-link">自测题</a><a href="#s3" class="nav-topic">第三节 · 进程管理</a><a href="#s3-goal" class="nav-link">学习目标</a><a href="#s3-concept" class="nav-link">核心概念</a><a href="#s3-code" class="nav-link">代码示例</a><a href="#s3-caution" class="nav-link">常见误区</a><a href="#s3-quiz" class="nav-link">自测题</a><a href="#s4" class="nav-topic">第四节 · 网络文本</a><a href="#s4-goal" class="nav-link">学习目标</a><a href="#s4-concept" class="nav-link">核心概念</a><a href="#s4-code" class="nav-link">代码示例</a><a href="#s4-caution" class="nav-link">常见误区</a><a href="#s4-quiz" class="nav-link">自测题</a><a href="#trace" class="nav-topic">📎 证据追溯</a></nav><main id="main-content"><nav class="chapter-nav" aria-label="阶段章节导航"><a href="00-deployment-overview.html">← 上一章：部署概览</a><a class="home" href="index.html">🏠 返回阶段总目录</a><a class="next" href="02-git.html">下一章：Git 版本控制 →</a></nav><h1>Linux 基础</h1><p class="subtitle">后端工程化的操作系统底座：文件系统、权限、进程、网络诊断与文本处理。</p><div class="reading-time">⏱️ 预估阅读 36 分钟</div>
+<div class="chapter-overview"><div class="overview-title">📌 本章 · 为什么要学 Linux？</div><p>线上服务器 99% 跑在 Linux 上。SSH 上去之后你需要看目录、查日志、改配置、起服务、找出端口被谁占了——这些都靠命令行。本章打通命令、权限、进程、网络与文本处理四块基本功，让你能独立完成"登录服务器、定位问题、改完重启"的闭环。</p><table><tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr><tr><td>Linux 基础命令</td><td>目录树 · 文件操作 · 查看 · 管道与重定向 · 包管理</td><td>⭐⭐⭐</td></tr><tr><td>权限与用户管理</td><td>rwx · chmod/chown · 用户与组 · sudo</td><td>⭐⭐⭐</td></tr><tr><td>进程管理</td><td>ps/top · kill/信号 · 后台与守护 · 端口占用</td><td>⭐⭐⭐</td></tr><tr><td>网络与文本处理</td><td>curl/netstat/ss · grep/awk/sed · 日志分析</td><td>⭐⭐⭐</td></tr></table></div>
+<section class="topic-section" id="s1"><h2>第一节 · Linux 基础命令</h2><div class="topic-desc">服务器命令行是后端的工作台，先把目录、文件、管道、重定向这些日常操作练熟。</div><div class="section goal open" id="s1-goal"><div class="section-header"><span class="tag">🎯 学习目标</span><span>▼</span></div><div class="section-body"><ul><li>理解 Linux 发行版与目录树。</li><li>掌握文件、目录、搜索、查看命令。</li><li>理解管道和重定向。</li></ul></div></div><div class="section concept open" id="s1-concept"><div class="section-header"><span class="tag">📖 核心概念</span><span>▼</span></div><div class="section-body"><pre class="ascii-diagram">/ 根目录
+├── etc   配置
+├── var   日志/数据
+├── home  用户目录
+└── usr   用户安装程序</pre><p>Linux 用一棵以 `/` 为根的目录树组织文件；后端最常接触 `/etc/nginx/`、`/var/log/`、`/home/`、`/opt/`。</p></div></div><div class="section code" id="s1-code"><div class="section-header"><span class="tag">💻 代码示例</span><span>▼</span></div><div class="section-body"><p>来源：<a href="../01_Linux/demo/1_basic_commands.py">demo/1_basic_commands.py</a></p><pre class="code-block">result = subprocess.run(
+    "ls -la",
+    shell=True,
+    capture_output=True,
+    text=True,
+    encoding="utf-8",
+)</pre></div></div><div class="section caution" id="s1-caution"><div class="section-header"><span class="tag">⚠️ 常见误区</span><span>▼</span></div><div class="section-body"><div class="callout">不要执行 `rm -rf /` 或 `rm -rf *` 这类不可恢复删除命令。</div></div></div><div class="section quiz" id="s1-quiz"><div class="section-header"><span class="tag">✏️ 自测题</span><span>▼</span></div><div class="section-body"><div class="quiz-item" data-answer="B">Linux 文件系统根目录是？ A. C:\ B. / C. home</div><div class="quiz-item" data-answer="A">实时查看日志常用？ A. tail -f B. rm -rf C. chmod 777</div><div class="quiz-item" data-answer="C">管道符是？ A. > B. & C. |</div></div></div></section>
+<section class="topic-section" id="s2"><h2>第二节 · 权限与用户管理</h2><div class="topic-desc">多用户系统里，rwx 与用户组决定谁能动什么，是部署安全的第一道闸。</div><div class="section goal open" id="s2-goal"><div class="section-header"><span class="tag">🎯 学习目标</span><span>▼</span></div><div class="section-body"><ul><li>理解 rwx 与 755/644。</li><li>掌握用户、用户组、sudo。</li><li>知道 SSH 密钥权限要求。</li></ul></div></div><div class="section concept open" id="s2-concept"><div class="section-header"><span class="tag">📖 核心概念</span><span>▼</span></div><div class="section-body"><div class="table-wrap"><table><tr><th>权限</th><th>数字</th><th>含义</th></tr><tr><td>r</td><td>4</td><td>读取</td></tr><tr><td>w</td><td>2</td><td>写入</td></tr><tr><td>x</td><td>1</td><td>执行/进入目录</td></tr></table></div><p>755 = owner 读写执行，group/other 读执行；644 = owner 读写，其他只读。</p></div></div><div class="section code" id="s2-code"><div class="section-header"><span class="tag">💻 代码示例</span><span>▼</span></div><div class="section-body"><p>来源：<a href="../01_Linux/demo/2_permissions.py">demo/2_permissions.py</a></p><pre class="code-block">mode = os.stat(path).st_mode
+permissions = oct(mode)[-3:]
+os.chmod(path, 0o644)</pre></div></div><div class="section caution" id="s2-caution"><div class="section-header"><span class="tag">⚠️ 常见误区</span><span>▼</span></div><div class="section-body"><div class="table-wrap"><table><tr><th>误区</th><th>纠正</th></tr><tr><td>生产直接 chmod 777</td><td>严重扩大攻击面，应按最小权限。</td></tr><tr><td>SSH 私钥可公开读</td><td>私钥通常应为 600。</td></tr></table></div></div></div><div class="section quiz" id="s2-quiz"><div class="section-header"><span class="tag">✏️ 自测题</span><span>▼</span></div><div class="section-body"><div class="quiz-item" data-answer="A">rwx 数字分别是？ A. 4/2/1 B. 1/2/3 C. 7/6/5</div><div class="quiz-item" data-answer="B">SSH 私钥常用权限？ A. 777 B. 600 C. 000</div><div class="quiz-item" data-answer="C">临时提权命令？ A. tail B. grep C. sudo</div></div></div></section>
+<section class="topic-section" id="s3"><h2>第三节 · 进程管理</h2><div class="topic-desc">你的服务在服务器上就是一个进程，能看、能起、能停、能查端口才算掌控。</div><div class="section goal open" id="s3-goal"><div class="section-header"><span class="tag">🎯 学习目标</span><span>▼</span></div><div class="section-body"><ul><li>理解 PID、前台/后台进程。</li><li>掌握 ps/top/kill/nohup。</li><li>了解 systemd 服务管理。</li></ul></div></div><div class="section concept open" id="s3-concept"><div class="section-header"><span class="tag">📖 核心概念</span><span>▼</span></div><div class="section-body"><pre class="ascii-diagram">创建 → 就绪 → 运行 → 阻塞 → 终止
+PID 标识进程，PPID 标识父进程</pre></div></div><div class="section code" id="s3-code"><div class="section-header"><span class="tag">💻 代码示例</span><span>▼</span></div><div class="section-body"><p>来源：<a href="../01_Linux/demo/3_process_management.py">demo/3_process_management.py</a></p><pre class="code-block">proc = subprocess.Popen([sys.executable, "worker.py"])
+print(proc.pid)
+proc.terminate()
+proc.wait(timeout=5)</pre></div></div><div class="section caution" id="s3-caution"><div class="section-header"><span class="tag">⚠️ 常见误区</span><span>▼</span></div><div class="section-body"><p>终止进程先用 SIGTERM，确认无法退出再用 SIGKILL；`kill -9` 是最后手段。</p></div></div><div class="section quiz" id="s3-quiz"><div class="section-header"><span class="tag">✏️ 自测题</span><span>▼</span></div><div class="section-body"><div class="quiz-item" data-answer="B">PID 是？ A. 端口号 B. 进程 ID C. 用户名</div><div class="quiz-item" data-answer="A">断开终端仍运行常用？ A. nohup B. cat C. pwd</div><div class="quiz-item" data-answer="C">现代服务管理器？ A. pip B. npm C. systemd</div></div></div></section>
+<section class="topic-section" id="s4"><h2>第四节 · 网络与文本处理</h2><div class="topic-desc">curl、netstat、grep、awk——线上排错就是靠这套组合从日志里找答案。</div><div class="section goal open" id="s4-goal"><div class="section-header"><span class="tag">🎯 学习目标</span><span>▼</span></div><div class="section-body"><ul><li>会用 curl/wget/ss/ip 做网络排查。</li><li>理解端口、防火墙、监听。</li><li>掌握 grep/sed/awk 思路。</li></ul></div></div><div class="section concept open" id="s4-concept"><div class="section-header"><span class="tag">📖 核心概念</span><span>▼</span></div><div class="section-body"><div class="table-wrap"><table><tr><th>工具</th><th>作用</th></tr><tr><td>curl</td><td>HTTP/API 调试</td></tr><tr><td>ss</td><td>查看监听端口</td></tr><tr><td>grep</td><td>搜索文本</td></tr><tr><td>awk</td><td>按列统计分析</td></tr></table></div></div></div><div class="section code" id="s4-code"><div class="section-header"><span class="tag">💻 代码示例</span><span>▼</span></div><div class="section-body"><p>来源：<a href="../01_Linux/demo/4_network_text.py">demo/4_network_text.py</a></p><pre class="code-block">with socket.create_connection((host, port), timeout=2):
+    print("端口可达")
+
+matches = re.findall(r"ERROR|WARN", log_text)</pre></div></div><div class="section caution" id="s4-caution"><div class="section-header"><span class="tag">⚠️ 常见误区</span><span>▼</span></div><div class="section-body"><p>不要把数据库端口（如 3306、6379）直接暴露到公网；优先只监听内网或本机。</p></div></div><div class="section quiz" id="s4-quiz"><div class="section-header"><span class="tag">✏️ 自测题</span><span>▼</span></div><div class="section-body"><div class="quiz-item" data-answer="A">测试 API 常用？ A. curl B. chmod C. useradd</div><div class="quiz-item" data-answer="B">查看监听端口现代工具？ A. tar B. ss C. zip</div><div class="quiz-item" data-answer="C">统计日志 IP 访问量常用组合？ A. echo B. pwd C. awk/sort/uniq</div></div></div></section>
+<section class="trace" id="trace"><h2>📎 证据追溯</h2><div class="table-wrap"><table><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr><tr><td>Linux 目录树与基础命令</td><td><a href="../01_Linux/1.Linux基础命令.md">1.Linux基础命令.md</a></td><td>文件系统结构 / 基础命令</td></tr><tr><td>rwx 权限与用户管理</td><td><a href="../01_Linux/2.权限与用户管理.md">2.权限与用户管理.md</a></td><td>文件权限详解 / sudo</td></tr><tr><td>PID、后台运行与 systemd</td><td><a href="../01_Linux/3.进程管理.md">3.进程管理.md</a></td><td>进程管理 / systemd</td></tr><tr><td>curl、ss、grep、awk 等排查工具</td><td><a href="../01_Linux/4.网络与文本处理.md">4.网络与文本处理.md</a></td><td>网络基础命令 / 文本处理</td></tr><tr><td>Demo 运行顺序与映射</td><td><a href="../01_Linux/demo/README.md">demo/README.md</a></td><td>学习顺序</td></tr></table></div></section></main><button class="back-top" id="backTop">↑</button><script>const themeBtn=document.getElementById('themeToggle'),saved=localStorage.getItem('theme');if(saved==='dark'){document.body.classList.add('dark');themeBtn.textContent='☀️'}themeBtn.onclick=()=>{document.body.classList.toggle('dark');const d=document.body.classList.contains('dark');themeBtn.textContent=d?'☀️':'🌙';localStorage.setItem('theme',d?'dark':'light')};const bar=document.getElementById('progressBar');window.addEventListener('scroll',()=>{const h=document.documentElement;bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';document.getElementById('backTop').classList.toggle('show',scrollY>300)});document.getElementById('backTop').onclick=()=>scrollTo({top:0,behavior:'smooth'});document.querySelectorAll('.section-header').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));const links=document.querySelectorAll('.nav-link');const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id))}})},{rootMargin:'-20% 0px -70%'});document.querySelectorAll('.section').forEach(s=>obs.observe(s));</script></body></html>

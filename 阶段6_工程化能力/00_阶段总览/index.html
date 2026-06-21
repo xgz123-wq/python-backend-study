@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阶段 6 · 工程化能力总览</title>
+<style>
+:root{
+  --bg:#f6f8fb;--surface:#fff;--border:#e3e8ef;--text:#1e293b;--muted:#64748b;
+  --accent:#2563eb;--accent-light:#dbeafe;
+  --radius:12px;--shadow:0 2px 8px rgba(0,0,0,.06);
+  --back-top-bg:#2563eb;--back-top-text:#fff;
+  --table-stripe:#f8fafc;--table-header:#f1f5f9;
+  --trace-bg:#f1f5f9;
+  --card-grad-1:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);
+  --card-grad-2:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);
+  --card-grad-3:linear-gradient(135deg,#cffafe 0%,#a5f3fc 100%);
+  --card-grad-4:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);
+  --card-grad-5:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);
+  --card-grad-6:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 100%);
+  --card-grad-7:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%);
+  --card-grad-8:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%);
+}
+body.dark{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);
+  --shadow:0 1px 4px rgba(0,0,0,.5);
+  --back-top-bg:#58a6ff;
+  --table-stripe:#161b22;--table-header:#21262d;
+  --trace-bg:#161b22;
+  --card-grad-1:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.08));
+  --card-grad-2:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(124,58,237,0.08));
+  --card-grad-3:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(6,182,212,0.08));
+  --card-grad-4:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.08));
+  --card-grad-5:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(22,163,74,0.08));
+  --card-grad-6:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(219,39,119,0.08));
+  --card-grad-7:linear-gradient(135deg,rgba(248,113,113,0.15),rgba(239,68,68,0.08));
+  --card-grad-8:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(79,70,229,0.08));
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;transition:background .3s,color .3s;margin:0;padding:0}
+.progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);z-index:200;transition:width .1s}
+.theme-toggle{position:fixed;top:12px;right:16px;z-index:300;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .15s}
+.theme-toggle:hover{transform:scale(1.1)}
+.layout{max-width:1280px;margin:0 auto;padding:32px 40px 80px}
+.hero{background:var(--surface);border-radius:20px;padding:48px 48px 40px;margin-bottom:32px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;top:0;right:0;width:300px;height:300px;background:radial-gradient(circle,rgba(124,58,237,.15),transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:16px}
+.hero h1{font-size:38px;font-weight:900;line-height:1.2;margin-bottom:14px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 50%,#db2777 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.hero-subtitle{font-size:16px;color:var(--muted);margin-bottom:24px;max-width:780px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.hero-meta span strong{color:var(--text);margin-right:4px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.btn-ghost{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-ghost:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.section-block{margin-bottom:48px;scroll-margin-top:20px}
+.section-block h2{font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.section-block h2 .num{width:32px;height:32px;background:var(--accent);color:#fff;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.section-block .section-sub{color:var(--muted);font-size:14px;margin-bottom:20px;margin-left:42px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}
+.card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-decoration:none;color:var(--text);box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08);border-color:var(--accent)}
+.card-c1{background:var(--card-grad-1)}
+.card-c2{background:var(--card-grad-2)}
+.card-c3{background:var(--card-grad-3)}
+.card-c4{background:var(--card-grad-4)}
+.card-c5{background:var(--card-grad-5)}
+.card-c6{background:var(--card-grad-6)}
+.card-c7{background:var(--card-grad-7)}
+.card-c8{background:var(--card-grad-8)}
+.card-icon{font-size:28px;margin-bottom:10px}
+.card-title{font-size:17px;font-weight:700;margin-bottom:6px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface);color:var(--muted);border:1px solid var(--border);letter-spacing:.05em;flex-shrink:0;margin-left:6px}
+.card-status.done{color:#16a34a;border-color:#16a34a;background:rgba(34,197,94,0.1)}
+.card-desc{font-size:13.5px;color:var(--muted);margin-bottom:12px;line-height:1.55}
+.card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-top:auto}
+.card-meta span{display:flex;align-items:center;gap:3px}
+.progress-overview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow)}
+.progress-bar-wrap{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:12px 0 8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);width:0%;transition:width .3s;border-radius:6px}
+.progress-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.info-card h4{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.info-card p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
+.table-wrap{overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border)}
+.table-wrap table{width:100%;border-collapse:collapse;margin:0;font-size:13.5px;table-layout:fixed;word-break:break-word}
+.table-wrap th{background:var(--table-header);font-weight:700;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text)}
+.table-wrap td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.table-wrap tr:nth-child(even) td{background:var(--table-stripe)}
+.table-wrap tr:last-child td{border-bottom:none}
+.table-wrap a{color:var(--accent);text-decoration:none}
+.table-wrap a:hover{text-decoration:underline}
+.callout{margin:14px 0;padding:12px 16px;border-radius:8px;border-left:4px solid;font-size:14px;line-height:1.65}
+.callout-tips{background:rgba(34,197,94,0.08);border-color:#16a34a}
+.callout-tips .callout-label{color:#16a34a}
+.callout-warn{background:rgba(245,158,11,0.08);border-color:#d97706}
+.callout-warn .callout-label{color:#d97706}
+.callout-label{font-weight:700;margin-right:6px}
+.callout p{margin:4px 0}
+.back-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--back-top-bg);color:var(--back-top-text);border:none;cursor:pointer;font-size:20px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:100;display:none;align-items:center;justify-content:center;transition:opacity .2s,transform .15s}
+.back-top:hover{transform:scale(1.1)}
+.back-top.show{display:flex}
+@media print{.back-top,.theme-toggle,.progress-bar{display:none!important}.layout{padding:20px}.card,.hero{break-inside:avoid}}
+@media (max-width:768px){.layout{padding:16px 16px 60px}.hero{padding:32px 24px}.hero h1{font-size:28px}.cards-grid{grid-template-columns:1fr}.section-block .section-sub{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" id="themeToggle" title="切换深浅色">🌙</button>
+
+<div class="layout">
+
+  <header class="hero">
+    <span class="hero-eyebrow">🚀 Python 后端学习 · 阶段 6</span>
+    <h1>工程化能力统一总览</h1>
+    <p class="hero-subtitle">从 Linux 基础、Git 协作、Docker 容器化、Nginx 反代、CI/CD 自动化，到生产部署与微服务架构——把 Python 后端从"能跑"变成"可上生产"。</p>
+    <div class="hero-meta">
+      <span><strong>📚 8 大章</strong> · 部署全链路</span>
+      <span><strong>⏱️ 约 220 分钟</strong> 总阅读</span>
+      <span><strong>🛠️ 24+ demo</strong> · 命令 + 配置文件 + 部署脚本</span>
+      <span><strong>🎯 受众</strong> 想让代码真正上生产的后端工程师</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="00-deployment-overview.html">🚀 立即开始：第 0 章 · 部署概览</a>
+      <a class="btn btn-ghost" href="03-docker.html">⚡ 重点章节：Docker 容器化</a>
+      <a class="btn btn-ghost" href="../../docs/01_后端学习路线.md">📋 后端学习路线</a>
+    </div>
+  </header>
+
+  <div class="progress-overview">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <strong style="font-size:15px">📊 我的学习进度</strong>
+      <span style="font-size:12px;color:var(--muted)">点击卡片切换"已读/未读"，自动保存到 localStorage</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="progress-label">
+      <span id="progressText">0 / 8 章已读（0%）</span>
+      <span id="progressHint">💡 建议：先看 00 部署概览（建立全景）→ 01 Linux（基础设施）→ 02-07（按需学）</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="cards">
+    <h2><span class="num">1</span>章节目录（按学习顺序）</h2>
+    <p class="section-sub">8 大工程化能力组成后端上生产的完整工具链。基础设施 → 协作流 → 容器化 → 流量网关 → 自动化 → 部署 → 分布式架构。</p>
+    <div class="cards-grid">
+
+      <a class="card card-c1" href="00-deployment-overview.html" data-file="00-deployment-overview.html">
+        <div class="card-icon">🧭</div>
+        <div class="card-title">00 部署概览 <span class="card-status" data-status="00-deployment-overview.html">未读</span></div>
+        <p class="card-desc">建立部署、环境、进程、服务、端口、域名的整体认知。先看地图再上路。</p>
+        <div class="card-meta"><span>📖 4 节</span><span>🗺️ 全景图</span><span>⏱️ ~20 分钟</span></div>
+      </a>
+
+      <a class="card card-c2" href="01-linux.html" data-file="01-linux.html">
+        <div class="card-icon">🐧</div>
+        <div class="card-title">01 Linux <span class="card-status" data-status="01-linux.html">未读</span></div>
+        <p class="card-desc">基础命令、权限与用户、进程管理、网络与文本处理。生产环境的唯一选择。</p>
+        <div class="card-meta"><span>📖 4 节</span><span>💻 基础设施</span><span>⏱️ ~30 分钟</span></div>
+      </a>
+
+      <a class="card card-c3" href="02-git.html" data-file="02-git.html">
+        <div class="card-icon">🌿</div>
+        <div class="card-title">02 Git 版本控制 <span class="card-status" data-status="02-git.html">未读</span></div>
+        <p class="card-desc">基础操作、分支管理与 Git Flow 团队协作流程。代码协作的"普通话"。</p>
+        <div class="card-meta"><span>📖 2 节</span><span>🤝 协作流</span><span>⏱️ ~20 分钟</span></div>
+      </a>
+
+      <a class="card card-c4" href="03-docker.html" data-file="03-docker.html">
+        <div class="card-icon">🐳</div>
+        <div class="card-title">03 Docker <span class="card-status" data-status="03-docker.html">未读</span></div>
+        <p class="card-desc">基础概念、常用命令、Dockerfile 编写、docker-compose 多容器编排。一致性交付。</p>
+        <div class="card-meta"><span>📖 4 节</span><span>📦 容器化</span><span>⏱️ ~40 分钟</span></div>
+      </a>
+
+      <a class="card card-c5" href="04-nginx.html" data-file="04-nginx.html">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">04 Nginx <span class="card-status" data-status="04-nginx.html">未读</span></div>
+        <p class="card-desc">反向代理、静态文件、HTTPS、负载均衡与高级配置。流量网关。</p>
+        <div class="card-meta"><span>📖 3 节</span><span>🚪 流量网关</span><span>⏱️ ~30 分钟</span></div>
+      </a>
+
+      <a class="card card-c6" href="05-cicd.html" data-file="05-cicd.html">
+        <div class="card-icon">🔁</div>
+        <div class="card-title">05 CI/CD 持续部署 <span class="card-status" data-status="05-cicd.html">未读</span></div>
+        <p class="card-desc">CI/CD 概念与流程、GitHub Actions 实战。从 push 到部署全自动。</p>
+        <div class="card-meta"><span>📖 2 节</span><span>🤖 自动化</span><span>⏱️ ~25 分钟</span></div>
+      </a>
+
+      <a class="card card-c7" href="06-production-deployment.html" data-file="06-production-deployment.html">
+        <div class="card-icon">🏭</div>
+        <div class="card-title">06 生产部署 <span class="card-status" data-status="06-production-deployment.html">未读</span></div>
+        <p class="card-desc">WSGI/ASGI 服务器、进程管理、安全与性能优化。代码上生产的最后一公里。</p>
+        <div class="card-meta"><span>📖 3 节</span><span>🏁 上线</span><span>⏱️ ~30 分钟</span></div>
+      </a>
+
+      <a class="card card-c8" href="07-microservices.html" data-file="07-microservices.html">
+        <div class="card-icon">🧩</div>
+        <div class="card-title">07 微服务 <span class="card-status" data-status="07-microservices.html">未读</span></div>
+        <p class="card-desc">微服务架构概念、gRPC 通信、Kubernetes 容器编排基础。分布式起点。</p>
+        <div class="card-meta"><span>📖 2 节</span><span>🏗️ 分布式</span><span>⏱️ ~25 分钟</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="section-block" id="path">
+    <h2><span class="num">2</span>推荐学习路径</h2>
+    <p class="section-sub">根据你的目标选择最合适的阅读顺序</p>
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>🟢 零基础新手</h4>
+        <p>00 部署概览 → 01 Linux → 02 Git → 03 Docker → 04 Nginx → 05 CI/CD → 06 部署 → 07 微服务</p>
+      </div>
+      <div class="info-card">
+        <h4>🟡 已会 Linux 跳过</h4>
+        <p>00 部署概览 → 02 Git → 03 Docker → 05 CI/CD → 06 部署。直接进入工程化核心</p>
+      </div>
+      <div class="info-card">
+        <h4>🔵 想立刻部署一个项目</h4>
+        <p>02 Git（协作）→ 03 Docker（第 3-4 节 Dockerfile + compose）→ 04 Nginx（第 1 节反代）→ 06 部署（第 1 节 ASGI）</p>
+      </div>
+      <div class="info-card">
+        <h4>🟠 面试 / 跳槽</h4>
+        <p>重点 03 Docker、05 CI/CD、07 微服务；其他挑核心命令记</p>
+      </div>
+    </div>
+    <div class="callout callout-tips">
+      <span class="callout-label">💡 学习约定</span>
+      <p>所有章节都遵循统一格式：左侧固定目录 + 右侧主内容 + 顶部进度条 + 4 类彩色 callout（💡 提示 / ⚠️ 注意 / ⛔ 避坑 / ✅ 验证）+ 表格斑马纹 + 代码块一键复制。配套 <code>demo/</code> 目录包含可直接用的配置文件和命令脚本。</p>
+    </div>
+  </div>
+
+  <div class="section-block" id="stack">
+    <h2><span class="num">3</span>8 章在生产链路中的位置</h2>
+    <p class="section-sub">从本地写代码到生产服务，8 章就是这条链路上的 8 个关键节点</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>环节</th><th>对应章节</th><th>核心产出</th><th>典型工具</th></tr></thead>
+        <tbody>
+          <tr><td>1. 全景认知</td><td>00 部署概览</td><td>理解部署是什么、链路长什么样</td><td>架构图 / 流程图</td></tr>
+          <tr><td>2. 服务器操作</td><td>01 Linux</td><td>能用命令行管理机器</td><td>bash / ssh / vim / grep</td></tr>
+          <tr><td>3. 代码协作</td><td>02 Git</td><td>多人代码不冲突</td><td>git / GitHub / Git Flow</td></tr>
+          <tr><td>4. 环境一致</td><td>03 Docker</td><td>"在我机器上能跑" 永远成立</td><td>Dockerfile / docker-compose</td></tr>
+          <tr><td>5. 流量接入</td><td>04 Nginx</td><td>域名、HTTPS、负载均衡</td><td>nginx / Let's Encrypt</td></tr>
+          <tr><td>6. 自动化</td><td>05 CI/CD</td><td>push 代码自动测试和部署</td><td>GitHub Actions / GitLab CI</td></tr>
+          <tr><td>7. 进程托管</td><td>06 生产部署</td><td>服务常驻、崩溃自启、监控</td><td>uvicorn / gunicorn / systemd</td></tr>
+          <tr><td>8. 横向扩展</td><td>07 微服务</td><td>单服务变多服务、流量调度</td><td>gRPC / Kubernetes / Service Mesh</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-warn">
+      <span class="callout-label">⚠️ 章节关系</span>
+      <p>00 是地图（先看）。01-05 是"基础"（缺一不可），06 需要前 5 章的产出物，07 是更高阶的演进路径。个人项目前 5 章就够；进公司做正经服务至少学到 06；想进大厂/做架构再补 07。</p>
+    </div>
+  </div>
+
+  <div class="section-block" id="trace" style="background:var(--trace-bg);padding:24px 28px;border-radius:10px;border:1px solid var(--border);margin-top:16px">
+    <h2><span class="num">📎</span>章节信息溯源</h2>
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:14px;margin-left:42px">本总览页所列 8 大工程能力、对应 demo 命令、工具链均直接来自阶段 6 各章节的 <code>README.md</code> 和 <code>chapter_review.html</code>。每节末尾的"📎 证据追溯"区列出了该节每条结论的源 MD 行号。</p>
+    <p style="color:var(--muted);font-size:13.5px;margin-left:42px">阶段 6 章节文件结构：<code>阶段6_工程化能力/0X_章节名/</code>（理论 .md + <code>demo/</code> 脚本 + <code>chapter_review.html</code> 总览）。<code>00_部署概览/</code> 包含跨章节的部署全景图。</p>
+  </div>
+
+</div>
+
+<button class="back-top" id="backTop" title="回到顶部">↑</button>
+
+<script>
+const themeBtn=document.getElementById('themeToggle'),savedTheme=localStorage.getItem('theme-stage6'),prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+if(savedTheme==='dark'||(!savedTheme&&prefersDark)){document.body.classList.add('dark');themeBtn.textContent='☀️'}
+themeBtn.addEventListener('click',()=>{document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');themeBtn.textContent=isDark?'☀️':'🌙';localStorage.setItem('theme-stage6',isDark?'dark':'light')});
+
+const progressBar=document.getElementById('progressBar');
+window.addEventListener('scroll',()=>{const h=document.documentElement;progressBar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%'});
+
+const backTop=document.getElementById('backTop');
+window.addEventListener('scroll',()=>backTop.classList.toggle('show',window.scrollY>300));
+backTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+const STORAGE_KEY='stage6-progress';
+const CARDS=document.querySelectorAll('.card[data-file]');
+let progress=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+
+function applyProgress(){
+  let done=0;
+  CARDS.forEach(card=>{
+    const file=card.dataset.file;
+    const status=card.querySelector('.card-status');
+    if(progress[file]){
+      card.style.opacity='0.85';
+      status.textContent='✓ 已读';
+      status.classList.add('done');
+      done++;
+    } else {
+      card.style.opacity='1';
+      status.textContent='未读';
+      status.classList.remove('done');
+    }
+  });
+  const total=CARDS.length;
+  const pct=Math.round((done/total)*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${done} / ${total} 章已读（${pct}%）`;
+  document.getElementById('progressHint').textContent=pct===100?'🎉 恭喜！全部 8 章都学完了！':(pct>=50?'🔥 进度过半，继续加油！':'💡 建议：先看 00 部署概览（建立全景）→ 01 Linux（基础设施）→ 02-07（按需学）');
+}
+
+CARDS.forEach(card=>{
+  card.addEventListener('click',()=>{
+    const file=card.dataset.file;
+    progress[file]=!progress[file];
+    if(!progress[file]) delete progress[file];
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(progress));
+    applyProgress();
+  });
+});
+applyProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+celery[redis]
+# 如需 RabbitMQ 支持，额外安装：
+# celery[rabbitmq]
+
+# Flower：Celery 监控界面（可选）
+flower

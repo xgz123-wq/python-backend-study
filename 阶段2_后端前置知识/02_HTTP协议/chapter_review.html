@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP 协议 — Python 后端学习</title>
+<style>
+/* ===== CSS 变量 ===== */
+:root {
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --cyan: #0284c7;
+  --red: #dc2626;
+  --orange: #d97706;
+  --green: #16a34a;
+  --bg: #f6f8fb;
+  --card: #fff;
+  --border: #e3e8ef;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --code-bg: #1e293b;
+  --ascii-bg: #0f172a;
+  --callout-warn-border: #dc2626;
+  --accent-light: rgba(37,99,235,0.08);
+  --shadow: 0 1px 4px rgba(0,0,0,.08);
+  --radius: 8px;
+  --sidebar-w: 260px;
+  --max-read-w: 720px;
+  --font-cn: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-code: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  --quiz-bg: #fffbeb;
+}
+.dark {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-secondary: #8b949e;
+  --blue: #58a6ff;
+  --code-bg: #161b22;
+  --ascii-bg: #0d1117;
+  --accent-light: rgba(88,166,255,0.12);
+  --callout-warn-border: #f85149;
+  --shadow: 0 1px 4px rgba(0,0,0,.3);
+  --quiz-bg: rgba(217,119,6,0.1);
+}
+
+/* ===== 基础重置 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 15px; }
+body {
+  font-family: var(--font-cn);
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  transition: background .3s, color .3s;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== 进度条 ===== */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--blue); z-index: 10000; width: 0%;
+  transition: width .15s linear;
+}
+
+/* ===== 深色模式切换 ===== */
+#theme-toggle {
+  position: fixed; top: 12px; right: 16px; z-index: 9999;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--card);
+  font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow); transition: background .3s;
+}
+#theme-toggle:hover { background: var(--border); }
+
+/* ===== 侧栏 ===== */
+#sidebar {
+  position: fixed; top: 0; left: 0; width: var(--sidebar-w);
+  height: 100vh; overflow-y: auto; padding: 24px 16px 80px;
+  background: var(--card); border-right: 1px solid var(--border);
+  z-index: 999; transition: transform .3s;
+}
+#sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+#sidebar .nav-topic {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  letter-spacing: .03em; padding: 6px 10px; border-radius: 6px;
+  display: block; margin-top: 12px; transition: color .2s, background .2s;
+}
+#sidebar .nav-topic:first-child { margin-top: 0; }
+#sidebar .nav-topic:hover { color: var(--blue); text-decoration: none; }
+#sidebar .nav-topic.active { color: var(--blue); background: var(--accent-light); }
+#sidebar .nav-link {
+  font-size: 13.5px; font-weight: 400; color: var(--text-secondary);
+  padding: 4px 10px 4px 20px; border-radius: 6px; display: block;
+  transition: color .2s, background .2s;
+}
+#sidebar .nav-link:hover { color: var(--blue); text-decoration: none; }
+#sidebar .nav-link.active { color: var(--blue); background: var(--accent-light); }
+
+/* ===== 移动端导航 ===== */
+#mobile-nav {
+  display: none; position: fixed; top: 0; left: 0; right: 0; height: 48px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  z-index: 1000; align-items: center; padding: 0 12px; gap: 10px;
+}
+#mobile-nav .title { font-size: 13px; font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mobile-nav .menu-btn {
+  width: 32px; height: 32px; border: 1px solid var(--border);
+  background: var(--bg); border-radius: 6px; font-size: 18px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+#overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  z-index: 998;
+}
+#overlay.show { display: block; }
+
+/* ===== 主内容区 ===== */
+main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  padding: 40px 40px 80px;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: margin-left .3s, padding .3s;
+}
+main h1 { font-size: 2rem; color: var(--text); margin-bottom: 8px; }
+main .reading-time { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+
+/* ===== 章节标题 ===== */
+.topic-title {
+  font-size: 1.4rem; color: var(--text); margin: 48px 0 20px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  scroll-margin-top: 60px;
+}
+
+/* ===== 五区块通用 ===== */
+.section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 16px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.section-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+  font-weight: 700; font-size: 14px; color: #fff;
+  border-radius: var(--radius) var(--radius) 0 0;
+  transition: background .2s;
+}
+.section.open .section-header { border-radius: var(--radius) var(--radius) 0 0; }
+.section:not(.open) .section-header { border-radius: var(--radius); }
+.section-header:hover { filter: brightness(1.1); }
+.section-body { display: none; padding: 16px 20px; }
+.section.open .section-body { display: block; }
+.section-header .toggle-icon {
+  margin-left: auto; transition: transform .25s; font-size: 12px;
+}
+.section.open .section-header .toggle-icon { transform: rotate(180deg); }
+
+/* 区块颜色变体 */
+.section.goal .section-header { background: var(--blue); }
+.section.concept .section-header { background: var(--purple); }
+.section.code .section-header { background: var(--cyan); }
+.section.pitfall .section-header { background: var(--red); }
+.section.quiz .section-header { background: var(--orange); }
+.section.overview .section-header { background: #475569; }
+
+/* ===== 小节首句钩子（topic-desc） ===== */
+.topic-desc {
+  color: var(--text-secondary); font-style: italic;
+  font-size: 14.5px; margin: -12px 0 20px; line-height: 1.6;
+  padding-left: 12px; border-left: 3px solid var(--blue);
+}
+
+/* ===== 学习目标 ===== */
+.objective-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.objective-list li { padding: 6px 0; padding-left: 20px; position: relative; }
+.objective-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.callout-backend {
+  margin-top: 12px; padding: 10px 14px; border-radius: 6px;
+  background: var(--accent-light); border-left: 3px solid var(--blue);
+  font-size: 13.5px; color: var(--text);
+}
+
+/* ===== 核心概念 ===== */
+.concept-block { margin-bottom: 16px; }
+.concept-block h4 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+.ascii-box {
+  background: var(--ascii-bg); color: #e2e8f0; padding: 14px 18px;
+  border-radius: 6px; font-family: var(--font-code); font-size: 12.5px;
+  line-height: 1.6; overflow-x: auto; white-space: pre; margin: 10px 0;
+}
+
+/* 表格 */
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+th, td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+th { font-weight: 700; background: var(--bg); }
+tr:nth-child(even) td { background: rgba(0,0,0,.02); }
+.dark tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+
+/* 折叠区 */
+details { margin: 10px 0; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; }
+details summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text); }
+details .details-content { margin-top: 8px; font-size: 14px; color: var(--text-secondary); }
+
+/* ===== 代码示例 ===== */
+.code-block-wrapper {
+  position: relative; margin: 12px 0; border-radius: 8px; overflow: hidden;
+  background: var(--code-bg);
+}
+.code-block-wrapper pre {
+  margin: 0; padding: 16px 40px 16px 16px; font-family: var(--font-code);
+  font-size: 12.5px; line-height: 1.6; color: #e2e8f0; overflow-x: auto;
+}
+.copy-btn {
+  position: absolute; top: 8px; right: 8px; padding: 4px 10px;
+  font-size: 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px;
+  background: rgba(255,255,255,.08); color: #cbd5e1; cursor: pointer;
+  font-family: var(--font-cn); transition: all .2s;
+}
+.copy-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* 语法高亮 */
+.hl-kw { color: #c084fc; }
+.hl-str { color: #6ee7b7; }
+.hl-com { color: #64748b; font-style: italic; }
+.hl-fn { color: #60a5fa; }
+.hl-num { color: #fbbf24; }
+.hl-decorator { color: #fbbf24; }
+.hl-builtin { color: #67e8f9; }
+
+/* 关键行 */
+.line-highlight {
+  border-left: 3px solid #f59e0b; padding-left: 12px !important;
+  display: block; margin: 0 -16px; padding-right: 16px; background: rgba(245,158,11,.06);
+}
+
+.code-caption { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+.io-table { margin: 10px 0 16px; }
+.io-table th { font-size: 12px; }
+
+/* ===== 常见误区 ===== */
+.pitfall-table td:first-child { color: var(--red); font-weight: 600; width: 35%; }
+.pitfall-table td:last-child { color: var(--green); }
+.callout-security {
+  margin-top: 12px; padding: 10px 14px; border-radius: 6px;
+  background: rgba(220,38,38,.06); border-left: 3px solid var(--callout-warn-border);
+  font-size: 13.5px; color: var(--text); font-weight: 600;
+}
+
+/* ===== 自测题 ===== */
+.quiz-item {
+  padding: 14px 16px; margin-bottom: 12px; border-radius: 8px;
+  background: #fffbeb; border-left: 3px solid var(--orange);
+}
+.dark .quiz-item { background: rgba(217,119,6,.08); }
+.quiz-item .quiz-q { font-weight: 700; margin-bottom: 8px; font-size: 14px; color: var(--text); }
+.quiz-item label {
+  display: block; padding: 6px 10px; margin: 2px 0; border-radius: 6px;
+  cursor: pointer; transition: background .15s; font-size: 13.5px; color: var(--text);
+}
+.quiz-item label:hover { background: rgba(37,99,235,.06); }
+.quiz-item input[type="radio"] { margin-right: 8px; }
+.quiz-feedback {
+  display: none; padding: 8px 12px; margin-top: 8px; border-radius: 6px;
+  font-size: 13px; line-height: 1.6;
+}
+.quiz-feedback.correct { background: rgba(22,163,74,.1); color: var(--green); }
+.quiz-feedback.wrong { background: rgba(220,38,38,.08); color: var(--red); }
+.quiz-actions { display: flex; gap: 10px; margin-top: 12px; }
+.quiz-actions button {
+  padding: 8px 20px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); cursor: pointer;
+  font-size: 14px; font-family: var(--font-cn); transition: background .2s;
+}
+.quiz-actions button:hover { background: var(--border); }
+.quiz-actions button:first-child { background: var(--blue); color: #fff; border-color: var(--blue); }
+.quiz-actions button:first-child:hover { filter: brightness(1.1); }
+
+/* ===== 证据追溯 ===== */
+#evidence {
+  margin-top: 60px; padding: 32px 24px; border-radius: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+#evidence h2 { font-size: 1.3rem; margin-bottom: 4px; }
+#evidence .ev-note { color: var(--text-secondary); font-size: 13.5px; margin-bottom: 16px; }
+#evidence table { font-size: 13px; }
+#evidence td:nth-child(1) { font-weight: 600; }
+#evidence td:nth-child(2) { color: var(--text-secondary); font-family: var(--font-code); font-size: 12px; }
+#evidence td:nth-child(3) { color: var(--text-secondary); font-size: 12.5px; }
+.ev-uncertain { color: var(--orange); font-weight: 600; }
+
+/* ===== 回到顶部 ===== */
+#back-to-top {
+  position: fixed; bottom: 32px; right: 32px; width: 44px; height: 44px;
+  border-radius: 50%; border: 1px solid var(--border); background: var(--card);
+  font-size: 20px; cursor: pointer; box-shadow: var(--shadow); z-index: 999;
+  display: none; align-items: center; justify-content: center;
+  transition: background .2s; color: var(--text);
+}
+#back-to-top:hover { background: var(--border); }
+
+/* ===== 响应式 ===== */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+  #sidebar { padding: 20px 12px 80px; }
+  #sidebar .nav-topic { font-size: 11.5px; padding: 4px 8px; }
+  #sidebar .nav-link { font-size: 12.5px; padding: 3px 6px 3px 14px; }
+  main { padding: 32px 24px 80px; }
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #mobile-nav { display: flex; }
+  main { margin-left: 0; padding: 60px 16px 60px; }
+  .code-block-wrapper pre { font-size: 11.5px; }
+  #theme-toggle { top: 8px; right: 8px; width: 32px; height: 32px; font-size: 16px; }
+  #back-to-top { bottom: 20px; right: 20px; width: 40px; height: 40px; }
+}
+
+/* ===== 打印 ===== */
+@media print {
+  #progress-bar, #theme-toggle, #sidebar, #mobile-nav, #overlay,
+  #back-to-top, .copy-btn, .quiz-actions { display: none !important; }
+  body { background: #fff; color: #000; }
+  main { margin-left: 0; max-width: 100%; padding: 0; }
+  .section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+  .section-body { display: block !important; }
+  .section-header { background: #eee !important; color: #000 !important; }
+  .ascii-box, .code-block-wrapper { background: #f5f5f5; color: #000; }
+}
+</style>
+</head>
+<body>
+
+<!-- 进度条 -->
+<div id="progress-bar"></div>
+
+<!-- 深色模式切换 -->
+<button id="theme-toggle" title="切换深色/浅色模式">☀️</button>
+
+<!-- 移动端导航 -->
+<nav id="mobile-nav">
+  <span class="title">HTTP 协议</span>
+  <button class="menu-btn" id="menu-btn" aria-label="菜单">☰</button>
+</nav>
+<div id="overlay"></div>
+
+<!-- 侧栏目录 -->
+<aside id="sidebar">
+  <nav>
+    <a class="nav-topic" href="#topic-1">第一节 · HTTP 请求与响应结构</a>
+    <a class="nav-link" href="#topic-1-obj">🎯 学习目标</a>
+    <a class="nav-link" href="#topic-1-concept">📖 核心概念</a>
+    <a class="nav-link" href="#topic-1-code">💻 代码示例</a>
+    <a class="nav-link" href="#topic-1-pitfall">⚠️ 常见误区</a>
+    <a class="nav-link" href="#topic-1-quiz">✏️ 自测题</a>
+
+    <a class="nav-topic" href="#topic-2">第二节 · HTTP 方法与状态码</a>
+    <a class="nav-link" href="#topic-2-obj">🎯 学习目标</a>
+    <a class="nav-link" href="#topic-2-concept">📖 核心概念</a>
+    <a class="nav-link" href="#topic-2-code">💻 代码示例</a>
+    <a class="nav-link" href="#topic-2-pitfall">⚠️ 常见误区</a>
+    <a class="nav-link" href="#topic-2-quiz">✏️ 自测题</a>
+
+    <a class="nav-topic" href="#topic-3">第三节 · Header 与 Content-Type</a>
+    <a class="nav-link" href="#topic-3-obj">🎯 学习目标</a>
+    <a class="nav-link" href="#topic-3-concept">📖 核心概念</a>
+    <a class="nav-link" href="#topic-3-code">💻 代码示例</a>
+    <a class="nav-link" href="#topic-3-pitfall">⚠️ 常见误区</a>
+    <a class="nav-link" href="#topic-3-quiz">✏️ 自测题</a>
+
+    <a class="nav-topic" href="#topic-4">第四节 · Cookie 与 Session</a>
+    <a class="nav-link" href="#topic-4-obj">🎯 学习目标</a>
+    <a class="nav-link" href="#topic-4-concept">📖 核心概念</a>
+    <a class="nav-link" href="#topic-4-code">💻 代码示例</a>
+    <a class="nav-link" href="#topic-4-pitfall">⚠️ 常见误区</a>
+    <a class="nav-link" href="#topic-4-quiz">✏️ 自测题</a>
+
+    <a class="nav-topic" href="#topic-5">第五节 · HTTPS 与 CORS</a>
+    <a class="nav-link" href="#topic-5-obj">🎯 学习目标</a>
+    <a class="nav-link" href="#topic-5-concept">📖 核心概念</a>
+    <a class="nav-link" href="#topic-5-code">💻 代码示例</a>
+    <a class="nav-link" href="#topic-5-pitfall">⚠️ 常见误区</a>
+    <a class="nav-link" href="#topic-5-quiz">✏️ 自测题</a>
+
+    <a class="nav-topic" href="#evidence">📎 证据追溯</a>
+  </nav>
+</aside>
+
+<!-- 主内容区 -->
+<main>
+
+<style>
+  .chapter-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); box-shadow: var(--shadow); font-size: 13.5px; }
+  .chapter-nav a, .chapter-nav span { flex: 1; color: var(--text-secondary); text-decoration: none; }
+  .chapter-nav a { color: var(--blue); font-weight: 700; }
+  .chapter-nav a:hover { text-decoration: underline; }
+  .chapter-nav .home { text-align: center; }
+  .chapter-nav .next { text-align: right; }
+  @media (max-width: 768px) { .chapter-nav { flex-direction: column; align-items: stretch; } .chapter-nav .home, .chapter-nav .next { text-align: left; } }
+</style>
+<nav class="chapter-nav" aria-label="阶段 2 章节导航">
+  <a href="../01_计算机网络基础/index.html">← 上一章：计算机网络基础</a>
+  <a class="home" href="../00_阶段总览/index.html">🏠 返回阶段总目录</a>
+  <a class="next" href="../03_RESTful_API设计/index.html">下一章：RESTful API 设计 →</a>
+</nav>
+
+<h1>HTTP 协议</h1>
+<p class="reading-time">⏱️ 预估阅读 40 分钟（约 12000 字）</p>
+
+<!-- ============================================================ -->
+<!-- 📌 本章 总览 -->
+<!-- ============================================================ -->
+<div class="section overview open" id="overview">
+<div class="section-header"><span>📌 本章 · 为什么要学 HTTP 协议？</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<p>HTTP 是后端开发最常打交道的协议——前端发请求、API 返响应、Cookie 维持登录、CORS 决定能不能跨域，所有这些日常都建立在 HTTP 报文格式与语义之上。读完本章，你能看懂任意一次请求/响应在线缆上长什么样、为什么会 401/403/CORS 失败、HTTPS 与裸 HTTP 差在哪里。</p>
+<table>
+<tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+<tr><td>HTTP 请求与响应结构</td><td>请求行 · 状态行 · Header · Body · 报文范例</td><td>⭐⭐⭐</td></tr>
+<tr><td>HTTP 方法与状态码</td><td>GET/POST/PUT/DELETE 语义 · 2xx/3xx/4xx/5xx 分组 · 幂等性</td><td>⭐⭐⭐</td></tr>
+<tr><td>Header 与 Content-Type</td><td>常见 Header · MIME 类型 · application/json vs form-urlencoded</td><td>⭐⭐⭐</td></tr>
+<tr><td>Cookie 与 Session</td><td>无状态机制 · Set-Cookie · Session ID · HttpOnly/Secure/SameSite</td><td>⭐⭐⭐</td></tr>
+<tr><td>HTTPS 与 CORS</td><td>TLS 握手 · 证书 · 同源策略 · 预检请求 · CORS Header</td><td>⭐⭐⭐</td></tr>
+</table>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第一节：HTTP 请求与响应结构 -->
+<!-- ============================================================ -->
+<h2 class="topic-title" id="topic-1">第一节 · HTTP 请求与响应结构</h2>
+<div class="topic-desc">HTTP 是浏览器、App、后端服务之间最常见的"对话格式"。理解请求和响应结构，是学习 API 的入口。</div>
+
+<!-- 🎯 学习目标 -->
+<div class="section goal open" id="topic-1-obj">
+<div class="section-header"><span>🎯 学习目标</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<ul class="objective-list">
+  <li>理解 HTTP 请求的 4 部分结构</li>
+  <li>理解 HTTP 响应的 4 部分结构</li>
+  <li>掌握 URL 各组成部分及含义</li>
+  <li>区分 HTTP 与 TCP 的层次关系</li>
+  <li>能通过浏览器或 Postman 观察请求头</li>
+</ul>
+<div class="callout-backend">
+  <strong>与后端开发的关联：</strong>后端框架（FastAPI/Django）本质就是解析 HTTP 请求（路径、查询参数、Header、Body）并返回 HTTP 响应的程序。理解请求/响应结构是后续所有 API 开发的基础。
+</div>
+</div>
+</div>
+
+<!-- 📖 核心概念 -->
+<div class="section concept open" id="topic-1-concept">
+<div class="section-header"><span>📖 核心概念</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="concept-block">
+<h4>HTTP 是什么？</h4>
+<p>HTTP（HyperText Transfer Protocol）是应用层协议，规定客户端和服务器如何交换数据。底层可靠传输由 TCP 负责，HTTP 只管数据格式。</p>
+<div class="ascii-box">客户端（浏览器 / Postman / Python 程序）
+        │  HTTP Request
+        ▼
+服务器（Nginx / FastAPI / Django）
+        │  HTTP Response
+        ▼
+客户端接收结果</div>
+</div>
+
+<div class="concept-block">
+<h4>HTTP 请求的 4 部分</h4>
+<table>
+<tr><th>部分</th><th>示例</th><th>说明</th></tr>
+<tr><td>请求行</td><td><code>POST /api/users?page=1 HTTP/1.1</code></td><td>方法 + 路径 + 协议版本</td></tr>
+<tr><td>请求头</td><td><code>Content-Type: application/json</code></td><td>元数据：格式、认证、来源</td></tr>
+<tr><td>空行</td><td>空白行</td><td>分隔 Header 和 Body</td></tr>
+<tr><td>请求体</td><td><code>{"name": "Alice"}</code></td><td>提交给服务器的数据</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>HTTP 响应的 4 部分</h4>
+<table>
+<tr><th>部分</th><th>示例</th><th>说明</th></tr>
+<tr><td>状态行</td><td><code>HTTP/1.1 200 OK</code></td><td>协议版本 + 状态码 + 状态文本</td></tr>
+<tr><td>响应头</td><td><code>Content-Type: application/json</code></td><td>响应元数据</td></tr>
+<tr><td>空行</td><td>空白行</td><td>分隔 Header 和 Body</td></tr>
+<tr><td>响应体</td><td><code>{"id": 1}</code></td><td>返回给客户端的数据</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>URL 完整组成</h4>
+<div class="ascii-box">https://api.example.com:443/users/1?verbose=true#profile
+│       │               │   │        │            │
+协议    域名            端口 路径     查询参数       片段</div>
+<p style="margin-top:8px;font-size:13.5px;color:var(--text-secondary);">⚠️ <code>#profile</code> 片段标识符只在浏览器端使用，<strong>不会发送给服务器</strong>。</p>
+</div>
+
+<details>
+<summary>请求行与状态行详细拆解</summary>
+<div class="details-content">
+<p><strong>请求行：</strong><code>POST /api/users?page=1 HTTP/1.1</code></p>
+<ul>
+  <li><code>POST</code> — 请求方法，表示创建资源</li>
+  <li><code>/api/users?page=1</code> — 请求路径和查询参数</li>
+  <li><code>HTTP/1.1</code> — 协议版本</li>
+</ul>
+<p style="margin-top:8px;"><strong>状态行：</strong><code>HTTP/1.1 200 OK</code></p>
+<ul>
+  <li><code>HTTP/1.1</code> — 协议版本</li>
+  <li><code>200</code> — 状态码，表示成功</li>
+  <li><code>OK</code> — 状态文本，给人看的说明</li>
+</ul>
+</div>
+</details>
+
+</div>
+</div>
+
+<!-- 💻 代码示例 -->
+<div class="section code" id="topic-1-code">
+<div class="section-header"><span>💻 代码示例</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<p class="code-caption">启动本地 HTTP 服务并发送 GET / POST 请求</p>
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">来源：<code>demo/1_http_request_response.py</code></p>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre>from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class RequestResponseHandler(BaseHTTPRequestHandler):
+<span class="line-highlight">    def do_GET(self) -> None:
+        parsed_url = urlparse(self.path)
+        query_params = parse_qs(parsed_url.query)
+        print(f"请求路径: {parsed_url.path}")
+        print(f"查询参数: {query_params}")</span>
+        # 解析后返回 JSON 响应
+        self._send_json_response(200, {"method": "GET", ...})
+
+    def do_POST(self) -> None:
+        content_length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(content_length).decode("utf-8")
+<span class="line-highlight">        request_data = json.loads(raw_body)  # 按 JSON 解析请求体</span>
+        self._send_json_response(201, {"method": "POST", ...})</pre>
+</div>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># 客户端：发送 GET 请求</span>
+connection = HTTPConnection(host, port)
+connection.request(
+    <span class="hl-str">"GET"</span>,
+    <span class="hl-str">"/api/users?page=1&amp;page_size=20"</span>,
+    headers={<span class="hl-str">"User-Agent"</span>: <span class="hl-str">"Python-HTTP-Demo/1.0"</span>},
+)
+response = connection.getresponse()
+<span class="hl-kw">print</span>(<span class="hl-str">f"状态行: HTTP/1.1 {response.status} {response.reason}"</span>)
+<span class="hl-kw">print</span>(<span class="hl-str">f"Content-Type: {response.getheader('Content-Type')}"</span>)
+<span class="hl-kw">print</span>(<span class="hl-str">f"响应体: {response.read().decode('utf-8')}"</span>)</pre>
+</div>
+
+<table class="io-table">
+<tr><th>输入</th><th>输出（服务端收到）</th></tr>
+<tr><td><code>GET /api/users?page=1&page_size=20</code></td><td>路径: /api/users，查询参数: {page: ['1'], page_size: ['20']}</td></tr>
+<tr><td><code>POST /api/users</code> + Body: <code>{"name":"Alice","age":20}</code></td><td>Content-Type: application/json，Body 解析为 Python dict</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ⚠️ 常见误区 -->
+<div class="section pitfall" id="topic-1-pitfall">
+<div class="section-header"><span>⚠️ 常见误区</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<table class="pitfall-table">
+<tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+<tr><td>"HTTP 是连接"</td><td>HTTP 是应用层协议，底层连接通常由 TCP 建立</td></tr>
+<tr><td>"GET 不能带参数"</td><td>GET 常通过 URL 查询参数传参，只是不建议带请求体</td></tr>
+<tr><td>"响应成功一定是业务成功"</td><td>HTTP <code>200</code> 只表示请求被正常处理，业务是否成功还要看响应体中的业务 code</td></tr>
+<tr><td>"URL 的 <code>#</code> 会传给后端"</td><td>不会，片段标识符只在客户端使用</td></tr>
+</table>
+</div>
+</div>
+
+<!-- ✏️ 自测题 -->
+<div class="section quiz" id="topic-1-quiz">
+<div class="section-header"><span>✏️ 自测题</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="quiz-item" data-topic="t1" data-quiz="1">
+<div class="quiz-q">1. HTTP 请求由哪几部分组成？</div>
+<label><input type="radio" name="q1" value="A"> A) 请求方法、URL、参数、Cookie</label>
+<label><input type="radio" name="q1" value="B"> B) 请求行、请求头、空行、请求体</label>
+<label><input type="radio" name="q1" value="C"> C) 请求行、请求体、响应行、响应体</label>
+<label><input type="radio" name="q1" value="D"> D) URL、Header、Body、Footer</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t1" data-quiz="2">
+<div class="quiz-q">2. URL 中哪个部分不会发送给服务器？</div>
+<label><input type="radio" name="q2" value="A"> A) 查询参数</label>
+<label><input type="radio" name="q2" value="B"> B) 路径</label>
+<label><input type="radio" name="q2" value="C"> C) 片段标识符 (#)</label>
+<label><input type="radio" name="q2" value="D"> D) 端口号</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-item" data-topic="t1" data-quiz="3">
+<div class="quiz-q">3. HTTP 和 TCP 的关系是？</div>
+<label><input type="radio" name="q3" value="A"> A) HTTP 可以替代 TCP</label>
+<label><input type="radio" name="q3" value="B"> B) HTTP 是应用层协议，TCP 是传输层协议</label>
+<label><input type="radio" name="q3" value="C"> C) HTTP 和 TCP 是同层协议</label>
+<label><input type="radio" name="q3" value="D"> D) TCP 是 HTTP 的升级版</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-actions">
+<button onclick="checkQuiz(this)">提交</button>
+<button onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第二节：HTTP 方法与状态码 -->
+<!-- ============================================================ -->
+<h2 class="topic-title" id="topic-2">第二节 · HTTP 方法与状态码</h2>
+<div class="topic-desc">HTTP 方法表达"想做什么"，状态码表达"结果怎么样"。这是 RESTful API 设计的基础。</div>
+
+<!-- 🎯 学习目标 -->
+<div class="section goal open" id="topic-2-obj">
+<div class="section-header"><span>🎯 学习目标</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<ul class="objective-list">
+  <li>掌握 5 种核心 HTTP 方法的语义</li>
+  <li>理解幂等的概念和判断方法</li>
+  <li>熟记常见状态码及分类（2xx/3xx/4xx/5xx）</li>
+  <li>区分 401 vs 403 的关键差异</li>
+  <li>能设计 RESTful 风格的方法与状态码映射</li>
+</ul>
+<div class="callout-backend">
+  <strong>与后端开发的关联：</strong>方法语义和状态码是 RESTful API 设计的基石。后端必须根据操作类型选择正确方法、根据结果返回正确状态码，前后端才能高效联调。
+</div>
+</div>
+</div>
+
+<!-- 📖 核心概念 -->
+<div class="section concept open" id="topic-2-concept">
+<div class="section-header"><span>📖 核心概念</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="concept-block">
+<h4>5 种核心 HTTP 方法</h4>
+<table>
+<tr><th>方法</th><th>语义</th><th>常见用途</th><th>是否应幂等</th></tr>
+<tr><td><code>GET</code></td><td>获取资源</td><td>查询列表、查询详情</td><td>✅ 是</td></tr>
+<tr><td><code>POST</code></td><td>创建资源 / 提交动作</td><td>注册、登录、创建订单</td><td>❌ 否</td></tr>
+<tr><td><code>PUT</code></td><td>全量更新资源</td><td>替换用户资料</td><td>✅ 是</td></tr>
+<tr><td><code>PATCH</code></td><td>局部更新资源</td><td>修改昵称、修改状态</td><td>✅ 通常是</td></tr>
+<tr><td><code>DELETE</code></td><td>删除资源</td><td>删除文章、删除商品</td><td>✅ 是</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>什么是幂等？</h4>
+<p>同一个请求执行一次和执行多次，<strong>最终结果相同</strong>。</p>
+<div class="ascii-box">GET /users/1     查询 1 次和 10 次，资源不变 → 幂等
+DELETE /users/1  删除 1 次和 10 次，最终都是不存在 → 幂等
+POST /orders     提交 1 次创 1 个订单，提交 10 次可能创 10 个 → 非幂等</div>
+</div>
+
+<details>
+<summary>完整状态码速查表（2xx/3xx/4xx/5xx）</summary>
+<div class="details-content">
+<table>
+<tr><th>类别</th><th>状态码</th><th>含义</th><th>场景</th></tr>
+<tr><td rowspan="3">2xx 成功</td><td><code>200 OK</code></td><td>请求成功</td><td>查询成功、更新成功</td></tr>
+<tr><td><code>201 Created</code></td><td>创建成功</td><td>新建用户、创建订单</td></tr>
+<tr><td><code>204 No Content</code></td><td>成功但无响应体</td><td>删除成功</td></tr>
+<tr><td rowspan="3">3xx 重定向</td><td><code>301</code></td><td>永久重定向</td><td>域名永久迁移</td></tr>
+<tr><td><code>302</code></td><td>临时重定向</td><td>临时跳转登录页</td></tr>
+<tr><td><code>304</code></td><td>资源未修改</td><td>浏览器缓存命中</td></tr>
+<tr><td rowspan="5">4xx 客户端</td><td><code>400</code></td><td>请求格式错误</td><td>JSON 格式错误</td></tr>
+<tr><td><code>401</code></td><td>未认证</td><td>没登录、Token 缺失</td></tr>
+<tr><td><code>403</code></td><td>无权限</td><td>登录了但不能访问</td></tr>
+<tr><td><code>404</code></td><td>资源不存在</td><td>用户 ID 不存在</td></tr>
+<tr><td><code>422</code></td><td>语义校验失败</td><td>FastAPI 参数校验失败</td></tr>
+<tr><td rowspan="4">5xx 服务端</td><td><code>500</code></td><td>服务端内部错误</td><td>未捕获异常</td></tr>
+<tr><td><code>502</code></td><td>网关错误响应</td><td>Nginx 后端服务异常</td></tr>
+<tr><td><code>503</code></td><td>服务不可用</td><td>服务维护、过载</td></tr>
+<tr><td><code>504</code></td><td>网关超时</td><td>后端处理太慢</td></tr>
+</table>
+</div>
+</details>
+
+</div>
+</div>
+
+<!-- 💻 代码示例 -->
+<div class="section code" id="topic-2-code">
+<div class="section-header"><span>💻 代码示例</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<p class="code-caption">服务端根据 HTTP 方法路由到不同处理逻辑</p>
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">来源：<code>demo/2_methods_status_codes.py</code></p>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-kw">class</span> <span class="hl-fn">MethodStatusHandler</span>(BaseHTTPRequestHandler):
+    <span class="hl-kw">def</span> <span class="hl-fn">do_GET</span>(<span class="hl-builtin">self</span>):
+        <span class="hl-kw">if</span> <span class="hl-builtin">self</span>.path == <span class="hl-str">"/users/1"</span>:
+            <span class="hl-builtin">self</span>._send_json(<span class="hl-num">200</span>, <span class="hl-builtin">self</span>.users[<span class="hl-num">1</span>])    <span class="hl-com"># 成功</span>
+        <span class="hl-kw">elif</span> <span class="hl-builtin">self</span>.path == <span class="hl-str">"/users/999"</span>:
+            <span class="hl-builtin">self</span>._send_json(<span class="hl-num">404</span>, {<span class="hl-str">"error"</span>: <span class="hl-str">"用户不存在"</span>}) <span class="hl-com"># 资源不存在</span>
+
+    <span class="hl-kw">def</span> <span class="hl-fn">do_POST</span>(<span class="hl-builtin">self</span>):
+        <span class="hl-com"># 创建用户，返回 201</span>
+<span class="line-highlight">        <span class="hl-builtin">self</span>._send_json(<span class="hl-num">201</span>, {<span class="hl-str">"message"</span>: <span class="hl-str">"创建成功"</span>})</span>
+
+    <span class="hl-kw">def</span> <span class="hl-fn">do_DELETE</span>(<span class="hl-builtin">self</span>):
+        <span class="hl-com"># 删除成功，返回 204 无响应体</span>
+<span class="line-highlight">        <span class="hl-builtin">self</span>.send_response(<span class="hl-num">204</span>)</span>
+        <span class="hl-builtin">self</span>.end_headers()</pre>
+</div>
+
+<table class="io-table">
+<tr><th>请求</th><th>状态码</th><th>响应体</th></tr>
+<tr><td><code>GET /users/1</code></td><td>200 OK</td><td>{"id": "1", "name": "Alice"}</td></tr>
+<tr><td><code>GET /users/999</code></td><td>404 Not Found</td><td>{"error": "用户不存在"}</td></tr>
+<tr><td><code>POST /users</code></td><td>201 Created</td><td>{"message": "创建成功", "user": ...}</td></tr>
+<tr><td><code>DELETE /users/1</code></td><td>204 No Content</td><td>&lt;无响应体&gt;</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ⚠️ 常见误区 -->
+<div class="section pitfall" id="topic-2-pitfall">
+<div class="section-header"><span>⚠️ 常见误区</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<table class="pitfall-table">
+<tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+<tr><td>"所有成功都返回 200"</td><td>创建资源更推荐 <code>201</code>，删除无内容更推荐 <code>204</code></td></tr>
+<tr><td>"未登录返回 403"</td><td>未认证是 <code>401</code>，认证后无权限才是 <code>403</code></td></tr>
+<tr><td>"业务错误都返回 500"</td><td>参数错误、资源不存在、权限问题属于 <code>4xx</code> 客户端错误</td></tr>
+<tr><td>"POST 比 GET 安全"</td><td>POST 参数不显示在 URL 中，但没有 HTTPS 仍然可能被窃听</td></tr>
+</table>
+<div class="callout-security">
+  🔒 安全警示：401（未认证）与 403（无权限）是面试高频考点。记住口诀："401 = 你是谁我不知道，403 = 我知道你是谁但你不能进"。
+</div>
+</div>
+</div>
+
+<!-- ✏️ 自测题 -->
+<div class="section quiz" id="topic-2-quiz">
+<div class="section-header"><span>✏️ 自测题</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="quiz-item" data-topic="t2" data-quiz="1">
+<div class="quiz-q">1. 以下哪个 HTTP 方法通常是非幂等的？</div>
+<label><input type="radio" name="q2_1" value="A"> A) GET</label>
+<label><input type="radio" name="q2_1" value="B"> B) PUT</label>
+<label><input type="radio" name="q2_1" value="C"> C) POST</label>
+<label><input type="radio" name="q2_1" value="D"> D) DELETE</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-item" data-topic="t2" data-quiz="2">
+<div class="quiz-q">2. 用户未登录访问需要认证的接口，应返回什么状态码？</div>
+<label><input type="radio" name="q2_2" value="A"> A) 403 Forbidden</label>
+<label><input type="radio" name="q2_2" value="B"> B) 404 Not Found</label>
+<label><input type="radio" name="q2_2" value="C"> C) 401 Unauthorized</label>
+<label><input type="radio" name="q2_2" value="D"> D) 400 Bad Request</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-item" data-topic="t2" data-quiz="3">
+<div class="quiz-q">3. 删除资源成功后，推荐返回什么状态码？</div>
+<label><input type="radio" name="q2_3" value="A"> A) 200 OK</label>
+<label><input type="radio" name="q2_3" value="B"> B) 201 Created</label>
+<label><input type="radio" name="q2_3" value="C"> C) 204 No Content</label>
+<label><input type="radio" name="q2_3" value="D"> D) 302 Found</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-actions">
+<button onclick="checkQuiz(this)">提交</button>
+<button onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第三节：Header 与 Content-Type -->
+<!-- ============================================================ -->
+<h2 class="topic-title" id="topic-3">第三节 · Header 与 Content-Type</h2>
+<div class="topic-desc">Header 是 HTTP 的"说明书"，Content-Type 告诉对方 Body 里装的是什么格式。</div>
+
+<!-- 🎯 学习目标 -->
+<div class="section goal open" id="topic-3-obj">
+<div class="section-header"><span>🎯 学习目标</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<ul class="objective-list">
+  <li>理解 Header 作为元数据的作用</li>
+  <li>区分 Content-Type 与 Accept</li>
+  <li>掌握常见 Content-Type 类型及场景</li>
+  <li>知道 Authorization 的安全放置位置</li>
+  <li>能根据请求体格式正确设置 Header</li>
+</ul>
+<div class="callout-backend">
+  <strong>与后端开发的关联：</strong>Header 错误是前后端联调最常见的坑——前端发了 JSON 但 Content-Type 写错，后端就无法正确解析。
+</div>
+</div>
+</div>
+
+<!-- 📖 核心概念 -->
+<div class="section concept open" id="topic-3-concept">
+<div class="section-header"><span>📖 核心概念</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="concept-block">
+<h4>常见请求 Header</h4>
+<table>
+<tr><th>Header</th><th>作用</th><th>示例</th></tr>
+<tr><td><code>Host</code></td><td>目标主机</td><td><code>api.example.com</code></td></tr>
+<tr><td><code>Content-Type</code></td><td>请求体格式</td><td><code>application/json</code></td></tr>
+<tr><td><code>Accept</code></td><td>客户端期望的响应类型</td><td><code>application/json</code></td></tr>
+<tr><td><code>Authorization</code></td><td>认证信息</td><td><code>Bearer eyJ...</code></td></tr>
+<tr><td><code>Cookie</code></td><td>浏览器携带的 Cookie</td><td><code>session_id=abc</code></td></tr>
+<tr><td><code>Origin</code></td><td>跨域请求来源</td><td><code>https://frontend.example.com</code></td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>常见 Content-Type 类型</h4>
+<table>
+<tr><th>Content-Type</th><th>含义</th><th>常见场景</th></tr>
+<tr><td><code>application/json</code></td><td>JSON 数据</td><td>RESTful API 最常用</td></tr>
+<tr><td><code>application/x-www-form-urlencoded</code></td><td>表单键值对</td><td>传统 HTML 表单</td></tr>
+<tr><td><code>multipart/form-data</code></td><td>多部分表单</td><td>文件上传</td></tr>
+<tr><td><code>text/plain</code></td><td>纯文本</td><td>文本响应</td></tr>
+<tr><td><code>text/html</code></td><td>HTML 页面</td><td>浏览器页面</td></tr>
+<tr><td><code>application/octet-stream</code></td><td>二进制流</td><td>文件下载</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>Content-Type 与 Accept 的区别</h4>
+<div class="ascii-box">请求方                       响应方
+───────                      ───────
+Content-Type: application/json   →   "我发的 Body 是 JSON"
+Accept: application/json         →   "请给我 JSON 格式的响应"</div>
+<table style="margin-top:10px;">
+<tr><th>Header</th><th>方向</th><th>含义</th></tr>
+<tr><td><code>Content-Type</code></td><td>发送方 → 接收方</td><td>描述当前消息体的格式</td></tr>
+<tr><td><code>Accept</code></td><td>请求方 → 响应方</td><td>表示期望得到的响应格式</td></tr>
+</table>
+</div>
+
+</div>
+</div>
+
+<!-- 💻 代码示例 -->
+<div class="section code" id="topic-3-code">
+<div class="section-header"><span>💻 代码示例</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<p class="code-caption">服务端根据 Content-Type 选择不同解析策略</p>
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">来源：<code>demo/3_headers_content_type.py</code></p>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre>content_type = <span class="hl-builtin">self</span>.headers.get(<span class="hl-str">"Content-Type"</span>, <span class="hl-str">""</span>)
+authorization = <span class="hl-builtin">self</span>.headers.get(<span class="hl-str">"Authorization"</span>, <span class="hl-str">""</span>)
+
+<span class="hl-kw">if</span> <span class="hl-str">"application/json"</span> <span class="hl-kw">in</span> content_type:
+<span class="line-highlight">    parsed_body = json.loads(raw_body)           <span class="hl-com"># JSON → dict</span></span>
+<span class="hl-kw">elif</span> <span class="hl-str">"application/x-www-form-urlencoded"</span> <span class="hl-kw">in</span> content_type:
+<span class="line-highlight">    parsed_body = parse_qs(raw_body)             <span class="hl-com"># 表单 → dict</span></span>
+<span class="hl-kw">elif</span> <span class="hl-str">"text/plain"</span> <span class="hl-kw">in</span> content_type:
+    parsed_body = raw_body                       <span class="hl-com"># 纯文本原样</span>
+<span class="hl-kw">else</span>:
+    <span class="hl-builtin">self</span>._send_json(<span class="hl-num">415</span>, {<span class="hl-str">"error"</span>: <span class="hl-str">"不支持的 Content-Type"</span>})</pre>
+</div>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># 客户端：分别发送 JSON、表单、纯文本请求</span>
+<span class="hl-com"># 1. JSON 请求 — 正确设置 Content-Type</span>
+connection.request(<span class="hl-str">"POST"</span>, <span class="hl-str">"/submit"</span>,
+    body=json.dumps({<span class="hl-str">"name"</span>: <span class="hl-str">"Alice"</span>}).encode(),
+    headers={<span class="hl-str">"Content-Type"</span>: <span class="hl-str">"application/json"</span>,
+             <span class="hl-str">"Authorization"</span>: <span class="hl-str">"Bearer demo-token-123456"</span>})
+
+<span class="hl-com"># 2. 表单请求</span>
+connection.request(<span class="hl-str">"POST"</span>, <span class="hl-str">"/submit"</span>,
+    body=<span class="hl-str">"username=alice&amp;password=secret"</span>.encode(),
+    headers={<span class="hl-str">"Content-Type"</span>: <span class="hl-str">"application/x-www-form-urlencoded"</span>})</pre>
+</div>
+
+<table class="io-table">
+<tr><th>发送的 Content-Type</th><th>服务端解析方式</th><th>结果</th></tr>
+<tr><td><code>application/json</code></td><td><code>json.loads()</code></td><td>Python dict</td></tr>
+<tr><td><code>application/x-www-form-urlencoded</code></td><td><code>parse_qs()</code></td><td>{username: ['alice'], ...}</td></tr>
+<tr><td><code>text/plain</code> + Accept: text/html</td><td>Accept 不匹配</td><td>406 Not Acceptable</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ⚠️ 常见误区 -->
+<div class="section pitfall" id="topic-3-pitfall">
+<div class="section-header"><span>⚠️ 常见误区</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<table class="pitfall-table">
+<tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+<tr><td>"Header 不重要"</td><td>Header 决定 Body 怎么解析、是否认证、是否跨域、是否缓存</td></tr>
+<tr><td>"Accept 和 Content-Type 一样"</td><td><code>Accept</code> 表示想接收什么；<code>Content-Type</code> 表示自己发送的 Body 是什么</td></tr>
+<tr><td>"JSON 放 Body 就行"</td><td>还必须设置 <code>Content-Type: application/json</code></td></tr>
+<tr><td>"Token 可以放 URL"</td><td>不推荐，URL 容易进入日志；应放 <code>Authorization</code> Header</td></tr>
+</table>
+<div class="callout-security">
+  🔒 安全警示：永远不要把 Token 放在 URL 查询参数中！URL 会出现在浏览器历史、服务器日志、代理日志中，极容易泄露。
+</div>
+</div>
+</div>
+
+<!-- ✏️ 自测题 -->
+<div class="section quiz" id="topic-3-quiz">
+<div class="section-header"><span>✏️ 自测题</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="quiz-item" data-topic="t3" data-quiz="1">
+<div class="quiz-q">1. Content-Type 和 Accept 的区别是？</div>
+<label><input type="radio" name="q3_1" value="A"> A) 两者完全相同</label>
+<label><input type="radio" name="q3_1" value="B"> B) Content-Type 描述发送格式，Accept 描述期望接收格式</label>
+<label><input type="radio" name="q3_1" value="C"> C) Accept 描述发送格式，Content-Type 描述期望接收格式</label>
+<label><input type="radio" name="q3_1" value="D"> D) 两者都描述期望接收格式</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t3" data-quiz="2">
+<div class="quiz-q">2. 文件上传一般使用什么 Content-Type？</div>
+<label><input type="radio" name="q3_2" value="A"> A) application/json</label>
+<label><input type="radio" name="q3_2" value="B"> B) text/plain</label>
+<label><input type="radio" name="q3_2" value="C"> C) multipart/form-data</label>
+<label><input type="radio" name="q3_2" value="D"> D) application/octet-stream</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-item" data-topic="t3" data-quiz="3">
+<div class="quiz-q">3. JWT Token 应该放在哪里？</div>
+<label><input type="radio" name="q3_3" value="A"> A) URL 查询参数中</label>
+<label><input type="radio" name="q3_3" value="B"> B) 请求体中</label>
+<label><input type="radio" name="q3_3" value="C"> C) Authorization Header 中</label>
+<label><input type="radio" name="q3_3" value="D"> D) Cookie 中（仅此一种方式）</label>
+<div class="quiz-feedback" data-answer="C"></div>
+</div>
+
+<div class="quiz-actions">
+<button onclick="checkQuiz(this)">提交</button>
+<button onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第四节：Cookie 与 Session -->
+<!-- ============================================================ -->
+<h2 class="topic-title" id="topic-4">第四节 · Cookie 与 Session</h2>
+<div class="topic-desc">HTTP 是无状态的，Cookie 和 Session 用来让服务器"记住你是谁"。</div>
+
+<!-- 🎯 学习目标 -->
+<div class="section goal open" id="topic-4-obj">
+<div class="section-header"><span>🎯 学习目标</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<ul class="objective-list">
+  <li>理解 HTTP 无状态的含义</li>
+  <li>掌握 Cookie 的客户端存储机制</li>
+  <li>掌握 Session 的服务端存储机制</li>
+  <li>熟记 Cookie 的 3 个关键安全属性</li>
+  <li>区分 Cookie/Session 与 JWT Token 方案</li>
+</ul>
+<div class="callout-backend">
+  <strong>与后端开发的关联：</strong>登录态管理是后端最核心的功能之一。Cookie + Session 是传统方案，JWT Token 是前后端分离方案，生产环境需要理解两者的安全配置。
+</div>
+</div>
+</div>
+
+<!-- 📖 核心概念 -->
+<div class="section concept open" id="topic-4-concept">
+<div class="section-header"><span>📖 核心概念</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="concept-block">
+<h4>Cookie 工作流程</h4>
+<div class="ascii-box">1. 用户登录（POST /login）
+2. 服务器验证用户名密码
+3. 服务器生成 session_id
+4. 响应头返回 Set-Cookie: session_id=xxx
+5. 浏览器保存 Cookie
+6. 后续请求自动带上 Cookie: session_id=xxx
+7. 服务器根据 session_id 查询用户状态</div>
+</div>
+
+<div class="concept-block">
+<h4>Cookie 常用安全属性</h4>
+<table>
+<tr><th>属性</th><th>作用</th><th>建议</th></tr>
+<tr><td><code>HttpOnly</code></td><td>禁止 JavaScript 读取 Cookie</td><td>登录态 Cookie 必加</td></tr>
+<tr><td><code>Secure</code></td><td>只允许 HTTPS 发送 Cookie</td><td>生产环境必加</td></tr>
+<tr><td><code>SameSite</code></td><td>限制跨站携带 Cookie</td><td>推荐 <code>Lax</code> 或 <code>Strict</code></td></tr>
+<tr><td><code>Max-Age</code> / <code>Expires</code></td><td>过期时间</td><td>根据业务设置</td></tr>
+<tr><td><code>Path</code></td><td>Cookie 生效路径</td><td>通常为 <code>/</code></td></tr>
+<tr><td><code>Domain</code></td><td>Cookie 生效域名</td><td>谨慎设置父域名</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>Session 存储方案对比</h4>
+<table>
+<tr><th>存储方式</th><th>特点</th><th>场景</th></tr>
+<tr><td>内存</td><td>快，但重启丢失，无法多实例共享</td><td>本地学习 Demo</td></tr>
+<tr><td>Redis</td><td>快，可过期，多实例共享</td><td>生产常用 ✅</td></tr>
+<tr><td>数据库</td><td>持久化强，但性能较低</td><td>管理后台、低频场景</td></tr>
+</table>
+</div>
+
+<details>
+<summary>Cookie/Session vs JWT Token 方案对比</summary>
+<div class="details-content">
+<table>
+<tr><th>维度</th><th>Cookie + Session</th><th>JWT Token</th></tr>
+<tr><td>状态保存位置</td><td>服务端保存状态</td><td>客户端保存令牌，服务端校验签名</td></tr>
+<tr><td>主动失效</td><td>方便（删 Session 即可）</td><td>较难（需黑名单机制）</td></tr>
+<tr><td>扩展性</td><td>需 Redis 集中存储</td><td>无状态，天然可扩展</td></tr>
+<tr><td>常见用途</td><td>传统 Web 登录</td><td>前后端分离、移动端 API</td></tr>
+</table>
+<p style="margin-top:8px;font-size:13px;">两者不是绝对替代关系：Cookie 是浏览器存储和自动携带机制，Session / JWT 是身份状态方案。</p>
+</div>
+</details>
+
+</div>
+</div>
+
+<!-- 💻 代码示例 -->
+<div class="section code" id="topic-4-code">
+<div class="section-header"><span>💻 代码示例</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<p class="code-caption">模拟登录 → Set-Cookie → 携带 Cookie 验证身份</p>
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">来源：<code>demo/4_cookie_session.py</code></p>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># 服务端：登录接口，创建 Session 并返回 Set-Cookie</span>
+<span class="hl-kw">def</span> <span class="hl-fn">do_POST</span>(<span class="hl-builtin">self</span>):
+    session_id = uuid.uuid4().hex
+    SESSIONS[session_id] = {<span class="hl-str">"user_id"</span>: <span class="hl-str">"1"</span>, <span class="hl-str">"username"</span>: <span class="hl-str">"alice"</span>}
+<span class="line-highlight">    <span class="hl-builtin">self</span>.send_header(<span class="hl-str">"Set-Cookie"</span>,
+        <span class="hl-str">f"session_id={session_id}; HttpOnly; SameSite=Lax; Path=/"</span>)</span>
+
+<span class="hl-com"># 服务端：验证 Cookie 中的 session_id</span>
+<span class="hl-kw">def</span> <span class="hl-fn">do_GET</span>(<span class="hl-builtin">self</span>):
+    cookie_header = <span class="hl-builtin">self</span>.headers.get(<span class="hl-str">"Cookie"</span>, <span class="hl-str">""</span>)
+    cookie = SimpleCookie(cookie_header)
+    morsel = cookie.get(<span class="hl-str">"session_id"</span>)
+<span class="line-highlight">    <span class="hl-kw">if</span> morsel <span class="hl-kw">is</span> <span class="hl-kw">None</span> <span class="hl-kw">or</span> morsel.value <span class="hl-kw">not</span> <span class="hl-kw">in</span> SESSIONS:
+        <span class="hl-builtin">self</span>._send_json(<span class="hl-num">401</span>, {<span class="hl-str">"error"</span>: <span class="hl-str">"未登录或 Session 已失效"</span>})</span></pre>
+</div>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># 客户端：流程演示</span>
+<span class="hl-com"># 1. 未登录访问 → 401</span>
+connection.request(<span class="hl-str">"GET"</span>, <span class="hl-str">"/profile"</span>)
+<span class="hl-com"># → 状态码: 401, 响应: {"error": "未登录或 Session 已失效"}</span>
+
+<span class="hl-com"># 2. 登录 → 拿到 Set-Cookie</span>
+connection.request(<span class="hl-str">"POST"</span>, <span class="hl-str">"/login"</span>)
+set_cookie = response.getheader(<span class="hl-str">"Set-Cookie"</span>)
+<span class="hl-com"># → Set-Cookie: session_id=abc123...; HttpOnly; SameSite=Lax; Path=/</span>
+
+<span class="hl-com"># 3. 携带 Cookie 访问 → 200</span>
+<span class="hl-kw">connection</span>.request(<span class="hl-str">"GET"</span>, <span class="hl-str">"/profile"</span>,
+    headers={<span class="hl-str">"Cookie"</span>: cookie_value})
+<span class="hl-com"># → 状态码: 200, 响应: {"message": "已登录", "user": ...}</span></pre>
+</div>
+
+<table class="io-table">
+<tr><th>场景</th><th>Cookie</th><th>状态码</th><th>响应</th></tr>
+<tr><td>未登录访问 /profile</td><td>无</td><td>401</td><td>未登录</td></tr>
+<tr><td>POST /login</td><td>← Set-Cookie</td><td>200</td><td>登录成功</td></tr>
+<tr><td>携带 Cookie 访问 /profile</td><td>session_id=xxx</td><td>200</td><td>已登录 + 用户信息</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ⚠️ 常见误区 -->
+<div class="section pitfall" id="topic-4-pitfall">
+<div class="section-header"><span>⚠️ 常见误区</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<table class="pitfall-table">
+<tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+<tr><td>"Cookie 和 Session 是一回事"</td><td>Cookie 在客户端，Session 在服务端</td></tr>
+<tr><td>"Cookie 一定不安全"</td><td>正确设置 <code>HttpOnly</code>、<code>Secure</code>、<code>SameSite</code> 后可用于安全登录态</td></tr>
+<tr><td>"Session 不需要存储"</td><td>Session 数据必须存储在内存、Redis 或数据库中</td></tr>
+<tr><td>"JWT 一定比 Session 好"</td><td>JWT 无法方便主动失效，Session 更适合强管控登录态</td></tr>
+</table>
+<div class="callout-security">
+  🔒 安全警示：生产环境的登录态 Cookie 必须同时设置 <code>HttpOnly</code>（防 XSS 窃取）+ <code>Secure</code>（仅 HTTPS 传输）+ <code>SameSite=Lax</code>（防 CSRF）。
+</div>
+</div>
+</div>
+
+<!-- ✏️ 自测题 -->
+<div class="section quiz" id="topic-4-quiz">
+<div class="section-header"><span>✏️ 自测题</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="quiz-item" data-topic="t4" data-quiz="1">
+<div class="quiz-q">1. Cookie 和 Session 的区别是？</div>
+<label><input type="radio" name="q4_1" value="A"> A) Cookie 存服务端，Session 存客户端</label>
+<label><input type="radio" name="q4_1" value="B"> B) Cookie 存客户端，Session 存服务端</label>
+<label><input type="radio" name="q4_1" value="C"> C) 两者完全相同，只是名字不同</label>
+<label><input type="radio" name="q4_1" value="D"> D) Cookie 只能存数字，Session 能存字符串</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t4" data-quiz="2">
+<div class="quiz-q">2. 设置 HttpOnly 属性的主要目的是？</div>
+<label><input type="radio" name="q4_2" value="A"> A) 让 Cookie 只在 HTTPS 下传输</label>
+<label><input type="radio" name="q4_2" value="B"> B) 防止 JavaScript 读取 Cookie，降低 XSS 风险</label>
+<label><input type="radio" name="q4_2" value="C"> C) 让 Cookie 永久有效</label>
+<label><input type="radio" name="q4_2" value="D"> D) 限制 Cookie 只能在同一站点发送</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t4" data-quiz="3">
+<div class="quiz-q">3. Session 在分布式部署中，推荐用什么方案共享？</div>
+<label><input type="radio" name="q4_3" value="A"> A) 每个服务器各自存一份，互不影响</label>
+<label><input type="radio" name="q4_3" value="B"> B) 用 Redis 集中存储</label>
+<label><input type="radio" name="q4_3" value="C"> C) 完全不用 Session，只有方法</label>
+<label><input type="radio" name="q4_3" value="D"> D) 把 Session 数据全部编码进 Cookie</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-actions">
+<button onclick="checkQuiz(this)">提交</button>
+<button onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 第五节：HTTPS 与 CORS -->
+<!-- ============================================================ -->
+<h2 class="topic-title" id="topic-5">第五节 · HTTPS 与 CORS</h2>
+<div class="topic-desc">HTTPS 解决"传输是否安全"，CORS 解决"浏览器是否允许跨域访问"。</div>
+
+<!-- 🎯 学习目标 -->
+<div class="section goal open" id="topic-5-obj">
+<div class="section-header"><span>🎯 学习目标</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<ul class="objective-list">
+  <li>理解 HTTPS 解决的三个核心问题</li>
+  <li>掌握同源策略的三要素判断</li>
+  <li>理解 CORS 的工作原理和预检请求</li>
+  <li>熟记核心 CORS 响应头</li>
+  <li>了解 FastAPI 中 CORS 的安全配置</li>
+</ul>
+<div class="callout-backend">
+  <strong>与后端开发的关联：</strong>生产环境 HTTPS 是强制要求，CORS 配置是前后端分离项目的必经之路。理解这两者才能正确处理跨域问题和安全部署。
+</div>
+</div>
+</div>
+
+<!-- 📖 核心概念 -->
+<div class="section concept open" id="topic-5-concept">
+<div class="section-header"><span>📖 核心概念</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="concept-block">
+<h4>HTTPS 解决的三个问题</h4>
+<table>
+<tr><th>目标</th><th>说明</th></tr>
+<tr><td>🔐 加密</td><td>防止请求和响应内容被窃听</td></tr>
+<tr><td>🔏 完整性</td><td>防止数据在传输中被篡改</td></tr>
+<tr><td>🛡️ 身份认证</td><td>通过证书确认服务器身份，防止访问到假网站</td></tr>
+</table>
+<p style="margin-top:8px;font-size:13.5px;color:var(--text-secondary);">HTTPS = HTTP + TLS 加密。生产环境中的登录、支付、用户隐私接口必须使用 HTTPS。</p>
+</div>
+
+<div class="concept-block">
+<h4>同源策略：三个完全相同才算同源</h4>
+<div class="ascii-box">协议 + 域名 + 端口</div>
+<table style="margin-top:8px;">
+<tr><th>URL 对比</th><th>是否同源</th><th>原因</th></tr>
+<tr><td><code>https://a.com</code> vs <code>https://a.com</code></td><td>✅ 是</td><td>完全相同</td></tr>
+<tr><td><code>http://a.com</code> vs <code>https://a.com</code></td><td>❌ 否</td><td>协议不同</td></tr>
+<tr><td><code>https://a.com</code> vs <code>https://www.a.com</code></td><td>❌ 否</td><td>域名不同</td></tr>
+<tr><td><code>https://a.com:443</code> vs <code>https://a.com:8443</code></td><td>❌ 否</td><td>端口不同</td></tr>
+</table>
+</div>
+
+<div class="concept-block">
+<h4>CORS 核心响应头</h4>
+<table>
+<tr><th>Header</th><th>作用</th><th>示例</th></tr>
+<tr><td><code>Access-Control-Allow-Origin</code></td><td>允许哪个来源访问</td><td><code>https://frontend.example.com</code></td></tr>
+<tr><td><code>Access-Control-Allow-Methods</code></td><td>允许哪些方法</td><td><code>GET, POST, PUT, DELETE</code></td></tr>
+<tr><td><code>Access-Control-Allow-Headers</code></td><td>允许哪些请求头</td><td><code>Content-Type, Authorization</code></td></tr>
+<tr><td><code>Access-Control-Allow-Credentials</code></td><td>是否允许携带 Cookie</td><td><code>true</code></td></tr>
+<tr><td><code>Access-Control-Max-Age</code></td><td>预检结果缓存时间（秒）</td><td><code>600</code></td></tr>
+</table>
+</div>
+
+<details>
+<summary>简单请求 vs 预检请求（OPTIONS）</summary>
+<div class="details-content">
+<p><strong>简单请求</strong>（直接发送）：GET/POST/HEAD 且 Header 简单、Content-Type 为表单类。</p>
+<p style="margin-top:8px;"><strong>预检请求</strong>（先发 OPTIONS 询问）：复杂跨域请求前，浏览器自动发 OPTIONS 请求：</p>
+<div class="ascii-box">OPTIONS /api/users HTTP/1.1
+Origin: https://frontend.example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, Authorization</div>
+<p style="margin-top:8px;">服务器返回允许的 CORS 头后，浏览器才发送真正的 POST 请求。</p>
+</div>
+</details>
+
+</div>
+</div>
+
+<!-- 💻 代码示例 -->
+<div class="section code" id="topic-5-code">
+<div class="section-header"><span>💻 代码示例</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<p class="code-caption">CORS 预检请求处理与 FastAPI CORS 配置</p>
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">来源：<code>demo/5_https_cors.py</code></p>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># 服务端：处理 CORS 预检 OPTIONS 请求</span>
+<span class="hl-kw">def</span> <span class="hl-fn">do_OPTIONS</span>(<span class="hl-builtin">self</span>):
+    origin = <span class="hl-builtin">self</span>.headers.get(<span class="hl-str">"Origin"</span>, <span class="hl-str">""</span>)
+    <span class="hl-kw">if</span> origin == ALLOWED_ORIGIN:
+        <span class="hl-builtin">self</span>.send_response(<span class="hl-num">204</span>)
+<span class="line-highlight">        <span class="hl-builtin">self</span>.send_header(<span class="hl-str">"Access-Control-Allow-Origin"</span>, origin)
+        <span class="hl-builtin">self</span>.send_header(<span class="hl-str">"Access-Control-Allow-Methods"</span>,
+                          <span class="hl-str">"GET, POST, PUT, PATCH, DELETE"</span>)
+        <span class="hl-builtin">self</span>.send_header(<span class="hl-str">"Access-Control-Allow-Headers"</span>,
+                          <span class="hl-str">"Content-Type, Authorization"</span>)</span>
+    <span class="hl-kw">else</span>:
+        <span class="hl-builtin">self</span>.send_response(<span class="hl-num">403</span>)  <span class="hl-com"># 拒绝不允许的来源</span></pre>
+</div>
+
+<div class="code-block-wrapper">
+<button class="copy-btn">📋 复制</button>
+<pre><span class="hl-com"># FastAPI 中推荐的 CORS 配置方式</span>
+<span class="hl-kw">from</span> fastapi.middleware.cors <span class="hl-kw">import</span> CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[<span class="hl-str">"https://frontend.example.com"</span>],  <span class="hl-com"># 明确列出</span>
+    allow_credentials=<span class="hl-kw">True</span>,
+    allow_methods=[<span class="hl-str">"GET"</span>, <span class="hl-str">"POST"</span>, <span class="hl-str">"PUT"</span>, <span class="hl-str">"PATCH"</span>, <span class="hl-str">"DELETE"</span>],
+    allow_headers=[<span class="hl-str">"Content-Type"</span>, <span class="hl-str">"Authorization"</span>],
+)
+
+<span class="hl-com"># ⚠️ 不要这样写！</span>
+<span class="hl-com"># allow_origins=["*"]   +   allow_credentials=True   → 浏览器拒绝</span></pre>
+</div>
+
+<table class="io-table">
+<tr><th>场景</th><th>Origin</th><th>OPTIONS 结果</th><th>Allow-Origin</th></tr>
+<tr><td>允许的来源</td><td><code>https://frontend.example.com</code></td><td>204</td><td>✅ 返回允许的来源</td></tr>
+<tr><td>不允许的来源</td><td><code>https://evil.example.com</code></td><td>403</td><td>❌ 无 CORS 头</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ⚠️ 常见误区 -->
+<div class="section pitfall" id="topic-5-pitfall">
+<div class="section-header"><span>⚠️ 常见误区</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+<table class="pitfall-table">
+<tr><th>❌ 误区</th><th>✅ 纠正</th></tr>
+<tr><td>"CORS 是后端拒绝请求"</td><td>CORS 主要是浏览器拦截响应，服务端通常已经收到请求</td></tr>
+<tr><td>"Postman 没跨域问题，说明浏览器也没问题"</td><td>Postman 不受浏览器同源策略限制</td></tr>
+<tr><td>"HTTPS 只用于加密密码"</td><td>HTTPS 保护所有请求和响应，包括 Token、Cookie、个人数据</td></tr>
+<tr><td>"allow_origins=['*'] 最方便"</td><td>生产环境应只允许可信来源，尤其是带 Cookie 的请求</td></tr>
+</table>
+<div class="callout-security">
+  🔒 安全警示：浏览器不允许 <code>Access-Control-Allow-Origin: *</code> 与 <code>Access-Control-Allow-Credentials: true</code> 同时用于凭证请求。生产环境必须明确列出可信前端域名。
+</div>
+</div>
+</div>
+
+<!-- ✏️ 自测题 -->
+<div class="section quiz" id="topic-5-quiz">
+<div class="section-header"><span>✏️ 自测题</span><span class="toggle-icon">▼</span></div>
+<div class="section-body">
+
+<div class="quiz-item" data-topic="t5" data-quiz="1">
+<div class="quiz-q">1. HTTPS 主要解决哪三个问题？</div>
+<label><input type="radio" name="q5_1" value="A"> A) 速度、压缩、缓存</label>
+<label><input type="radio" name="q5_1" value="B"> B) 加密、完整性、身份认证</label>
+<label><input type="radio" name="q5_1" value="C"> C) 加密、重定向、缓存</label>
+<label><input type="radio" name="q5_1" value="D"> D) 压缩、加密、路由</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t5" data-quiz="2">
+<div class="quiz-q">2. CORS 是什么层面的限制？</div>
+<label><input type="radio" name="q5_2" value="A"> A) 服务器主动拒绝请求</label>
+<label><input type="radio" name="q5_2" value="B"> B) 浏览器安全策略</label>
+<label><input type="radio" name="q5_2" value="C"> C) 网络防火墙规则</label>
+<label><input type="radio" name="q5_2" value="D"> D) 数据库访问权限</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-item" data-topic="t5" data-quiz="3">
+<div class="quiz-q">3. Postman 发送跨域请求不会有 CORS 问题，原因是？</div>
+<label><input type="radio" name="q5_3" value="A"> A) Postman 使用特殊的 HTTP 协议</label>
+<label><input type="radio" name="q5_3" value="B"> B) Postman 不受浏览器同源策略限制</label>
+<label><input type="radio" name="q5_3" value="C"> C) Postman 自动处理了 CORS 响应头</label>
+<label><input type="radio" name="q5_3" value="D"> D) Postman 使用代理服务器绕过限制</label>
+<div class="quiz-feedback" data-answer="B"></div>
+</div>
+
+<div class="quiz-actions">
+<button onclick="checkQuiz(this)">提交</button>
+<button onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 📎 证据追溯 -->
+<!-- ============================================================ -->
+<section id="evidence">
+<h2>📎 证据追溯</h2>
+<p class="ev-note">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+<table>
+<tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr>
+<tr><td>HTTP 请求由请求行、请求头、空行、请求体组成</td><td>1.HTTP请求与响应结构.md</td><td>第三章 · HTTP 请求结构</td></tr>
+<tr><td>HTTP 响应由状态行、响应头、空行、响应体组成</td><td>1.HTTP请求与响应结构.md</td><td>第四章 · HTTP 响应结构</td></tr>
+<tr><td>URL 片段标识符 # 不会发送给服务器</td><td>1.HTTP请求与响应结构.md</td><td>第三章 · URL 的常见组成</td></tr>
+<tr><td>HTTP 是应用层协议，TCP 负责可靠传输</td><td>1.HTTP请求与响应结构.md</td><td>第一章 · 概念解释 / 第七章</td></tr>
+<tr><td>GET/PUT/DELETE 幂等，POST 通常非幂等</td><td>2.HTTP方法与状态码.md</td><td>第三章 · 幂等</td></tr>
+<tr><td>401 表示未认证，403 表示无权限</td><td>2.HTTP方法与状态码.md</td><td>第四章 · 4xx 状态码 / 第六章</td></tr>
+<tr><td>创建资源推荐 201，删除无内容推荐 204</td><td>2.HTTP方法与状态码.md</td><td>第四章 · 2xx / 第六章</td></tr>
+<tr><td>Content-Type 描述发送格式，Accept 描述期望接收格式</td><td>3.Header与Content-Type.md</td><td>第七章 · 常见误区</td></tr>
+<tr><td>Token 应放在 Authorization Header 中，避免放入 URL</td><td>3.Header与Content-Type.md</td><td>第七章 · 常见误区 / 第八章</td></tr>
+<tr><td>文件上传使用 multipart/form-data</td><td>3.Header与Content-Type.md</td><td>第五章 / 第八章</td></tr>
+<tr><td>Cookie 保存在客户端，Session 保存在服务端</td><td>4.Cookie与Session.md</td><td>第一章 · 概念解释 / 第七章</td></tr>
+<tr><td>登录态 Cookie 需设置 HttpOnly、Secure、SameSite</td><td>4.Cookie与Session.md</td><td>第四章 · Cookie 常用属性</td></tr>
+<tr><td>Session 分布式部署需用 Redis 集中存储</td><td>4.Cookie与Session.md</td><td>第五章 / 第八章</td></tr>
+<tr><td>JWT 无法方便主动失效，Session 适合强管控登录态</td><td>4.Cookie与Session.md</td><td>第六章 / 第七章</td></tr>
+<tr><td>HTTPS = HTTP + TLS，解决加密、完整性、身份认证</td><td>5.HTTPS与CORS.md</td><td>第一章 · HTTPS 概念解释</td></tr>
+<tr><td>CORS 是浏览器安全策略，非服务端限制</td><td>5.HTTPS与CORS.md</td><td>第四章 / 第八章</td></tr>
+<tr><td>allow_origins=["*"] 与 allow_credentials=True 不能共存</td><td>5.HTTPS与CORS.md</td><td>第七章 · 实际场景</td></tr>
+<tr><td>同源要求协议、域名、端口三者完全相同</td><td>5.HTTPS与CORS.md</td><td>第四章 · CORS 概念解释</td></tr>
+<tr><td>CORS 预检请求使用 OPTIONS 方法</td><td>5.HTTPS与CORS.md</td><td>第六章 · 简单请求与预检请求</td></tr>
+<tr><td>Demo 脚本使用 Python 标准库，无第三方依赖</td><td>demo/README.md</td><td>运行方式</td></tr>
+</table>
+</section>
+
+</main>
+
+<!-- 回到顶部 -->
+<button id="back-to-top" title="回到顶部">↑</button>
+
+<script>
+/* ===== 深色模式 ===== */
+(function() {
+  const toggle = document.getElementById('theme-toggle');
+  const stored = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = stored === 'dark' || (!stored && prefersDark);
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    toggle.textContent = '🌙';
+  } else {
+    toggle.textContent = '☀️';
+  }
+  toggle.addEventListener('click', function() {
+    const dark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    toggle.textContent = dark ? '🌙' : '☀️';
+  });
+})();
+
+/* ===== 折叠展开（纯 CSS 类切换） ===== */
+document.querySelectorAll('.section-header').forEach(function(header) {
+  header.addEventListener('click', function() {
+    this.parentElement.classList.toggle('open');
+  });
+});
+
+/* ===== 代码复制 ===== */
+document.querySelectorAll('.copy-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var pre = this.nextElementSibling;
+    var text = pre.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '✅ 已复制';
+      setTimeout(function() { btn.textContent = '📋 复制'; }, 1500);
+    });
+  });
+});
+
+/* ===== 进度条 ===== */
+window.addEventListener('scroll', function() {
+  var scrollTop = window.scrollY || document.documentElement.scrollTop;
+  var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  document.getElementById('progress-bar').style.width = progress + '%';
+});
+
+/* ===== 回到顶部 ===== */
+(function() {
+  var btn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function() {
+    var scrollTop = window.scrollY || document.documentElement.scrollTop;
+    btn.style.display = scrollTop > 300 ? 'flex' : 'none';
+  });
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+
+/* ===== 移动端菜单 ===== */
+(function() {
+  var menuBtn = document.getElementById('menu-btn');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('overlay');
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+  menuBtn.addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+})();
+
+/* ===== 侧栏高亮（IntersectionObserver） ===== */
+(function() {
+  var navLinks = document.querySelectorAll('#sidebar .nav-link');
+  var navTopics = document.querySelectorAll('#sidebar .nav-topic');
+  var linkMap = {};
+  navLinks.forEach(function(link) {
+    var href = link.getAttribute('href');
+    if (href) linkMap[href] = link;
+  });
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var id = '#' + entry.target.id;
+        navLinks.forEach(function(l) { l.classList.remove('active'); });
+        navTopics.forEach(function(t) { t.classList.remove('active'); });
+        var activeLink = linkMap[id];
+        if (activeLink) {
+          activeLink.classList.add('active');
+          // 联动高亮父级 nav-topic
+          var prev = activeLink.previousElementSibling;
+          while (prev) {
+            if (prev.classList.contains('nav-topic')) {
+              prev.classList.add('active');
+              break;
+            }
+            prev = prev.previousElementSibling;
+          }
+        }
+      }
+    });
+  }, { rootMargin: '-60px 0px -70% 0px', threshold: 0 });
+
+  document.querySelectorAll('[id^="topic-"]').forEach(function(el) {
+    observer.observe(el);
+  });
+  // 也观察证据追溯区
+  var evidence = document.getElementById('evidence');
+  if (evidence) observer.observe(evidence);
+})();
+
+/* ===== 自测题 ===== */
+function checkQuiz(btn) {
+  var container = btn.parentElement.parentElement;
+  var items = container.querySelectorAll('.quiz-item');
+  items.forEach(function(item) {
+    var answer = item.querySelector('.quiz-feedback').getAttribute('data-answer');
+    var selected = item.querySelector('input[type="radio"]:checked');
+    var fb = item.querySelector('.quiz-feedback');
+    var topic = item.getAttribute('data-topic') || '';
+    var quizNum = item.getAttribute('data-quiz') || '';
+    if (!selected) {
+      fb.textContent = '⚠️ 请先选择一个选项';
+      fb.className = 'quiz-feedback wrong';
+      fb.style.display = 'block';
+      return;
+    }
+    var explain = getExplanation(topic, quizNum, answer);
+    if (selected.value === answer) {
+      fb.textContent = '✅ 正确！' + explain;
+      fb.className = 'quiz-feedback correct';
+    } else {
+      fb.textContent = '❌ 错误。正确答案是 ' + answer + '。' + explain;
+      fb.className = 'quiz-feedback wrong';
+    }
+    fb.style.display = 'block';
+  });
+}
+
+function resetQuiz(btn) {
+  var container = btn.parentElement.parentElement;
+  container.querySelectorAll('input[type="radio"]').forEach(function(r) { r.checked = false; });
+  container.querySelectorAll('.quiz-feedback').forEach(function(fb) {
+    fb.style.display = 'none';
+  });
+}
+
+function getExplanation(topic, quizNum, answer) {
+  var map = {
+    't1-1': ' 请求行包含方法+路径+协议版本；空行分隔 Header 和 Body。',
+    't1-2': ' # 片段标识符只在浏览器端使用，不会发送给服务器。',
+    't1-3': ' HTTP 是应用层协议（定义数据格式），TCP 是传输层协议（负责可靠传输）。',
+    't2-1': ' POST 每次请求可能创建新资源，执行多次结果不同，因此非幂等。',
+    't2-2': ' 401 表示"你是谁我不知道"（未认证），403 表示"我知道你是谁但你不能进"（无权限）。',
+    't2-3': ' 删除成功无内容返回时推荐 204 No Content。',
+    't3-1': ' Content-Type = 我发的 Body 是什么格式；Accept = 我希望收到什么格式。',
+    't3-2': ' multipart/form-data 支持分段传输文件数据。',
+    't3-3': ' Authorization Header 不会出现在 URL 和服务器日志中，比查询参数更安全。',
+    't4-1': ' Cookie 保存在浏览器（客户端），Session 数据保存在服务器端。',
+    't4-2': ' HttpOnly 禁止 document.cookie 读取，是防御 XSS 窃取登录态的关键措施。',
+    't4-3': ' Redis 支持过期时间、高性能读写、多实例共享，是 Session 集中存储的首选。',
+    't5-1': ' HTTPS = HTTP + TLS，提供加密（防窃听）、完整性（防篡改）、身份认证（防假冒）。',
+    't5-2': ' CORS 是浏览器内置的安全策略，不是服务器主动拒绝——请求通常已到达后端。',
+    't5-3': ' Postman 是桌面应用，不运行在浏览器沙箱中，不受同源策略限制。',
+  };
+  return map[topic + '-' + quizNum] || '';
+}
+</script>
+
+</body>
+</html>

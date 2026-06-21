@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nginx 基础 - 学习页面</title>
+<style>
+:root{--accent:#2563eb;--accent-light:rgba(37,99,235,0.1);--purple:#7c3aed;--cyan:#0284c7;--red:#dc2626;--orange:#d97706;--green:#16a34a;--bg:#f6f8fb;--card:#fff;--border:#e3e8ef;--text:#1e293b;--text-muted:#64748b;--code-bg:#1e293b;--sidebar-width:260px;--callout-warn-border:#dc2626;--quiz-bg:#fffbeb}
+.dark{--accent:#58a6ff;--accent-light:rgba(88,166,255,0.12);--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--code-bg:#0d1117;--callout-warn-border:#f85149;--quiz-bg:rgba(217,119,6,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg)}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0%;z-index:1000;transition:width .1s}
+#dark-toggle{position:fixed;top:16px;right:16px;z-index:500;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#dark-toggle:hover{background:var(--border)}
+.layout{display:flex;max-width:1100px;margin:0 auto;min-height:100vh}
+#sidebar{width:var(--sidebar-width);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;border-right:1px solid var(--border);background:var(--card)}
+#sidebar nav{display:flex;flex-direction:column;gap:4px}
+#sidebar .nav-topic{font-size:12.5px;font-weight:bold;color:var(--text-muted);padding:6px 8px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-topic:hover,#sidebar .nav-topic.active{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link{font-size:13.5px;color:var(--text);padding:4px 8px 4px 20px;border-radius:6px;text-decoration:none;display:block;transition:color .15s,background .15s}
+#sidebar .nav-link:hover{color:var(--accent);background:var(--accent-light)}
+#sidebar .nav-link.active{color:var(--accent);font-weight:600}
+main{flex:1;padding:32px 40px;max-width:800px;margin:0 auto}
+.article-title{font-size:28px;font-weight:800;margin-bottom:8px;color:var(--text)}
+.read-time{color:var(--text-muted);font-size:13px;margin-bottom:32px;display:flex;align-items:center;gap:6px}
+.topic{margin-bottom:56px;scroll-margin-top:24px}
+.topic-header{margin-bottom:20px}
+.topic-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.topic-divider{height:1px;background:var(--border);margin-top:12px}
+.section{margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)}
+.section-header{display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;user-select:none;transition:background .15s}
+.section-header:hover{background:var(--accent-light)}
+.section-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;color:#fff;flex-shrink:0}
+.badge-goal{background:var(--accent)}.badge-concept{background:var(--purple)}.badge-code{background:var(--cyan)}.badge-caution{background:var(--red)}.badge-quiz{background:var(--orange)}
+.section-arrow{margin-left:auto;font-size:12px;transition:transform .2s;color:var(--text-muted)}
+.section.open .section-arrow{transform:rotate(180deg)}
+.section-body{display:none;padding:16px 20px}
+.section.open .section-body{display:block}
+.section-content ul{margin:8px 0 8px 20px}
+.section-content li{margin-bottom:6px}
+.section-content p{margin-bottom:10px}
+.section-content h4{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--text)}
+.callout{padding:10px 14px;border-radius:6px;margin:12px 0;font-size:13.5px;border-left:3px solid}
+.callout-blue{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.callout-warn{background:rgba(220,38,38,0.08);border-color:var(--callout-warn-border);color:var(--callout-warn-border)}
+.section-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;table-layout:fixed;word-break:break-word}
+.section-content th,.section-content td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+.section-content th{background:var(--bg);font-weight:600}
+.section-content tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark .section-content tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+.code-block{position:relative;background:var(--code-bg);border-radius:8px;margin:12px 0;overflow:hidden}
+.code-block pre{padding:16px;overflow-x:auto;font-size:12.5px;line-height:1.6;color:#e2e8f0;font-family:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace;white-space:pre;margin:0}
+.code-block .copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#e2e8f0;border:none;border-radius:4px;cursor:pointer;transition:background .2s}
+.code-block .copy-btn:hover{background:rgba(255,255,255,0.2)}
+.code-block .copy-btn.copied{color:#4ade80}
+.key-line{border-left:3px solid #f59e0b!important;margin-left:-3px}
+.comparison-table{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:12px 0;font-size:13.5px}
+.comparison-table .left,.comparison-table .right{padding:10px 14px}
+.comparison-table .left{background:rgba(220,38,38,0.06);color:var(--red)}
+.comparison-table .right{background:rgba(22,163,74,0.06);color:var(--green)}
+.quiz-question{margin-bottom:16px}
+.quiz-question h4{font-size:14px;margin-bottom:8px;background:var(--quiz-bg);padding:8px 12px;border-left:3px solid var(--orange);border-radius:4px}
+.quiz-options{display:flex;flex-direction:column;gap:6px}
+.quiz-option{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:background .15s}
+.quiz-option:hover{background:var(--accent-light)}
+.quiz-option input{accent-color:var(--accent)}
+.quiz-submit{margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer}
+.quiz-submit:hover{opacity:.9}
+.quiz-result{margin-top:10px;padding:10px 14px;border-radius:6px;font-size:13.5px;display:none}
+.quiz-result.correct{background:rgba(22,163,74,0.1);color:var(--green);border:1px solid var(--green)}
+.quiz-result.incorrect{background:rgba(220,38,38,0.1);color:var(--red);border:1px solid var(--red)}
+.quiz-reset{margin-top:8px;padding:6px 14px;background:var(--border);color:var(--text);border:none;border-radius:6px;font-size:13px;cursor:pointer}
+#evidence{margin-top:64px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+#evidence h2{font-size:16px;margin-bottom:16px}
+#evidence table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;word-break:break-word}
+#evidence th,#evidence td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+#evidence th{background:var(--bg);font-weight:600}
+#evidence tr:nth-child(even) td{background:rgba(0,0,0,0.02)}
+.dark #evidence tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+#back-to-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:opacity .2s}
+#back-to-top.show{display:flex}
+#mobile-nav{display:none;position:fixed;top:0;left:0;right:0;height:48px;background:var(--card);border-bottom:1px solid var(--border);z-index:400;padding:0 16px;align-items:center;gap:12px}
+#mobile-nav .nav-title{flex:1;font-weight:600;font-size:15px}
+#hamburger{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450}
+@media(max-width:768px){
+#sidebar{position:fixed;left:-280px;top:0;height:100vh;z-index:500;width:280px;transition:left .3s}
+#sidebar.open{left:0}
+#sidebar-overlay.show{display:block}
+#mobile-nav{display:flex}
+main{padding:60px 20px 20px}
+.code-block pre{font-size:11.5px}
+}
+@media print{
+#sidebar,#dark-toggle,#progress-bar,#back-to-top,#mobile-nav,#evidence{display:none!important}
+.layout{display:block}
+main{max-width:100%;padding:0}
+.section .section-body{display:block!important}
+}
+.ascii-diagram{background:var(--code-bg);padding:14px;border-radius:6px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12px;line-height:1.55;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:12px 0}
+
+/* Unified chapter navigation: clear targets, fewer misclicks */
+.chapter-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin: 0 0 28px !important;
+    padding: 14px !important;
+    border: 1px solid var(--border, #30363d) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(180deg, rgba(37, 99, 235, .08), rgba(37, 99, 235, .025)), var(--card, var(--surface, #161b22)) !important;
+    box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)) !important;
+    font-size: 14px !important;
+}
+.chapter-nav a,
+.chapter-nav span {
+    min-height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid transparent !important;
+    text-decoration: none !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+}
+.chapter-nav a {
+    color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .10) !important;
+    font-weight: 800 !important;
+}
+.chapter-nav a:hover {
+    transform: translateY(-1px) !important;
+    border-color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .18) !important;
+    text-decoration: none !important;
+}
+.chapter-nav .home {
+    justify-content: center !important;
+    min-width: 180px !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .24) !important;
+}
+.chapter-nav .next {
+    justify-content: flex-end !important;
+    text-align: right !important;
+}
+.chapter-nav .chapter-nav-disabled,
+.chapter-nav span:not(.home):not(.next) {
+    color: var(--muted, #8b949e) !important;
+    background: rgba(148, 163, 184, .10) !important;
+    cursor: not-allowed !important;
+    opacity: .72 !important;
+}
+.chapter-nav .chapter-nav-disabled.next,
+.chapter-nav span.next {
+    justify-content: flex-end !important;
+}
+@media (max-width: 768px) {
+    .chapter-nav {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+    .chapter-nav a,
+    .chapter-nav span,
+    .chapter-nav .home,
+    .chapter-nav .next {
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+        width: 100% !important;
+    }
+}
+.chapter-overview{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:18px 22px;margin:0 0 32px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.chapter-overview .overview-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px}
+.chapter-overview p{color:var(--text);font-size:14px;line-height:1.7;margin:0 0 12px}
+.chapter-overview table{width:100%;border-collapse:collapse;font-size:13.5px}
+.chapter-overview th,.chapter-overview td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+.chapter-overview th{background:rgba(37,99,235,.08);font-weight:700}
+.topic-desc{color:var(--text-muted);font-style:italic;font-size:14.5px;margin:0 0 16px;line-height:1.6;padding:6px 0 6px 12px;border-left:3px solid var(--accent)}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="dark-toggle" title="切换深色/浅色">☀️</button>
+<div id="mobile-nav">
+<button id="hamburger" onclick="toggleSidebar()">☰</button>
+<span class="nav-title">Nginx 基础</span>
+</div>
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="layout">
+<aside id="sidebar">
+<nav>
+<a class="nav-topic" href="#s1">第一节 · Nginx基础与反向代理</a>
+<a class="nav-link" href="#s1-goal">学习目标</a>
+<a class="nav-link" href="#s1-concept">核心概念</a>
+<a class="nav-link" href="#s1-code">代码示例</a>
+<a class="nav-link" href="#s1-caution">常见误区</a>
+<a class="nav-link" href="#s1-quiz">自测题</a>
+<a class="nav-topic" href="#s2">第二节 · 静态文件与HTTPS</a>
+<a class="nav-link" href="#s2-goal">学习目标</a>
+<a class="nav-link" href="#s2-concept">核心概念</a>
+<a class="nav-link" href="#s2-code">代码示例</a>
+<a class="nav-link" href="#s2-caution">常见误区</a>
+<a class="nav-link" href="#s2-quiz">自测题</a>
+<a class="nav-topic" href="#s3">第三节 · 负载均衡与高级配置</a>
+<a class="nav-link" href="#s3-goal">学习目标</a>
+<a class="nav-link" href="#s3-concept">核心概念</a>
+<a class="nav-link" href="#s3-code">代码示例</a>
+<a class="nav-link" href="#s3-caution">常见误区</a>
+<a class="nav-link" href="#s3-quiz">自测题</a>
+</nav>
+</aside>
+<main>
+<nav class="chapter-nav" aria-label="阶段章节导航"><a href="03-docker.html">← 上一章：Docker</a><a class="home" href="index.html">🏠 返回阶段总目录</a><a class="next" href="05-cicd.html">下一章：CI/CD 持续部署 →</a></nav><h1 class="article-title">Nginx 基础</h1>
+<p class="read-time">⏱️ 预估阅读 35 分钟</p>
+
+<!-- ==================== 📌 本章总览 ==================== -->
+<div class="chapter-overview">
+<div class="overview-title">📌 本章 · 为什么要学 Nginx？</div>
+<p>Nginx 是后端服务最前面的"门卫与调度员"：对外接住高并发，对内反代到应用进程，顺手把静态文件、HTTPS、限流、缓存都包了。本章按"反向代理 → 静态/HTTPS → 负载均衡"三层递进，让你写得出配置、看得懂 access_log，把 FastAPI/Django 服务真正放上公网。</p>
+<table>
+<tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+<tr><td>Nginx 基础与反向代理</td><td>Nginx 角色 · server/location · proxy_pass · upstream</td><td>⭐⭐⭐</td></tr>
+<tr><td>静态文件与 HTTPS 配置</td><td>静态资源托管 · 缓存头 · TLS 证书 · Let's Encrypt</td><td>⭐⭐⭐</td></tr>
+<tr><td>负载均衡与高级配置</td><td>多后端 upstream · 轮询/权重/IP 哈希 · 限流 · 缓存</td><td>⭐⭐⭐</td></tr>
+</table>
+</div>
+
+<!-- 第一节 -->
+<section class="topic" id="s1">
+<div class="topic-header">
+<h2 class="topic-title">第一节 · Nginx基础与反向代理</h2>
+<div class="topic-divider"></div>
+</div>
+<div class="topic-desc">Nginx 是服务最前面的"门卫"，反向代理把外部请求安全地转给后端进程。</div>
+
+<div class="section open" id="s1-goal">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-goal">🎯</span>学习目标<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+<ul>
+<li>理解 Nginx 的定位：高性能 Web 服务器 + 反向代理</li>
+<li>掌握正向代理与反向代理的核心区别</li>
+<li>熟悉 nginx.conf 的层级结构（main → events → http → server → location）</li>
+<li>掌握 location 5 种匹配规则及优先级</li>
+<li>能独立配置 FastAPI 反向代理 + 真实 IP 透传</li>
+</ul>
+<div class="callout callout-blue">Nginx 是后端部署的核心组件。FastAPI/Django 上线前几乎都需经 Nginx 转发，配置错误会导致 502、IP 丢失、HTTPS 失效等线上故障。</div>
+</div>
+</div>
+</div>
+
+<div class="section open" id="s1-concept">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-concept">📖</span>核心概念<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>Nginx 是什么</h4>
+<p>Nginx（engine-x）是 2004 年由 Igor Sysoev 开发的高性能 HTTP 服务器和反向代理服务器。在全球 Web 服务器市场占据约 36% 份额（2024），是部署 Python 后端应用最常用的网关组件。</p>
+
+<h4>核心能力</h4>
+<table>
+<tr><th>能力</th><th>实际用途</th></tr>
+<tr><td>Web 服务器</td><td>直接提供 HTML/CSS/JS/图片</td></tr>
+<tr><td>反向代理</td><td>FastAPI/Django 部署</td></tr>
+<tr><td>负载均衡</td><td>高可用架构</td></tr>
+<tr><td>HTTPS 终端</td><td>SSL/TLS 加密解密</td></tr>
+<tr><td>缓存</td><td>减少后端重复计算</td></tr>
+<tr><td>限流</td><td>防止恶意请求</td></tr>
+</table>
+
+<h4>为什么需要 Nginx（不直接让 FastAPI 监听 80 端口）</h4>
+<pre class="ascii-diagram">方案 A（不推荐）：客户端 → FastAPI(uvicorn) 直接对外
+方案 B（推荐）：  客户端 → Nginx → FastAPI(uvicorn)</pre>
+<p>Nginx 优势：C 编写事件驱动，处理静态比 Python 快 10-100 倍；隐藏后端技术栈；后端崩溃时返回友好错误页；统一处理 HTTPS、压缩、缓存。</p>
+
+<h4>正向代理 vs 反向代理</h4>
+<pre class="ascii-diagram"># 正向代理：代理代表「客户端」
+客户端 → [正向代理] → 目标服务器
+         ↑
+    客户端知道目标服务器是谁
+
+# 反向代理：代理代表「服务端」
+客户端 → [反向代理] → 后端服务器
+         ↑
+    客户端不知道后端服务器是谁</pre>
+
+<table>
+<tr><th>维度</th><th>正向代理</th><th>反向代理</th></tr>
+<tr><td>代理谁</td><td>客户端</td><td>服务端</td></tr>
+<tr><td>客户端知道目标吗</td><td>知道</td><td>不知道</td></tr>
+<tr><td>部署位置</td><td>客户端一侧</td><td>服务端一侧</td></tr>
+<tr><td>典型工具</td><td>VPN、Squid</td><td>Nginx、HAProxy</td></tr>
+<tr><td>主要目的</td><td>访问控制/翻墙</td><td>负载均衡/安全/缓存</td></tr>
+</table>
+
+<h4>反向代理的三大作用</h4>
+<pre class="ascii-diagram"># 1. 安全隔离
+互联网 → Nginx (80/443) → FastAPI (127.0.0.1:8000)
+
+# 2. 负载均衡
+Nginx ──┬→ FastAPI 实例 1 (8001)
+        ├→ FastAPI 实例 2 (8002)
+        └→ FastAPI 实例 3 (8003)
+
+# 3. 统一入口
+api.example.com/api/*    → FastAPI
+api.example.com/static/* → Nginx 直接返回
+api.example.com/admin/*  → Django</pre>
+
+<h4>nginx.conf 层级结构</h4>
+<pre class="ascii-diagram">main (全局块)
+├── events (事件块)
+└── http (HTTP 块)
+    ├── upstream (上游服务器组)
+    └── server (虚拟主机)
+        └── location (路径匹配规则)</pre>
+
+<h4>location 匹配优先级（从高到低）</h4>
+<table>
+<tr><th>语法</th><th>含义</th><th>示例</th></tr>
+<tr><td>= /path</td><td>精确匹配</td><td>= /health</td></tr>
+<tr><td>^~ /path</td><td>前缀匹配，不再检查正则</td><td>^~ /static/</td></tr>
+<tr><td>~ regex</td><td>正则匹配（区分大小写）</td><td>~ \.(jpg|png)$</td></tr>
+<tr><td>~* regex</td><td>正则匹配（不区分大小写）</td><td>~* \.(gif|ico)$</td></tr>
+<tr><td>/path</td><td>普通前缀匹配</td><td>/api/</td></tr>
+</table>
+
+<h4>关键 header 作用</h4>
+<table>
+<tr><th>Header</th><th>作用</th></tr>
+<tr><td>Host</td><td>传递原始请求的域名</td></tr>
+<tr><td>X-Real-IP</td><td>客户端真实 IP</td></tr>
+<tr><td>X-Forwarded-For</td><td>完整代理链路 IP 列表</td></tr>
+<tr><td>X-Forwarded-Proto</td><td>原始请求协议（http/https）</td></tr>
+</table>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-code">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-code">💻</span>代码示例<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>安装与命令</h4>
+<div class="code-block"><pre># Ubuntu / Debian
+sudo apt update
+sudo apt install nginx
+
+# CentOS / RHEL
+sudo yum install epel-release
+sudo yum install nginx
+
+# Docker
+docker run -d -p 80:80 --name my-nginx nginx:alpine
+
+# 常用命令
+nginx -v                  # 查看版本
+sudo nginx -t             # 测试配置语法
+sudo nginx -s reload      # 重新加载（不中断服务）
+sudo nginx -s stop        # 立即停止
+sudo nginx -s quit        # 优雅停止
+sudo systemctl enable nginx  # 开机自启</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>nginx.conf 完整结构</h4>
+<div class="code-block key-line"><pre># main 全局块
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+# events 事件块
+events {
+    worker_connections 1024;
+    use epoll;
+}
+
+# http 块
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile on;
+    keepalive_timeout 65;
+
+    # upstream 上游服务器组
+    upstream backend {
+        server 127.0.0.1:8001;
+        server 127.0.0.1:8002;
+    }
+
+    # server 虚拟主机
+    server {
+        listen 80;
+        server_name example.com;
+
+        location / {
+            proxy_pass http://backend;
+        }
+
+        location /static/ {
+            alias /var/www/static/;
+        }
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>反向代理 FastAPI 实战</h4>
+<div class="code-block"><pre>server {
+    listen 80;
+    server_name api.example.com;
+
+    # 反向代理到 FastAPI
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+
+        # 传递真实客户端信息
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 超时设置
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+    }
+
+    # 健康检查（直接返回，不经过后端）
+    location = /nginx-health {
+        return 200 "OK";
+        add_header Content-Type text/plain;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>Python 正向代理示例</h4>
+<div class="code-block"><pre>import requests
+
+# 正向代理示例：客户端通过代理访问外部网站
+proxies = {
+    "http":  "http://proxy.company.com:8080",
+    "https": "http://proxy.company.com:8080",
+}
+response = requests.get("https://api.github.com", proxies=proxies)
+print(response.status_code)</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>FastAPI 中获取真实 IP</h4>
+<div class="code-block key-line"><pre>from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.get("/whoami")
+async def whoami(request: Request):
+    # 如果 Nginx 设置了 X-Real-IP
+    real_ip = request.headers.get("X-Real-IP", "unknown")
+    # 如果没有 Nginx，拿到的是直连 IP
+    direct_ip = request.client.host
+    return {
+        "real_ip": real_ip,
+        "direct_ip": direct_ip,
+    }</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-caution">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-caution">⚠️</span>常见误区<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="comparison-table">
+<div class="left">❌ 修改配置后忘记 reload</div>
+<div class="right">✅ 先 nginx -t 测试，再 nginx -s reload</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ proxy_pass 末尾斜杠写错导致路由错乱</div>
+<div class="right">✅ /api/ + /backend/ → /api/users 变 /users</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 502 Bad Gateway 直接放弃</div>
+<div class="right">✅ 检查后端是否运行、端口、防火墙</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 文件上传 413</div>
+<div class="right">✅ 调大 client_max_body_size</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ server_name 写 IP 地址</div>
+<div class="right">✅ 用域名，IP 变化时只需改 DNS</div>
+</div>
+
+<div class="callout callout-warn">安全提示：proxy_pass 末尾斜杠差异是新手最常踩的坑。有斜杠时 location 匹配部分会被替换，无斜杠则原样传递。</div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s1-quiz">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-quiz">✏️</span>自测题<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="quiz-question" data-answer="B">
+<h4>1. 正向代理和反向代理的本质区别是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q1" value="A"> A. 正向代理更快，反向代理更慢</label>
+<label class="quiz-option"><input type="radio" name="q1" value="B"> B. 正向代理代表客户端，反向代理代表服务端</label>
+<label class="quiz-option"><input type="radio" name="q1" value="C"> C. 正向代理用于 HTTPS，反向代理用于 HTTP</label>
+<label class="quiz-option"><input type="radio" name="q1" value="D"> D. 正向代理是收费的，反向代理免费</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>2. nginx.conf 的层级结构顺序是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q2" value="A"> A. http → main → events → server → location</label>
+<label class="quiz-option"><input type="radio" name="q2" value="B"> B. main → http → server → events → location</label>
+<label class="quiz-option"><input type="radio" name="q2" value="C"> C. main → events → http → server → location</label>
+<label class="quiz-option"><input type="radio" name="q2" value="D"> D. main → server → http → events → location</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>3. `proxy_pass http://backend/;`（有斜杠）和 `proxy_pass http://backend;`（无斜杠）的区别是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q3" value="A"> A. 完全一样</label>
+<label class="quiz-option"><input type="radio" name="q3" value="B"> B. 有斜杠会替换 location 匹配前缀，无斜杠原样传递</label>
+<label class="quiz-option"><input type="radio" name="q3" value="C"> C. 有斜杠走 HTTPS，无斜杠走 HTTP</label>
+<label class="quiz-option"><input type="radio" name="q3" value="D"> D. 无斜杠会报错</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>4. Nginx 传递客户端真实 IP 给后端的标准 header 是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q4" value="A"> A. X-Client-IP</label>
+<label class="quiz-option"><input type="radio" name="q4" value="B"> B. X-Original-IP</label>
+<label class="quiz-option"><input type="radio" name="q4" value="C"> C. X-Real-IP 和 X-Forwarded-For</label>
+<label class="quiz-option"><input type="radio" name="q4" value="D"> D. Client-IP</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- 第二节 -->
+<section class="topic" id="s2">
+<div class="topic-header">
+<h2 class="topic-title">第二节 · 静态文件与HTTPS配置</h2>
+<div class="topic-divider"></div>
+</div>
+<div class="topic-desc">让 Nginx 直接发静态资源、再用 Let's Encrypt 给站点挂上 HTTPS。</div>
+
+<div class="section open" id="s2-goal">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-goal">🎯</span>学习目标<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+<ul>
+<li>理解 root 与 alias 的差异及正确使用</li>
+<li>掌握 gzip 压缩配置及适用场景</li>
+<li>理解 HTTP 缓存机制（Cache-Control、ETag）</li>
+<li>理解 HTTPS/TLS 握手原理</li>
+<li>能独立配置 Let's Encrypt 免费证书 + HTTP 自动跳转 HTTPS</li>
+</ul>
+<div class="callout callout-blue">生产环境 HTTPS 已是标配。Let's Encrypt 让零成本启用 HTTPS 成为可能，Certbot 可自动化整个流程。</div>
+</div>
+</div>
+</div>
+
+<div class="section open" id="s2-concept">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-concept">📖</span>核心概念<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>静态文件</h4>
+<p>不需要后端计算就能直接返回的文件：HTML/CSS/JS、图片、字体、媒体。Nginx 用 <code>sendfile()</code> 系统调用，数据直接从磁盘到网卡，不经过用户态内存。</p>
+
+<h4>root vs alias</h4>
+<table>
+<tr><th>指令</th><th>路径计算</th><th>示例</th></tr>
+<tr><td>root /var/www</td><td>root + 完整 URI</td><td>/static/a.css → /var/www/static/a.css</td></tr>
+<tr><td>alias /opt/files/</td><td>alias 替换匹配前缀</td><td>/static/a.css → /opt/files/a.css</td></tr>
+</table>
+<div class="callout callout-warn"><code>alias</code> 结尾必须加 <code>/</code>，<code>root</code> 结尾不加 <code>/</code>。</div>
+
+<h4>gzip 压缩</h4>
+<table>
+<tr><th>级别</th><th>压缩率</th><th>CPU</th><th>适用</th></tr>
+<tr><td>1</td><td>低</td><td>极低</td><td>高并发实时压缩</td></tr>
+<tr><td>6</td><td>中</td><td>中</td><td>推荐默认值</td></tr>
+<tr><td>9</td><td>高</td><td>高</td><td>低流量极致压缩</td></tr>
+</table>
+<p>不要对图片/视频 gzip：JPEG/PNG/MP4 已是压缩格式，再 gzip 几乎无效且浪费 CPU。</p>
+
+<h4>缓存策略</h4>
+<table>
+<tr><th>文件类型</th><th>推荐</th><th>原因</th></tr>
+<tr><td>JS/CSS（带 hash）</td><td>max-age=31536000（1年）</td><td>文件名含 hash，内容变化时文件名也变</td></tr>
+<tr><td>图片/字体</td><td>max-age=2592000（30天）</td><td>变化不频繁</td></tr>
+<tr><td>HTML</td><td>no-cache</td><td>始终验证最新</td></tr>
+<tr><td>API 响应</td><td>no-store</td><td>不缓存动态数据</td></tr>
+</table>
+
+<h4>ETag 工作原理</h4>
+<pre class="ascii-diagram">1. 首次请求：服务器返回文件 + ETag: "abc123"
+2. 再次请求：浏览器发送 If-None-Match: "abc123"
+3. 文件未变：服务器返回 304 Not Modified（不传文件体）
+4. 文件已变：服务器返回 200 OK + 新文件 + 新 ETag</pre>
+
+<h4>HTTPS = HTTP + TLS</h4>
+<p>HTTP 三大问题：窃听、篡改、冒充。HTTPS 全部解决。</p>
+
+<h4>TLS 握手过程（简化）</h4>
+<pre class="ascii-diagram">客户端                                    服务器
+  │─── 1. ClientHello ──────────────────→  │  (加密算法列表、随机数)
+  │←── 2. ServerHello ──────────────────── │  (选定算法、证书、随机数)
+  │─── 3. 验证证书 + 加密的预主密钥 ─────→ │  (用公钥加密)
+  │    5. 双方用三个随机数生成会话密钥        │
+  │←── 6. 对称加密通信开始 ──────────────→  │  (后续用会话密钥加密)</pre>
+
+<table>
+<tr><th>概念</th><th>说明</th></tr>
+<tr><td>非对称加密</td><td>公钥加密私钥解密，握手阶段传递密钥（慢）</td></tr>
+<tr><td>对称加密</td><td>同一密钥加密解密，传输数据（快）</td></tr>
+<tr><td>证书</td><td>CA 签发，证明公钥确实属于该域名</td></tr>
+<tr><td>证书链</td><td>根 CA → 中间 CA → 网站证书，逐级验证</td></tr>
+</table>
+
+<h4>Let's Encrypt vs 传统付费证书</h4>
+<table>
+<tr><th>对比</th><th>传统付费</th><th>Let's Encrypt</th></tr>
+<tr><td>费用</td><td>几百-几千元/年</td><td>免费</td></tr>
+<tr><td>验证</td><td>邮件/人工审核</td><td>域名验证（自动化）</td></tr>
+<tr><td>有效期</td><td>1-2 年</td><td>90 天（自动续期）</td></tr>
+<tr><td>适用</td><td>企业级 EV 证书</td><td>个人项目、中小网站</td></tr>
+</table>
+
+<h4>301 vs 302 重定向</h4>
+<ul>
+<li><strong>301 永久</strong>：浏览器会记住，下次直接访问 HTTPS</li>
+<li><strong>302 临时</strong>：浏览器每次都先访问 HTTP 再跳转</li>
+</ul>
+<p>生产环境应使用 301。</p>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-code">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-code">💻</span>代码示例<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>静态文件：root vs alias</h4>
+<div class="code-block key-line"><pre>server {
+    listen 80;
+    server_name example.com;
+
+    # 方式 1：root（路径拼接）
+    # /static/css/style.css → /var/www/html/static/css/style.css
+    location /static/ {
+        root /var/www/html;
+    }
+
+    # 方式 2：alias（路径替换）
+    # /static/css/style.css → /opt/app/static/css/style.css
+    location /static/ {
+        alias /opt/app/static/;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>gzip 压缩配置</h4>
+<div class="code-block"><pre>http {
+    gzip on;
+    gzip_min_length 1k;               # 小于 1KB 不压缩
+    gzip_comp_level 6;                # 推荐 6 级
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        application/javascript
+        application/json
+        application/xml
+        image/svg+xml;
+    gzip_vary on;
+    gzip_proxied any;
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>缓存配置</h4>
+<div class="code-block"><pre>location /static/ {
+    alias /var/www/static/;
+
+    # 30 天过期（Nginx 自动设置 Cache-Control 和 Expires）
+    expires 30d;
+
+    # 更精细控制
+    add_header Cache-Control "public, max-age=2592000";
+}
+
+location / {
+    # HTML 不缓存，保证最新
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>Certbot 申请证书</h4>
+<div class="code-block key-line"><pre># 安装 Certbot + Nginx 插件
+sudo apt install certbot python3-certbot-nginx
+
+# 一键申请证书并自动配置 Nginx
+sudo certbot --nginx -d example.com -d www.example.com
+
+# 手动续期测试
+sudo certbot renew --dry-run
+
+# 查看已安装证书
+sudo certbot certificates
+
+# 证书到期前 30 天内 cron 自动续期</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>HTTPS 完整配置</h4>
+<div class="code-block"><pre># HTTP → HTTPS 重定向
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS 主配置
+server {
+    listen 443 ssl;
+    server_name example.com www.example.com;
+
+    # 证书路径
+    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    # SSL 安全配置
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # SSL 会话缓存
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # 反向代理
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 静态文件
+    location /static/ {
+        alias /var/www/static/;
+        expires 30d;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>SSL 安全加固</h4>
+<div class="code-block"><pre># 禁止 SSLv3、TLSv1.0、TLSv1.1
+ssl_protocols TLSv1.2 TLSv1.3;
+
+# 强加密算法
+ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+
+# OCSP Stapling
+ssl_stapling on;
+ssl_stapling_verify on;
+resolver 8.8.8.8 8.8.4.4 valid=300s;
+
+# DH 参数
+ssl_dhparam /etc/nginx/dhparam.pem;</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-caution">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-caution">⚠️</span>常见误区<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="comparison-table">
+<div class="left">❌ HTTPS 页面引用 HTTP 资源（混合内容）</div>
+<div class="right">✅ 用 HTTPS 或协议相对路径 //</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 证书域名不匹配（签给 example.com 但访问 www.example.com）</div>
+<div class="right">✅ 申请时同时包含两个域名</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ Certbot 续期失败不去排查</div>
+<div class="right">✅ 用 certbot renew --dry-run 模拟看报错</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 静态文件 403 以为是路径错</div>
+<div class="right">✅ 检查目录权限和 Nginx 运行用户</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ gzip 对所有文件都开</div>
+<div class="right">✅ 只对文本类（HTML/CSS/JS/JSON）开启</div>
+</div>
+
+<div class="callout callout-warn">安全提示：测试 SSL 配置用 [SSL Labs](https://www.ssllabs.com/ssltest/)，目标是 A 或 A+ 评级。</div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s2-quiz">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-quiz">✏️</span>自测题<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="quiz-question" data-answer="B">
+<h4>1. root 和 alias 的核心区别是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q5" value="A"> A. 完全一样</label>
+<label class="quiz-option"><input type="radio" name="q5" value="B"> B. root 拼接完整 URI，alias 替换匹配前缀</label>
+<label class="quiz-option"><input type="radio" name="q5" value="C"> C. root 用于静态文件，alias 用于代理</label>
+<label class="quiz-option"><input type="radio" name="q5" value="D"> D. alias 性能更好</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>2. TLS 握手中，传输实际数据用的是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q6" value="A"> A. 非对称加密</label>
+<label class="quiz-option"><input type="radio" name="q6" value="B"> B. 哈希算法</label>
+<label class="quiz-option"><input type="radio" name="q6" value="C"> C. 对称加密</label>
+<label class="quiz-option"><input type="radio" name="q6" value="D"> D. 明文传输</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>3. 哪种缓存策略最适合带 hash 文件名的 JS/CSS？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q7" value="A"> A. no-cache</label>
+<label class="quiz-option"><input type="radio" name="q7" value="B"> B. max-age=31536000（1年）</label>
+<label class="quiz-option"><input type="radio" name="q7" value="C"> C. max-age=2592000（30天）</label>
+<label class="quiz-option"><input type="radio" name="q7" value="D"> D. no-store</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="C">
+<h4>4. HTTP 永久重定向到 HTTPS 应该用？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q8" value="A"> A. 302</label>
+<label class="quiz-option"><input type="radio" name="q8" value="B"> B. 307</label>
+<label class="quiz-option"><input type="radio" name="q8" value="C"> C. 301</label>
+<label class="quiz-option"><input type="radio" name="q8" value="D"> D. 308</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- 第三节 -->
+<section class="topic" id="s3">
+<div class="topic-header">
+<h2 class="topic-title">第三节 · 负载均衡与高级配置</h2>
+<div class="topic-divider"></div>
+</div>
+<div class="topic-desc">单实例扛不住时，用 Nginx 把流量分发到多台后端，并加上限流与缓存。</div>
+
+<div class="section open" id="s3-goal">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-goal">🎯</span>学习目标<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+<ul>
+<li>理解负载均衡的工作层次（DNS/四层/七层）</li>
+<li>掌握 Nginx 四种负载均衡算法及适用场景</li>
+<li>理解 upstream 高级参数（weight、max_fails、backup）</li>
+<li>掌握限流（limit_req）与限并发（limit_conn）配置</li>
+<li>能配置 WebSocket 代理、长连接超时、跨域等高级功能</li>
+</ul>
+<div class="callout callout-blue">负载均衡是高可用的基石。生产环境单实例宕机不能影响服务，限流是防止恶意流量压垮后端的关键手段。</div>
+</div>
+</div>
+</div>
+
+<div class="section open" id="s3-concept">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-concept">📖</span>核心概念<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>负载均衡的层次</h4>
+<table>
+<tr><th>层次</th><th>说明</th><th>工具</th></tr>
+<tr><td>DNS</td><td>域名解析到多个 IP</td><td>Route53、CloudFlare</td></tr>
+<tr><td>四层（TCP/UDP）</td><td>按 IP+端口转发</td><td>LVS、HAProxy (TCP mode)</td></tr>
+<tr><td>七层（HTTP）</td><td>解析 HTTP 头/路径/Cookie</td><td>Nginx、HAProxy (HTTP mode)</td></tr>
+</table>
+<p>Nginx 工作在七层，可按 URL、Header、Cookie 做精细路由。</p>
+
+<h4>负载均衡算法</h4>
+<table>
+<tr><th>算法</th><th>配置关键字</th><th>Session 保持</th><th>适用</th></tr>
+<tr><td>轮询（默认）</td><td>无</td><td>❌</td><td>后端配置相同</td></tr>
+<tr><td>加权轮询</td><td>weight=N</td><td>❌</td><td>后端性能不同</td></tr>
+<tr><td>IP Hash</td><td>ip_hash</td><td>✅ 按 IP</td><td>需要 Session 粘性</td></tr>
+<tr><td>最少连接</td><td>least_conn</td><td>❌</td><td>请求处理时间差异大</td></tr>
+</table>
+
+<h4>upstream 服务器状态参数</h4>
+<table>
+<tr><th>参数</th><th>说明</th></tr>
+<tr><td>weight=N</td><td>权重，默认为 1</td></tr>
+<tr><td>max_fails=N</td><td>fail_timeout 内最大失败次数</td></tr>
+<tr><td>fail_timeout=Ns</td><td>失败统计窗口 & 标记不可用后等待时间</td></tr>
+<tr><td>backup</td><td>备用服务器，其他都不可用才接收请求</td></tr>
+<tr><td>down</td><td>标记为永久离线</td></tr>
+</table>
+
+<h4>限流</h4>
+<table>
+<tr><th>参数</th><th>说明</th></tr>
+<tr><td>$binary_remote_addr</td><td>按客户端 IP 限流</td></tr>
+<tr><td>zone=name:10m</td><td>共享内存区域（10MB ≈ 16万 IP）</td></tr>
+<tr><td>rate=10r/s</td><td>每秒 10 个（也可用 100r/m 每分钟）</td></tr>
+<tr><td>burst=20</td><td>允许突发排队 20 个</td></tr>
+<tr><td>nodelay</td><td>突发请求立即处理，不延迟</td></tr>
+</table>
+
+<h4>常用日志变量</h4>
+<table>
+<tr><th>变量</th><th>说明</th><th>示例</th></tr>
+<tr><td>$remote_addr</td><td>客户端 IP</td><td>203.0.113.1</td></tr>
+<tr><td>$request</td><td>完整请求行</td><td>GET /api/users HTTP/1.1</td></tr>
+<tr><td>$status</td><td>响应状态码</td><td>200</td></tr>
+<tr><td>$request_time</td><td>请求处理总时间（秒）</td><td>0.032</td></tr>
+<tr><td>$upstream_response_time</td><td>后端响应时间</td><td>0.028</td></tr>
+<tr><td>$body_bytes_sent</td><td>发送字节数</td><td>1234</td></tr>
+</table>
+
+<h4>WebSocket 特殊性</h4>
+<p>WebSocket 是长连接协议，基于 HTTP Upgrade 机制建立。Nginx 默认不支持，需显式配置 Upgrade 头。WebSocket 长连接必须增大 <code>proxy_read_timeout</code>，默认 60s 会被断开。</p>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s3-code">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-code">💻</span>代码示例<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<h4>四种负载均衡算法</h4>
+<div class="code-block"><pre># 1. 轮询（默认）
+upstream backend {
+    server 127.0.0.1:8001;
+    server 127.0.0.1:8002;
+    server 127.0.0.1:8003;
+}
+
+# 2. 加权轮询
+upstream backend {
+    server 127.0.0.1:8001 weight=5;
+    server 127.0.0.1:8002 weight=3;
+    server 127.0.0.1:8003 weight=2;
+}
+
+# 3. IP Hash
+upstream backend {
+    ip_hash;
+    server 127.0.0.1:8001;
+    server 127.0.0.1:8002;
+}
+
+# 4. 最少连接
+upstream backend {
+    least_conn;
+    server 127.0.0.1:8001;
+    server 127.0.0.1:8002;
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>upstream 高级配置</h4>
+<div class="code-block key-line"><pre>upstream backend {
+    server 127.0.0.1:8001 weight=5 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:8002 weight=3 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:8003 backup;              # 备用服务器
+    server 127.0.0.1:8004 down;                # 永久离线
+}
+
+server {
+    location / {
+        proxy_pass http://backend;
+        # 502/503/超时/出错时自动切换到下一个后端
+        proxy_next_upstream error timeout http_502 http_503;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>限流配置</h4>
+<div class="code-block"><pre>http {
+    # 定义限流区域：每个客户端 IP 每秒 10 个请求
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+
+    # 定义限并发区域
+    limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
+
+    server {
+        location /api/ {
+            # 限流：突发 20 个排队 + nodelay 立即处理
+            limit_req zone=api_limit burst=20 nodelay;
+            # 限并发：每 IP 最多 10 个连接
+            limit_conn conn_limit 10;
+
+            proxy_pass http://backend;
+        }
+    }
+
+    # 限流返回 429 而非默认 503
+    limit_req_status 429;
+    limit_conn_status 429;
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>JSON 日志格式</h4>
+<div class="code-block"><pre>http {
+    log_format json_log escape=json '{'
+        '"time": "$time_iso8601",'
+        '"remote_addr": "$remote_addr",'
+        '"request": "$request",'
+        '"status": $status,'
+        '"body_bytes_sent": $body_bytes_sent,'
+        '"request_time": $request_time,'
+        '"upstream_response_time": "$upstream_response_time"'
+    '}';
+
+    access_log /var/log/nginx/access.log json_log;
+}
+
+# 按站点配置 + 静态文件不记录日志
+server {
+    server_name api.example.com;
+    access_log /var/log/nginx/api_access.log json_log;
+    error_log  /var/log/nginx/api_error.log warn;
+
+    location /static/ {
+        access_log off;
+        alias /var/www/static/;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>WebSocket 代理配置</h4>
+<div class="code-block key-line"><pre># map 必须在 http 块中
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+upstream websocket_backend {
+    server 127.0.0.1:8001;
+    server 127.0.0.1:8002;
+    ip_hash;  # WebSocket 长连接建议 ip_hash 保持粘性
+}
+
+server {
+    listen 80;
+    server_name ws.example.com;
+
+    location /ws/ {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+
+        # 关键：传递 Upgrade 和 Connection 头
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # WebSocket 长连接超时（默认 60s 太短）
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>按路径分流到不同后端</h4>
+<div class="code-block"><pre>upstream api_backend   { server 127.0.0.1:8001; }
+upstream admin_backend { server 127.0.0.1:9001; }
+upstream static_backend{ server 127.0.0.1:7001; }
+
+server {
+    listen 80;
+    server_name example.com;
+
+    location /api/    { proxy_pass http://api_backend; }
+    location /admin/  { proxy_pass http://admin_backend; }
+    location /static/ { proxy_pass http://static_backend; }
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>CORS 跨域配置</h4>
+<div class="code-block"><pre>location /api/ {
+    add_header Access-Control-Allow-Origin    "https://frontend.example.com" always;
+    add_header Access-Control-Allow-Methods   "GET, POST, PUT, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers   "Authorization, Content-Type" always;
+    add_header Access-Control-Allow-Credentials "true" always;
+
+    # OPTIONS 预检请求直接返回 204
+    if ($request_method = OPTIONS) {
+        return 204;
+    }
+
+    proxy_pass http://backend;
+}</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+<h4>FastAPI WebSocket 示例</h4>
+<div class="code-block"><pre>from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
+
+@app.websocket("/ws/chat")
+async def chat(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Echo: {data}")
+    except Exception:
+        pass  # 客户端断开连接</pre><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s3-caution">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-caution">⚠️</span>常见误区<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="comparison-table">
+<div class="left">❌ upstream 写 localhost</div>
+<div class="right">✅ 用 127.0.0.1 明确 IPv4</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ WebSocket 60 秒后断开</div>
+<div class="right">✅ 增大 proxy_read_timeout 到 3600s</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ limit_req_zone 放在 server/location 中</div>
+<div class="right">✅ 必须在 http 块顶层</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 负载均衡后 Session 丢失（用户被踢下线）</div>
+<div class="right">✅ IP Hash / Redis 共享 / JWT</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ 上传文件 413</div>
+<div class="right">✅ 调大 client_max_body_size</div>
+</div>
+<div class="comparison-table">
+<div class="left">❌ CORS 在 Nginx 和应用层都配置</div>
+<div class="right">✅ 只在一处配置，避免重复头</div>
+</div>
+
+<div class="callout callout-warn">安全提示：被 CDN/反向代理覆盖了真实 IP 时，所有请求看起来来自同一 IP，限流可能误伤。需配置 real_ip_header 和 set_real_ip_from 还原真实客户端。</div>
+
+</div>
+</div>
+</div>
+
+<div class="section" id="s3-quiz">
+<div class="section-header" onclick="toggleSection(this)">
+<span class="section-badge badge-quiz">✏️</span>自测题<span class="section-arrow">▼</span>
+</div>
+<div class="section-body">
+<div class="section-content">
+
+<div class="quiz-question" data-answer="C">
+<h4>1. 哪种算法天然支持 Session 保持？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q9" value="A"> A. 轮询</label>
+<label class="quiz-option"><input type="radio" name="q9" value="B"> B. 加权轮询</label>
+<label class="quiz-option"><input type="radio" name="q9" value="C"> C. IP Hash</label>
+<label class="quiz-option"><input type="radio" name="q9" value="D"> D. 最少连接</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>2. `limit_req_zone` 必须放在哪个块中？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q10" value="A"> A. server 块</label>
+<label class="quiz-option"><input type="radio" name="q10" value="B"> B. http 块（顶层）</label>
+<label class="quiz-option"><input type="radio" name="q10" value="C"> C. location 块</label>
+<label class="quiz-option"><input type="radio" name="q10" value="D"> D. events 块</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>3. WebSocket 代理必须修改哪个 header？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q11" value="A"> A. User-Agent</label>
+<label class="quiz-option"><input type="radio" name="q11" value="B"> B. Upgrade 和 Connection</label>
+<label class="quiz-option"><input type="radio" name="q11" value="C"> C. Accept-Encoding</label>
+<label class="quiz-option"><input type="radio" name="q11" value="D"> D. Authorization</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+<div class="quiz-question" data-answer="B">
+<h4>4. upstream 中 `server 127.0.0.1:8003 backup;` 的含义是？</h4>
+<div class="quiz-options">
+<label class="quiz-option"><input type="radio" name="q12" value="A"> A. 主服务器</label>
+<label class="quiz-option"><input type="radio" name="q12" value="B"> B. 备用服务器，其他都不可用才接收请求</label>
+<label class="quiz-option"><input type="radio" name="q12" value="C"> C. 永久离线</label>
+<label class="quiz-option"><input type="radio" name="q12" value="D"> D. 测试用服务器</label>
+</div>
+<div class="quiz-result"></div>
+<button class="quiz-submit" onclick="checkQuiz(this)">提交</button>
+<button class="quiz-reset" onclick="resetQuiz(this)">再次作答</button>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- 证据追溯区 -->
+<div id="evidence">
+<h2>📎 证据追溯</h2>
+<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+<table>
+<tr>
+<th>结论摘要</th>
+<th>来源文件</th>
+<th>位置（章节/行号）</th>
+</tr>
+<tr>
+<td>Nginx 占全球 Web 服务器市场约 36% 份额（2024）</td>
+<td><a href="../04_Nginx/1.Nginx基础与反向代理.md">1.Nginx基础与反向代理.md</a></td>
+<td>第一节 / 一</td>
+</tr>
+<tr>
+<td>正向代理代表客户端，反向代理代表服务端</td>
+<td><a href="../04_Nginx/1.Nginx基础与反向代理.md">1.Nginx基础与反向代理.md</a></td>
+<td>第二节</td>
+</tr>
+<tr>
+<td>nginx.conf 层级：main → events → http → server → location</td>
+<td><a href="../04_Nginx/1.Nginx基础与反向代理.md">1.Nginx基础与反向代理.md</a></td>
+<td>第五节</td>
+</tr>
+<tr>
+<td>location 优先级：= > ^~ > ~ > 普通前缀</td>
+<td><a href="../04_Nginx/1.Nginx基础与反向代理.md">1.Nginx基础与反向代理.md</a></td>
+<td>第五节 / 表格</td>
+</tr>
+<tr>
+<td>proxy_pass 末尾斜杠差异是新手最常踩的坑</td>
+<td><a href="../04_Nginx/1.Nginx基础与反向代理.md">1.Nginx基础与反向代理.md</a></td>
+<td>第七节 / 坑2</td>
+</tr>
+<tr>
+<td>root 拼接完整 URI，alias 替换匹配前缀</td>
+<td><a href="../04_Nginx/2.静态文件与HTTPS配置.md">2.静态文件与HTTPS配置.md</a></td>
+<td>第一节</td>
+</tr>
+<tr>
+<td>gzip 级别 1-9，推荐 6</td>
+<td><a href="../04_Nginx/2.静态文件与HTTPS配置.md">2.静态文件与HTTPS配置.md</a></td>
+<td>第二节 / 表格</td>
+</tr>
+<tr>
+<td>Let's Encrypt 免费证书有效期 90 天，Certbot 自动续期</td>
+<td><a href="../04_Nginx/2.静态文件与HTTPS配置.md">2.静态文件与HTTPS配置.md</a></td>
+<td>第五节</td>
+</tr>
+<tr>
+<td>生产环境 HTTP→HTTPS 用 301 永久重定向</td>
+<td><a href="../04_Nginx/2.静态文件与HTTPS配置.md">2.静态文件与HTTPS配置.md</a></td>
+<td>第六节</td>
+</tr>
+<tr>
+<td>Nginx 工作在七层（HTTP 层）</td>
+<td><a href="../04_Nginx/3.负载均衡与高级配置.md">3.负载均衡与高级配置.md</a></td>
+<td>第一节</td>
+</tr>
+<tr>
+<td>ip_hash 天然支持 Session 保持</td>
+<td><a href="../04_Nginx/3.负载均衡与高级配置.md">3.负载均衡与高级配置.md</a></td>
+<td>第二节</td>
+</tr>
+<tr>
+<td>limit_req_zone 必须放在 http 块中</td>
+<td><a href="../04_Nginx/3.负载均衡与高级配置.md">3.负载均衡与高级配置.md</a></td>
+<td>第八节 / 坑3</td>
+</tr>
+<tr>
+<td>WebSocket 长连接默认 60s 会被断开，需增大 proxy_read_timeout</td>
+<td><a href="../04_Nginx/3.负载均衡与高级配置.md">3.负载均衡与高级配置.md</a></td>
+<td>第六节 / 坑2</td>
+</tr>
+</table>
+</div>
+
+</main>
+</div>
+<button id="back-to-top" onclick="scrollToTop()">↑</button>
+<script>
+(function(){
+  var dark=localStorage.getItem('dark-mode');
+  if(dark==='true'||(!dark&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+    document.body.classList.add('dark');
+    document.getElementById('dark-toggle').textContent='🌙';
+  }else{
+    document.getElementById('dark-toggle').textContent='☀️';
+  }
+  document.getElementById('dark-toggle').addEventListener('click',function(){
+    document.body.classList.toggle('dark');
+    var isDark=document.body.classList.contains('dark');
+    localStorage.setItem('dark-mode',isDark);
+    this.textContent=isDark?'🌙':'☀️';
+  });
+  window.addEventListener('scroll',function(){
+    var s=document.documentElement.scrollTop;
+    var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    document.getElementById('progress-bar').style.width=(s/h*100)+'%';
+    document.getElementById('back-to-top').classList.toggle('show',s>300);
+  });
+  window.toggleSection=function(el){
+    el.parentElement.classList.toggle('open');
+  };
+  window.scrollToTop=function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+  var links=document.querySelectorAll('.nav-link');
+  var sections=document.querySelectorAll('.topic, .section[id]');
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var id=e.target.id;
+        links.forEach(function(l){
+          l.classList.toggle('active',l.getAttribute('href')==='#'+id);
+        });
+        var section=document.getElementById(id);
+        if(section){
+          var parent=section.closest('.topic');
+          if(parent){
+            var topicLink=document.querySelector('.nav-topic[href="#'+parent.id+'"]');
+            if(topicLink) topicLink.classList.add('active');
+          }
+        }
+      }
+    });
+  },{rootMargin:'-20% 0px -70% 0px'});
+  sections.forEach(function(s){observer.observe(s);});
+  window.copyCode=function(btn){
+    var pre=btn.parentElement.querySelector('pre');
+    var text=pre.textContent;
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent='✅ 已复制';
+      btn.classList.add('copied');
+      setTimeout(function(){
+        btn.textContent='📋 复制';
+        btn.classList.remove('copied');
+      },1500);
+    });
+  };
+  window.checkQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    var answer=q.getAttribute('data-answer');
+    var selected=q.querySelector('input[name]:checked');
+    var result=q.querySelector('.quiz-result');
+    if(!selected){alert('请选择一个选项');return;}
+    if(selected.value===answer){
+      result.textContent='✅ 回答正确！';
+      result.className='quiz-result correct';
+    }else{
+      result.textContent='❌ 回答错误，正确答案是 '+answer;
+      result.className='quiz-result incorrect';
+    }
+    result.style.display='block';
+  };
+  window.resetQuiz=function(btn){
+    var q=btn.closest('.quiz-question');
+    q.querySelectorAll('input[name]').forEach(function(r){r.checked=false;});
+    var result=q.querySelector('.quiz-result');
+    result.style.display='none';
+    result.className='quiz-result';
+  };
+  window.toggleSidebar=function(){
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('show');
+  };
+})();
+</script>
+</body>
+</html>

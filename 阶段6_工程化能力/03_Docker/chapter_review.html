@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker 学习复习页</title>
+    <style>
+        :root {
+            --accent: #2563eb;
+            --concept: #7c3aed;
+            --code: #0284c7;
+            --danger: #dc2626;
+            --quiz: #d97706;
+            --success: #16a34a;
+            --bg: #f6f8fb;
+            --card: #ffffff;
+            --border: #e3e8ef;
+            --text: #1e293b;
+            --muted: #64748b;
+            --soft: #eff6ff;
+            --soft-concept: #f5f3ff;
+            --soft-code: #e0f2fe;
+            --soft-danger: #fef2f2;
+            --soft-quiz: #fffbeb;
+            --soft-success: #f0fdf4;
+            --code-bg: #1e293b;
+            --diagram-bg: #0f172a;
+            --code-text: #e2e8f0;
+            --code-keyword: #93c5fd;
+            --code-function: #67e8f9;
+            --code-string: #86efac;
+            --code-number: #fbbf24;
+            --code-comment: #94a3b8;
+            --code-highlight: rgba(245, 158, 11, .12);
+            --code-copy-bg: rgba(15, 23, 42, .62);
+            --code-copy-border: rgba(226, 232, 240, .28);
+            --row-alt: rgba(100, 116, 139, .06);
+            --overlay: rgba(15, 23, 42, .48);
+            --shadow: 0 1px 4px rgba(0, 0, 0, .08);
+            --radius: 9px;
+            --nav-width: 260px;
+        }
+
+        .dark {
+            --accent: #58a6ff;
+            --concept: #a78bfa;
+            --code: #38bdf8;
+            --danger: #f87171;
+            --quiz: #fbbf24;
+            --success: #4ade80;
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --soft: rgba(88, 166, 255, .12);
+            --soft-concept: rgba(167, 139, 250, .12);
+            --soft-code: rgba(56, 189, 248, .12);
+            --soft-danger: rgba(248, 113, 113, .12);
+            --soft-quiz: rgba(251, 191, 36, .12);
+            --soft-success: rgba(74, 222, 128, .12);
+            --code-bg: #0d1117;
+            --diagram-bg: #010409;
+            --code-text: #c9d1d9;
+            --code-keyword: #79c0ff;
+            --code-function: #56d4dd;
+            --code-string: #7ee787;
+            --code-number: #f2cc60;
+            --code-comment: #8b949e;
+            --code-highlight: rgba(187, 128, 9, .24);
+            --code-copy-bg: rgba(1, 4, 9, .74);
+            --code-copy-border: rgba(201, 209, 217, .25);
+            --row-alt: rgba(139, 148, 158, .08);
+            --overlay: rgba(1, 4, 9, .62);
+            --shadow: 0 1px 4px rgba(0, 0, 0, .26);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 70;
+            width: 100%;
+            height: 3px;
+            background: transparent;
+        }
+
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background: var(--accent);
+            transition: width .12s linear;
+        }
+
+        .theme-toggle,
+        .mobile-menu,
+        .top-button {
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 18px;
+            z-index: 60;
+            padding: 7px 10px;
+        }
+
+        .mobile-bar {
+            display: none;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: var(--nav-width) minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 26px 18px 28px;
+            border-right: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .brand {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-title {
+            display: block;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .brand-subtitle {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 13.5px;
+        }
+
+        .nav-topic,
+        .nav-link {
+            display: block;
+            border-radius: 8px;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .nav-topic {
+            margin-top: 12px;
+            padding: 8px 10px;
+            font-size: 12.5px;
+            font-weight: 800;
+            letter-spacing: .03em;
+            color: var(--muted);
+        }
+
+        .nav-topic.active,
+        .nav-link.active {
+            background: var(--soft);
+            color: var(--accent);
+        }
+
+        .nav-link {
+            margin-left: 8px;
+            padding: 5px 10px;
+            font-size: 13.5px;
+            color: var(--muted);
+        }
+
+        .nav-link:hover,
+        .nav-topic:hover {
+            background: var(--soft);
+            color: var(--accent);
+        }
+
+        .content-shell {
+            padding: 44px 24px 80px;
+        }
+
+        .content {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            margin-bottom: 28px;
+            padding-bottom: 22px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--accent);
+            font-weight: 800;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 34px;
+            line-height: 1.18;
+            letter-spacing: 0;
+        }
+
+        .read-time {
+            margin-top: 10px;
+            color: var(--muted);
+        }
+
+        .intro-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .intro-item {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .intro-item strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .intro-item span {
+            color: var(--muted);
+        }
+
+        .topic {
+            margin: 30px 0 38px;
+            scroll-margin-top: 22px;
+        }
+
+        .topic-header {
+            margin-bottom: 14px;
+        }
+
+        .topic-kicker {
+            color: var(--muted);
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+
+        h2 {
+            margin: 3px 0 0;
+            font-size: 25px;
+            line-height: 1.25;
+            letter-spacing: 0;
+        }
+
+        .section {
+            margin: 10px 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .section-head {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border: 0;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            padding: 12px 14px;
+            text-align: left;
+            font: inherit;
+        }
+
+        .section-head strong {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            width: 8px;
+            height: 22px;
+            border-radius: 8px;
+            background: var(--accent);
+        }
+
+        .section.goal .tag {
+            background: var(--accent);
+        }
+
+        .section.concept .tag {
+            background: var(--concept);
+        }
+
+        .section.code .tag {
+            background: var(--code);
+        }
+
+        .section.mistake .tag {
+            background: var(--danger);
+        }
+
+        .section.quiz .tag {
+            background: var(--quiz);
+        }
+
+        .chevron {
+            color: var(--muted);
+            transition: transform .2s ease;
+        }
+
+        .section.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .section-body {
+            display: none;
+            padding: 0 14px 16px;
+        }
+
+        .section.open .section-body {
+            display: block;
+        }
+
+        p {
+            margin: 8px 0;
+        }
+
+        ul {
+            margin: 8px 0 8px 20px;
+            padding: 0;
+        }
+
+        li {
+            margin: 4px 0;
+        }
+
+        .callout {
+            margin: 12px 0;
+            padding: 11px 12px;
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius);
+            background: var(--soft);
+        }
+
+        .callout.success {
+            border-left-color: var(--success);
+            background: var(--soft-success);
+        }
+
+        .callout.danger {
+            border-left-color: var(--danger);
+            background: var(--soft-danger);
+        }
+
+        .callout.quiz-note {
+            border-left-color: var(--quiz);
+            background: var(--soft-quiz);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin: 12px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            word-break: break-word;
+            background: var(--card);
+        }
+
+        th,
+        td {
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--soft);
+            text-align: left;
+            font-weight: 800;
+        }
+
+        tr:nth-child(even) td {
+            background: var(--row-alt);
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .ascii-diagram,
+        .code-block {
+            position: relative;
+            overflow-x: auto;
+            margin: 12px 0;
+            border-radius: var(--radius);
+            color: var(--code-text);
+            font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+            font-size: 12.5px;
+            line-height: 1.58;
+        }
+
+        .ascii-diagram {
+            padding: 14px;
+            background: var(--diagram-bg);
+            white-space: pre;
+        }
+
+        .code-block {
+            padding: 38px 14px 14px;
+            background: var(--code-bg);
+            white-space: pre;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            border: 1px solid var(--code-copy-border);
+            border-radius: 7px;
+            background: var(--code-copy-bg);
+            color: var(--code-text);
+            cursor: pointer;
+            font: inherit;
+            font-size: 12px;
+            padding: 3px 8px;
+        }
+
+        .hl {
+            display: block;
+            margin-left: -14px;
+            padding-left: 11px;
+            border-left: 3px solid var(--quiz);
+            background: var(--code-highlight);
+        }
+
+        .kw {
+            color: var(--code-keyword);
+        }
+
+        .fn {
+            color: var(--code-function);
+        }
+
+        .str {
+            color: var(--code-string);
+        }
+
+        .num {
+            color: var(--code-number);
+        }
+
+        .cm {
+            color: var(--code-comment);
+        }
+
+        .io-table td:first-child {
+            width: 28%;
+            font-weight: 800;
+        }
+
+        .quiz-question {
+            margin: 12px 0;
+            padding: 12px;
+            border-left: 3px solid var(--quiz);
+            border-radius: var(--radius);
+            background: var(--soft-quiz);
+        }
+
+        .quiz-question p {
+            margin-top: 0;
+            font-weight: 800;
+        }
+
+        .option {
+            display: block;
+            margin: 6px 0;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            cursor: pointer;
+            transition: background .15s ease;
+        }
+
+        .option:hover {
+            background: var(--soft);
+        }
+
+        .quiz-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--accent);
+            color: var(--card);
+            cursor: pointer;
+            font: inherit;
+            padding: 7px 12px;
+        }
+
+        .action-btn.secondary {
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .quiz-result {
+            display: none;
+            margin-top: 8px;
+            padding: 9px 10px;
+            border-radius: var(--radius);
+        }
+
+        .quiz-result.correct {
+            display: block;
+            background: var(--soft-success);
+            color: var(--success);
+        }
+
+        .quiz-result.wrong {
+            display: block;
+            background: var(--soft-danger);
+            color: var(--danger);
+        }
+
+        .evidence {
+            margin-top: 44px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            box-shadow: var(--shadow);
+        }
+
+        .evidence h2 {
+            margin-bottom: 8px;
+        }
+
+        .top-button {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 50;
+            width: 46px;
+            height: 46px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease;
+        }
+
+        .top-button.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 15px;
+            }
+
+            .layout {
+                display: block;
+            }
+
+            .mobile-bar {
+                position: sticky;
+                top: 3px;
+                z-index: 55;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                background: var(--card);
+            }
+
+            .mobile-menu {
+                padding: 5px 9px;
+            }
+
+            .theme-toggle {
+                top: 9px;
+                right: 10px;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                z-index: 80;
+                width: min(86vw, var(--nav-width));
+                transform: translateX(-100%);
+                transition: transform .22s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 75;
+                background: var(--overlay);
+            }
+
+            .overlay.show {
+                display: block;
+            }
+
+            .content-shell {
+                padding: 24px 14px 68px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .intro-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .code-block,
+            .ascii-diagram {
+                font-size: 11.5px;
+            }
+
+            .quiz-actions {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media print {
+            body {
+                background: var(--card);
+                color: var(--text);
+            }
+
+            .progress,
+            .sidebar,
+            .theme-toggle,
+            .mobile-bar,
+            .top-button,
+            .copy-btn,
+            .overlay {
+                display: none;
+            }
+
+            .layout,
+            .content-shell,
+            .content {
+                display: block;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .section-body {
+                display: block;
+            }
+
+            .section {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress" aria-hidden="true"><div class="progress-bar"></div></div>
+    <button class="theme-toggle" type="button" aria-label="切换深浅色">深色</button>
+    <div class="mobile-bar">
+        <button class="mobile-menu" type="button" aria-label="打开目录">☰</button>
+        <strong>Docker 复习页</strong>
+    </div>
+    <div class="overlay"></div>
+
+    <div class="layout">
+        <aside class="sidebar" aria-label="章节目录">
+            <div class="brand">
+                <span class="brand-title">Docker</span>
+                <span class="brand-subtitle">阶段6 · 工程化能力</span>
+            </div>
+            <nav>
+                <a class="nav-topic" href="#s1">第一节 · Docker 基础概念</a>
+                <a class="nav-link" href="#s1-goal">学习目标</a>
+                <a class="nav-link" href="#s1-concept">核心概念</a>
+                <a class="nav-link" href="#s1-code">代码示例</a>
+                <a class="nav-link" href="#s1-mistake">常见误区</a>
+                <a class="nav-link" href="#s1-quiz">自测题</a>
+
+                <a class="nav-topic" href="#s2">第二节 · Docker 常用命令</a>
+                <a class="nav-link" href="#s2-goal">学习目标</a>
+                <a class="nav-link" href="#s2-concept">核心概念</a>
+                <a class="nav-link" href="#s2-code">代码示例</a>
+                <a class="nav-link" href="#s2-mistake">常见误区</a>
+                <a class="nav-link" href="#s2-quiz">自测题</a>
+
+                <a class="nav-topic" href="#s3">第三节 · Dockerfile 编写</a>
+                <a class="nav-link" href="#s3-goal">学习目标</a>
+                <a class="nav-link" href="#s3-concept">核心概念</a>
+                <a class="nav-link" href="#s3-code">代码示例</a>
+                <a class="nav-link" href="#s3-mistake">常见误区</a>
+                <a class="nav-link" href="#s3-quiz">自测题</a>
+
+                <a class="nav-topic" href="#s4">第四节 · docker-compose 编排</a>
+                <a class="nav-link" href="#s4-goal">学习目标</a>
+                <a class="nav-link" href="#s4-concept">核心概念</a>
+                <a class="nav-link" href="#s4-code">代码示例</a>
+                <a class="nav-link" href="#s4-mistake">常见误区</a>
+                <a class="nav-link" href="#s4-quiz">自测题</a>
+
+                <a class="nav-topic" href="#evidence">证据追踪</a>
+            </nav>
+        </aside>
+
+        <main class="content-shell">
+            <article class="content">
+                <header class="hero">
+                    <p class="eyebrow">Python 后端工程化 · Docker</p>
+                    <h1>把应用装进可复制的运行环境</h1>
+                    <div class="read-time">预计阅读 18 分钟</div>
+                    <div class="intro-grid" aria-label="章节概览">
+                        <div class="intro-item">
+                            <strong>主线</strong>
+                            <span>镜像 → 容器 → Dockerfile → Compose</span>
+                        </div>
+                        <div class="intro-item">
+                            <strong>后端落点</strong>
+                            <span>FastAPI、MySQL、Redis 的可复现部署</span>
+                        </div>
+                        <div class="intro-item">
+                            <strong>高频动作</strong>
+                            <span>build、run、logs、exec、up、down</span>
+                        </div>
+                        <div class="intro-item">
+                            <strong>安全重点</strong>
+                            <span>非 root 用户、数据卷、环境变量、健康检查</span>
+                        </div>
+                    </div>
+                </header>
+
+                <section class="topic" id="s1">
+                    <header class="topic-header">
+                        <div class="topic-kicker">第一节</div>
+                        <h2>Docker 基础概念</h2>
+                    </header>
+
+                    <section class="section goal open" id="s1-goal">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>学习目标</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <ul>
+                                <li>说清 Docker 解决的环境一致性问题</li>
+                                <li>区分镜像、容器、仓库、宿主机</li>
+                                <li>理解镜像分层和容器可写层</li>
+                                <li>比较 Docker 与虚拟机的差异</li>
+                                <li>理解 Client、Daemon、Registry 的工作流</li>
+                            </ul>
+                            <div class="callout">与后端开发的关联：Docker 让 FastAPI、Redis、MySQL 等运行环境可以被团队共享、CI 复用、服务器复现。</div>
+                        </div>
+                    </section>
+
+                    <section class="section concept open" id="s1-concept">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>核心概念</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>Docker 的核心不是“装了一个系统”，而是把应用和依赖打包成标准化运行单元。镜像是只读模板，容器是镜像启动后的运行实例。</p>
+                            <pre class="ascii-diagram">镜像到容器的关系：
+┌─────────────────────────┐
+│ Image: python-api:v1     │  只读模板
+│  - Python runtime        │
+│  - dependencies          │
+│  - app code              │
+└────────────┬────────────┘
+             │ docker run
+             ▼
+┌─────────────────────────┐
+│ Container: api-1         │  运行实例
+│  + writable layer        │  临时可写层
+└─────────────────────────┘</pre>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>概念</th><th>定位</th><th>后端类比</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Image</td><td>只读模板，包含运行所需文件</td><td>应用发布包</td></tr>
+                                        <tr><td>Container</td><td>镜像的运行实例，有可写层</td><td>正在运行的 API 服务</td></tr>
+                                        <tr><td>Dockerfile</td><td>镜像构建说明书</td><td>构建脚本</td></tr>
+                                        <tr><td>Registry</td><td>镜像存储和分发服务</td><td>镜像版代码仓库</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <details>
+                                <summary>展开：Docker 与虚拟机的核心区别</summary>
+                                <p>虚拟机会运行完整操作系统，所以隔离更强但启动慢、占用大。Docker 容器共享宿主机内核，本质上更接近隔离的进程，因此启动速度快、资源开销低，适合微服务、CI/CD 和开发环境统一。</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="section code" id="s1-code">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>代码示例</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>基础脚本先检查 Docker Client 与 Daemon，再运行后续演示，避免环境不存在时直接报错。</p>
+                            <pre class="code-block"><button class="copy-btn" type="button">复制</button><code><span class="kw">def</span> <span class="fn">check_docker_installed</span>() -&gt; <span class="kw">bool</span>:
+    result = run_cmd(<span class="str">"docker --version"</span>, check=<span class="kw">False</span>)
+    <span class="kw">if</span> result <span class="kw">is</span> <span class="kw">None</span> <span class="kw">or</span> result.returncode != <span class="num">0</span>:
+        print(<span class="str">"Docker 未安装或不在 PATH 中"</span>)
+        <span class="kw">return</span> <span class="kw">False</span>
+
+<span class="hl">    result = run_cmd("docker info --format '{{.ServerVersion}}'", check=False)</span>
+    <span class="kw">if</span> result <span class="kw">is</span> <span class="kw">None</span> <span class="kw">or</span> result.returncode != <span class="num">0</span>:
+        print(<span class="str">"Docker Daemon 未运行"</span>)
+        <span class="kw">return</span> <span class="kw">False</span>
+
+    <span class="kw">return</span> <span class="kw">True</span></code></pre>
+                            <div class="table-wrap">
+                                <table class="io-table">
+                                    <tbody>
+                                        <tr><td>输入</td><td>`docker --version` 与 `docker info`</td></tr>
+                                        <tr><td>输出</td><td>Docker 可用时继续；未安装或守护进程未运行时给出提示</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section mistake" id="s1-mistake">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>常见误区</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>错误理解</th><th>纠正</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Docker 就是轻量级虚拟机</td><td>容器共享宿主机内核，虚拟机有独立内核，二者隔离机制不同。</td></tr>
+                                        <tr><td>一个容器里跑完整应用栈</td><td>推荐一个容器一个主要进程，数据库、缓存、Web 服务分开编排。</td></tr>
+                                        <tr><td>容器里的数据天然安全</td><td>容器删除会丢失可写层，数据库必须使用 Volume 或 Bind Mount。</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="callout danger">安全提醒：不要把密钥、`.env`、证书文件打进镜像，容器镜像可能被推送到共享仓库。</div>
+                        </div>
+                    </section>
+
+                    <section class="section quiz" id="s1-quiz">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>自测题</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="quiz-question" data-answer="B">
+                                <p>1. 镜像和容器的关系最准确的是？</p>
+                                <label class="option"><input type="radio" name="q1-1" value="A"> 镜像是运行实例，容器是模板</label>
+                                <label class="option"><input type="radio" name="q1-1" value="B"> 镜像是只读模板，容器是运行实例</label>
+                                <label class="option"><input type="radio" name="q1-1" value="C"> 镜像和容器完全等价</label>
+                                <label class="option"><input type="radio" name="q1-1" value="D"> 容器不能从镜像创建</label>
+                                <div class="quiz-result">正确答案：B。镜像像类或设计图，容器像对象或运行实例。</div>
+                            </div>
+                            <div class="quiz-question" data-answer="C">
+                                <p>2. 容器删除后仍需保留数据库数据，应该使用什么？</p>
+                                <label class="option"><input type="radio" name="q1-2" value="A"> 只依赖容器可写层</label>
+                                <label class="option"><input type="radio" name="q1-2" value="B"> 只使用 EXPOSE</label>
+                                <label class="option"><input type="radio" name="q1-2" value="C"> 数据卷或绑定挂载</label>
+                                <label class="option"><input type="radio" name="q1-2" value="D"> 删除镜像缓存</label>
+                                <div class="quiz-result">正确答案：C。可写层随容器删除而消失，持久化数据要挂载到卷。</div>
+                            </div>
+                            <div class="quiz-actions">
+                                <button class="action-btn quiz-submit" type="button">提交</button>
+                                <button class="action-btn secondary quiz-reset" type="button">再次作答</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="topic" id="s2">
+                    <header class="topic-header">
+                        <div class="topic-kicker">第二节</div>
+                        <h2>Docker 常用命令</h2>
+                    </header>
+
+                    <section class="section goal open" id="s2-goal">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>学习目标</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <ul>
+                                <li>掌握镜像拉取、构建、查看、删除</li>
+                                <li>熟悉容器运行、停止、日志、进入容器</li>
+                                <li>理解 `-d`、`-p`、`-v`、`-e` 参数</li>
+                                <li>知道数据卷和网络的基本命令</li>
+                                <li>识别高风险清理命令</li>
+                            </ul>
+                            <div class="callout">与后端开发的关联：排查线上容器问题时，`ps`、`logs`、`exec`、`inspect` 是最常用的一组命令。</div>
+                        </div>
+                    </section>
+
+                    <section class="section concept open" id="s2-concept">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>核心概念</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>Docker 命令可以按对象记忆：镜像负责构建和分发，容器负责运行和调试，Volume 负责持久化，Network 负责容器通信。</p>
+                            <pre class="ascii-diagram">常用命令地图：
+Image
+  ├─ pull      下载镜像
+  ├─ images    查看本地镜像
+  ├─ build     构建镜像
+  └─ rmi       删除镜像
+
+Container
+  ├─ run       创建并运行
+  ├─ ps        查看容器
+  ├─ logs      查看日志
+  ├─ exec      进入/执行命令
+  └─ stop/rm   停止/删除
+
+Storage & Network
+  ├─ volume    数据持久化
+  └─ network   服务通信</pre>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>命令</th><th>典型用途</th><th>注意点</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>`docker run`</td><td>从镜像创建并启动容器</td><td>`run` 每次都会创建新容器</td></tr>
+                                        <tr><td>`docker exec`</td><td>在运行中的容器内执行命令</td><td>常用于进入 shell 调试</td></tr>
+                                        <tr><td>`docker logs -f`</td><td>实时追踪容器日志</td><td>适合看 API 启动报错</td></tr>
+                                        <tr><td>`docker volume`</td><td>管理持久化数据</td><td>数据库容器不能只靠可写层</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section code" id="s2-code">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>代码示例</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>`docker run` 的参数组合最值得熟练：后台运行、命名、端口映射、卷挂载和环境变量通常一起出现。</p>
+                            <pre class="code-block"><button class="copy-btn" type="button">复制</button><code><span class="cm"># 运行一个 FastAPI 容器</span>
+docker run -d \
+  --name my-api \
+<span class="hl">  -p 8000:8000 \</span>
+<span class="hl">  -v /host/project:/app \</span>
+  -e APP_ENV=development \
+  --restart unless-stopped \
+  python:3.12-slim \
+  uvicorn app:app --host 0.0.0.0 --port 8000
+
+<span class="cm"># 调试和观察</span>
+docker ps
+docker logs -f my-api
+docker exec -it my-api /bin/sh</code></pre>
+                            <div class="table-wrap">
+                                <table class="io-table">
+                                    <tbody>
+                                        <tr><td>输入</td><td>`docker run` 参数组合</td></tr>
+                                        <tr><td>输出</td><td>宿主机访问 `localhost:8000`，容器内运行 FastAPI 服务</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section mistake" id="s2-mistake">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>常见误区</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>误区</th><th>纠正</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>`docker stop` 和 `docker kill` 随便用</td><td>`stop` 给应用优雅关闭时间，生产环境优先使用 `stop`。</td></tr>
+                                        <tr><td>`docker rm` 能删除运行中容器</td><td>普通 `rm` 只能删除已停止容器，强制删除有数据风险。</td></tr>
+                                        <tr><td>端口映射失败就是镜像坏了</td><td>先检查宿主机端口是否被占用。</td></tr>
+                                        <tr><td>清理命令可以随手执行</td><td>`system prune -a --volumes` 可能删掉镜像和卷数据。</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="callout danger">安全提醒：涉及 `prune`、`rm -f`、`down -v` 的命令都要先确认影响范围，尤其是数据卷。</div>
+                        </div>
+                    </section>
+
+                    <section class="section quiz" id="s2-quiz">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>自测题</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="quiz-question" data-answer="A">
+                                <p>1. 想实时查看容器日志，应该使用？</p>
+                                <label class="option"><input type="radio" name="q2-1" value="A"> docker logs -f name</label>
+                                <label class="option"><input type="radio" name="q2-1" value="B"> docker images name</label>
+                                <label class="option"><input type="radio" name="q2-1" value="C"> docker tag name</label>
+                                <label class="option"><input type="radio" name="q2-1" value="D"> docker volume ls</label>
+                                <div class="quiz-result">正确答案：A。`logs -f` 类似 `tail -f`，适合追踪服务输出。</div>
+                            </div>
+                            <div class="quiz-question" data-answer="D">
+                                <p>2. 在运行中的容器内打开 shell，常用命令是？</p>
+                                <label class="option"><input type="radio" name="q2-2" value="A"> docker run -q</label>
+                                <label class="option"><input type="radio" name="q2-2" value="B"> docker pull -it</label>
+                                <label class="option"><input type="radio" name="q2-2" value="C"> docker build --shell</label>
+                                <label class="option"><input type="radio" name="q2-2" value="D"> docker exec -it name /bin/sh</label>
+                                <div class="quiz-result">正确答案：D。`exec` 是在已有容器中执行命令，`-it` 提供交互终端。</div>
+                            </div>
+                            <div class="quiz-actions">
+                                <button class="action-btn quiz-submit" type="button">提交</button>
+                                <button class="action-btn secondary quiz-reset" type="button">再次作答</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="topic" id="s3">
+                    <header class="topic-header">
+                        <div class="topic-kicker">第三节</div>
+                        <h2>Dockerfile 编写</h2>
+                    </header>
+
+                    <section class="section goal open" id="s3-goal">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>学习目标</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <ul>
+                                <li>理解 Dockerfile 是镜像构建脚本</li>
+                                <li>掌握 FROM、WORKDIR、COPY、RUN、CMD</li>
+                                <li>会写 Python 后端生产级 Dockerfile</li>
+                                <li>理解多阶段构建和层缓存</li>
+                                <li>知道 `.dockerignore` 与非 root 用户的重要性</li>
+                            </ul>
+                            <div class="callout">与后端开发的关联：一个好的 Dockerfile 会直接影响构建速度、镜像体积、容器安全和服务关闭行为。</div>
+                        </div>
+                    </section>
+
+                    <section class="section concept open" id="s3-concept">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>核心概念</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>Dockerfile 的每条关键指令都在定义镜像的某一层或运行时元数据。写 Dockerfile 的核心能力，是让依赖层稳定、源码层靠后、安全配置完整。</p>
+                            <pre class="ascii-diagram">推荐构建顺序：
+FROM python:3.12-slim
+  │
+  ├─ WORKDIR /app
+  ├─ COPY requirements.txt .
+  ├─ RUN pip install ...
+  │        ↑ 依赖层：尽量稳定，便于缓存
+  ├─ COPY . .
+  │        ↑ 源码层：变化频繁，放在后面
+  ├─ USER appuser
+  ├─ EXPOSE 8000
+  └─ CMD ["uvicorn", ...]</pre>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>指令</th><th>作用</th><th>后端最佳实践</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>FROM</td><td>指定基础镜像</td><td>Python 项目优先 `python:3.12-slim`</td></tr>
+                                        <tr><td>RUN</td><td>构建时执行命令</td><td>合并命令并清理缓存</td></tr>
+                                        <tr><td>COPY</td><td>复制构建上下文文件</td><td>先复制依赖文件，再复制源码</td></tr>
+                                        <tr><td>CMD</td><td>容器默认启动命令</td><td>用 exec 格式，监听 `0.0.0.0`</td></tr>
+                                        <tr><td>USER</td><td>切换运行用户</td><td>生产环境避免 root 运行</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <details>
+                                <summary>展开：为什么多阶段构建能减小镜像</summary>
+                                <p>构建阶段可能需要编译器、构建工具和缓存文件，但运行阶段只需要应用与运行依赖。多阶段构建使用多个 `FROM`，最终镜像只保留运行阶段，再从构建阶段复制必要产物，所以镜像更小，也减少了攻击面。</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="section code" id="s3-code">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>代码示例</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>demo 中的 Dockerfile 使用多阶段构建、层缓存、健康检查和非 root 用户，是 Python 后端容器化的核心模板。</p>
+                            <pre class="code-block"><button class="copy-btn" type="button">复制</button><code><span class="cm"># 阶段 1：依赖安装</span>
+<span class="kw">FROM</span> python:3.12-slim <span class="kw">AS</span> builder
+<span class="kw">WORKDIR</span> /build
+<span class="hl">COPY requirements.txt .</span>
+<span class="hl">RUN pip install --user --no-cache-dir -r requirements.txt</span>
+
+<span class="cm"># 阶段 2：运行环境</span>
+<span class="kw">FROM</span> python:3.12-slim <span class="kw">AS</span> runtime
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> --from=builder /root/.local /root/.local
+<span class="kw">ENV</span> PATH=/root/.local/bin:$PATH
+<span class="kw">COPY</span> . .
+<span class="hl">RUN useradd -m -r appuser && chown -R appuser:appuser /app</span>
+<span class="kw">USER</span> appuser
+<span class="kw">EXPOSE</span> 8000
+<span class="kw">HEALTHCHECK</span> --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+<span class="kw">CMD</span> ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+                            <div class="table-wrap">
+                                <table class="io-table">
+                                    <tbody>
+                                        <tr><td>输入</td><td>`docker build -t myapp:v1.0 .`</td></tr>
+                                        <tr><td>输出</td><td>可用 `docker run -p 8000:8000 myapp:v1.0` 启动的 FastAPI 镜像</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section mistake" id="s3-mistake">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>常见误区</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>误区</th><th>纠正</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>先 `COPY . .` 再装依赖</td><td>源码一变就会重新安装依赖，构建慢。先复制 `requirements.txt`。</td></tr>
+                                        <tr><td>CMD 用 shell 格式</td><td>shell 格式可能导致 SIGTERM 不传递，`docker stop` 无法优雅关闭。</td></tr>
+                                        <tr><td>监听 `127.0.0.1`</td><td>容器外无法访问，应监听 `0.0.0.0`。</td></tr>
+                                        <tr><td>生产环境 root 运行</td><td>创建非 root 用户，降低权限风险。</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="callout danger">安全提醒：`.dockerignore` 应排除 `.env`、密钥、证书、虚拟环境和缓存目录。</div>
+                        </div>
+                    </section>
+
+                    <section class="section quiz" id="s3-quiz">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>自测题</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="quiz-question" data-answer="B">
+                                <p>1. 为什么要先 `COPY requirements.txt` 再 `COPY . .`？</p>
+                                <label class="option"><input type="radio" name="q3-1" value="A"> 这样能自动映射端口</label>
+                                <label class="option"><input type="radio" name="q3-1" value="B"> 利用层缓存，依赖不变时不用重装</label>
+                                <label class="option"><input type="radio" name="q3-1" value="C"> 这样容器会自动重启</label>
+                                <label class="option"><input type="radio" name="q3-1" value="D"> 这样能删除数据库卷</label>
+                                <div class="quiz-result">正确答案：B。依赖文件稳定，放前面可最大化利用 Docker 层缓存。</div>
+                            </div>
+                            <div class="quiz-question" data-answer="A">
+                                <p>2. Dockerfile 中推荐的 CMD 写法是？</p>
+                                <label class="option"><input type="radio" name="q3-2" value="A"> `CMD ["uvicorn", "main:app", "--host", "0.0.0.0"]`</label>
+                                <label class="option"><input type="radio" name="q3-2" value="B"> `CMD uvicorn main:app --host 127.0.0.1`</label>
+                                <label class="option"><input type="radio" name="q3-2" value="C"> `CMD docker compose up`</label>
+                                <label class="option"><input type="radio" name="q3-2" value="D"> `CMD rm -rf /tmp`</label>
+                                <div class="quiz-result">正确答案：A。exec 格式有更好的信号处理，`0.0.0.0` 才能让容器外访问。</div>
+                            </div>
+                            <div class="quiz-actions">
+                                <button class="action-btn quiz-submit" type="button">提交</button>
+                                <button class="action-btn secondary quiz-reset" type="button">再次作答</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="topic" id="s4">
+                    <header class="topic-header">
+                        <div class="topic-kicker">第四节</div>
+                        <h2>docker-compose 编排</h2>
+                    </header>
+
+                    <section class="section goal open" id="s4-goal">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>学习目标</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <ul>
+                                <li>理解 compose 用一个 YAML 管理多容器</li>
+                                <li>掌握 services、volumes、networks</li>
+                                <li>会编排 FastAPI + MySQL + Redis</li>
+                                <li>理解服务名通信和健康检查依赖</li>
+                                <li>区分 `up`、`down`、`logs`、`exec`、`build`</li>
+                            </ul>
+                            <div class="callout">与后端开发的关联：实际项目很少只有一个 Web 容器，compose 是本地开发和小型部署最直接的编排入口。</div>
+                        </div>
+                    </section>
+
+                    <section class="section concept open" id="s4-concept">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>核心概念</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>docker-compose 把多个 `docker run` 命令收敛到一个 `docker-compose.yml` 中。服务之间加入同一个网络后，可以直接用 service name 当主机名。</p>
+                            <pre class="ascii-diagram">Compose 三服务关系：
+┌───────────── app-network ─────────────┐
+│                                       │
+│  web                                  │
+│   ├─ DATABASE_URL -> db:3306          │
+│   └─ REDIS_URL    -> redis:6379       │
+│                                       │
+│  db      -> mysql-data volume         │
+│  redis   -> redis-data volume         │
+└───────────────────────────────────────┘</pre>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>配置块</th><th>作用</th><th>记忆方式</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>services</td><td>定义每个容器服务</td><td>Web、DB、Redis 都是 service</td></tr>
+                                        <tr><td>volumes</td><td>声明命名卷</td><td>数据库数据落在卷里</td></tr>
+                                        <tr><td>networks</td><td>声明容器网络</td><td>服务名 DNS 解析靠网络</td></tr>
+                                        <tr><td>depends_on</td><td>控制启动依赖</td><td>配合 healthcheck 等待就绪</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <details>
+                                <summary>展开：depends_on 的真正含义</summary>
+                                <p>`depends_on` 默认只保证启动顺序，不保证数据库已经初始化完成。要等待服务就绪，需要被依赖服务配置 `healthcheck`，再在 `depends_on` 里使用 `condition: service_healthy`。</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="section code" id="s4-code">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>代码示例</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <p>demo 的 compose 文件展示了 FastAPI、MySQL、Redis 三服务编排，重点看服务名、数据卷和健康检查依赖。</p>
+                            <pre class="code-block"><button class="copy-btn" type="button">复制</button><code><span class="kw">services</span>:
+  db:
+    image: mysql:8.0
+    volumes:
+<span class="hl">      - mysql-data:/var/lib/mysql</span>
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+
+  redis:
+    image: redis:7.2-alpine
+    volumes:
+      - redis-data:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+<span class="hl">      - DATABASE_URL=mysql+aiomysql://appuser:apppass123@db:3306/demo_db</span>
+<span class="hl">      - REDIS_URL=redis://redis:6379/0</span>
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+<span class="kw">volumes</span>:
+  mysql-data:
+  redis-data:</code></pre>
+                            <div class="table-wrap">
+                                <table class="io-table">
+                                    <tbody>
+                                        <tr><td>输入</td><td>`docker compose up -d --build`</td></tr>
+                                        <tr><td>输出</td><td>启动 Web、MySQL、Redis，并通过服务名建立容器间通信</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section mistake" id="s4-mistake">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>常见误区</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>误区</th><th>纠正</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>容器之间用 `localhost` 通信</td><td>`localhost` 指容器自己，同一网络下应使用服务名，如 `db`、`redis`。</td></tr>
+                                        <tr><td>`depends_on` 等于服务可用</td><td>默认只等容器启动，服务就绪要配 `healthcheck`。</td></tr>
+                                        <tr><td>`down -v` 是普通停止</td><td>`-v` 会删除命名卷，数据库数据可能丢失。</td></tr>
+                                        <tr><td>改 Dockerfile 后直接 `up -d`</td><td>需要 `up -d --build` 或先 `build`。</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="callout danger">安全提醒：示例密码只适合学习环境，真实项目应通过环境变量或密钥管理注入，不提交 `.env`。</div>
+                        </div>
+                    </section>
+
+                    <section class="section quiz" id="s4-quiz">
+                        <button class="section-head" type="button">
+                            <strong><span class="tag"></span>自测题</strong><span class="chevron">⌄</span>
+                        </button>
+                        <div class="section-body">
+                            <div class="quiz-question" data-answer="C">
+                                <p>1. web 容器连接 MySQL 时，主机名应写成？</p>
+                                <label class="option"><input type="radio" name="q4-1" value="A"> localhost</label>
+                                <label class="option"><input type="radio" name="q4-1" value="B"> 127.0.0.1</label>
+                                <label class="option"><input type="radio" name="q4-1" value="C"> db</label>
+                                <label class="option"><input type="radio" name="q4-1" value="D"> mysql-data</label>
+                                <div class="quiz-result">正确答案：C。同一 compose 网络下服务名会被解析为容器地址。</div>
+                            </div>
+                            <div class="quiz-question" data-answer="B">
+                                <p>2. 修改 Dockerfile 后希望重新构建并启动，应使用？</p>
+                                <label class="option"><input type="radio" name="q4-2" value="A"> docker compose ps</label>
+                                <label class="option"><input type="radio" name="q4-2" value="B"> docker compose up -d --build</label>
+                                <label class="option"><input type="radio" name="q4-2" value="C"> docker compose logs -f</label>
+                                <label class="option"><input type="radio" name="q4-2" value="D"> docker compose down -v</label>
+                                <div class="quiz-result">正确答案：B。`--build` 会重新构建镜像再启动服务。</div>
+                            </div>
+                            <div class="quiz-actions">
+                                <button class="action-btn quiz-submit" type="button">提交</button>
+                                <button class="action-btn secondary quiz-reset" type="button">再次作答</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="evidence" id="evidence">
+                    <h2>证据追踪</h2>
+                    <p>以下列出本页核心结论的原始来源，方便回到章节文档验证。</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Docker 将应用和依赖打包为标准化容器环境</td><td>1.Docker基础概念.md</td><td>第 5-35 行</td></tr>
+                                <tr><td>镜像是只读模板，容器是运行实例且有可写层</td><td>1.Docker基础概念.md</td><td>第 39-96 行</td></tr>
+                                <tr><td>Docker 容器与虚拟机在内核、启动速度和资源开销上不同</td><td>1.Docker基础概念.md</td><td>第 100-148 行</td></tr>
+                                <tr><td>常用命令按镜像、容器、数据卷、网络分类记忆</td><td>2.Docker常用命令.md</td><td>第 3-5 行、第 9-247 行</td></tr>
+                                <tr><td>数据卷用于解决容器删除后数据丢失问题</td><td>2.Docker常用命令.md</td><td>第 251-259 行</td></tr>
+                                <tr><td>Dockerfile 是镜像构建脚本，CMD 推荐 exec 格式</td><td>3.Dockerfile编写.md</td><td>第 3-21 行、第 128-141 行</td></tr>
+                                <tr><td>多阶段构建能减小最终镜像体积</td><td>3.Dockerfile编写.md</td><td>第 224-270 行</td></tr>
+                                <tr><td>Compose 用一个 YAML 文件管理多服务</td><td>4.docker-compose编排.md</td><td>第 3-55 行</td></tr>
+                                <tr><td>depends_on 只控制启动顺序，等待就绪需要 healthcheck</td><td>4.docker-compose编排.md</td><td>第 148-166 行</td></tr>
+                                <tr><td>demo Dockerfile 使用多阶段构建、非 root 用户、健康检查和层缓存</td><td>demo/Dockerfile</td><td>第 1-76 行</td></tr>
+                                <tr><td>demo compose 使用 db、redis、web 三服务和命名卷</td><td>demo/docker-compose.yml</td><td>第 11-112 行</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </article>
+        </main>
+    </div>
+
+    <button class="top-button" type="button" aria-label="回到顶部">↑</button>
+
+    <script>
+        (function () {
+            const root = document.documentElement;
+            const themeButton = document.querySelector(".theme-toggle");
+            const progressBar = document.querySelector(".progress-bar");
+            const topButton = document.querySelector(".top-button");
+            const sidebar = document.querySelector(".sidebar");
+            const overlay = document.querySelector(".overlay");
+            const mobileMenu = document.querySelector(".mobile-menu");
+            const navLinks = Array.from(document.querySelectorAll(".nav-link"));
+            const navTopics = Array.from(document.querySelectorAll(".nav-topic"));
+
+            function applyTheme(theme) {
+                root.classList.toggle("dark", theme === "dark");
+                themeButton.textContent = theme === "dark" ? "浅色" : "深色";
+                localStorage.setItem("docker-review-theme", theme);
+            }
+
+            const savedTheme = localStorage.getItem("docker-review-theme");
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            applyTheme(savedTheme || (prefersDark ? "dark" : "light"));
+
+            themeButton.addEventListener("click", function () {
+                applyTheme(root.classList.contains("dark") ? "light" : "dark");
+            });
+
+            function updateProgress() {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const width = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+                progressBar.style.width = width + "%";
+                topButton.classList.toggle("show", scrollTop > 300);
+            }
+
+            window.addEventListener("scroll", updateProgress, { passive: true });
+            updateProgress();
+
+            topButton.addEventListener("click", function () {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+
+            document.querySelectorAll(".section-head").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    button.closest(".section").classList.toggle("open");
+                });
+            });
+
+            document.querySelectorAll(".copy-btn").forEach(function (button) {
+                button.addEventListener("click", async function () {
+                    const code = button.parentElement.querySelector("code").innerText;
+                    try {
+                        await navigator.clipboard.writeText(code);
+                    } catch (error) {
+                        const textarea = document.createElement("textarea");
+                        textarea.value = code;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand("copy");
+                        textarea.remove();
+                    }
+                    const oldText = button.textContent;
+                    button.textContent = "已复制";
+                    setTimeout(function () {
+                        button.textContent = oldText;
+                    }, 1500);
+                });
+            });
+
+            function clearNav() {
+                navLinks.forEach(function (link) { link.classList.remove("active"); });
+                navTopics.forEach(function (topic) { topic.classList.remove("active"); });
+            }
+
+            function activateNav(id) {
+                clearNav();
+                const activeLink = document.querySelector('.nav-link[href="#' + id + '"]');
+                if (activeLink) {
+                    activeLink.classList.add("active");
+                    let previous = activeLink.previousElementSibling;
+                    while (previous && !previous.classList.contains("nav-topic")) {
+                        previous = previous.previousElementSibling;
+                    }
+                    if (previous) {
+                        previous.classList.add("active");
+                    }
+                    return;
+                }
+                const activeTopic = document.querySelector('.nav-topic[href="#' + id + '"]');
+                if (activeTopic) {
+                    activeTopic.classList.add("active");
+                }
+            }
+
+            const observed = Array.from(document.querySelectorAll(".topic, .section, .evidence"));
+            const observer = new IntersectionObserver(function (entries) {
+                const visible = entries
+                    .filter(function (entry) { return entry.isIntersecting; })
+                    .sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; })[0];
+                if (visible) {
+                    activateNav(visible.target.id);
+                }
+            }, { rootMargin: "-12% 0px -70% 0px", threshold: [0.05, 0.2, 0.5] });
+
+            observed.forEach(function (item) {
+                observer.observe(item);
+            });
+
+            function closeSidebar() {
+                sidebar.classList.remove("open");
+                overlay.classList.remove("show");
+            }
+
+            mobileMenu.addEventListener("click", function () {
+                sidebar.classList.add("open");
+                overlay.classList.add("show");
+            });
+
+            overlay.addEventListener("click", closeSidebar);
+            document.querySelectorAll(".sidebar a").forEach(function (link) {
+                link.addEventListener("click", closeSidebar);
+            });
+
+            document.querySelectorAll(".quiz-submit").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const section = button.closest(".section-body");
+                    section.querySelectorAll(".quiz-question").forEach(function (question) {
+                        const answer = question.dataset.answer;
+                        const checked = question.querySelector("input[type='radio']:checked");
+                        const result = question.querySelector(".quiz-result");
+                        result.classList.remove("correct", "wrong");
+                        if (checked && checked.value === answer) {
+                            result.classList.add("correct");
+                        } else {
+                            result.classList.add("wrong");
+                        }
+                    });
+                });
+            });
+
+            document.querySelectorAll(".quiz-reset").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const section = button.closest(".section-body");
+                    section.querySelectorAll("input[type='radio']").forEach(function (input) {
+                        input.checked = false;
+                    });
+                    section.querySelectorAll(".quiz-result").forEach(function (result) {
+                        result.classList.remove("correct", "wrong");
+                    });
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

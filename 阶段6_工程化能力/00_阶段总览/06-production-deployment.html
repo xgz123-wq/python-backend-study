@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生产部署 · 学习页面</title>
+<style>
+/* ============================================================
+   颜色变量（浅色 + 深色）
+   ============================================================ */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --border: #e3e8ef;
+  --text: #1e293b;
+  --muted: #64748b;
+  --code-bg: #1e293b;
+  --code-text: #e6edf3;
+  --ascii-bg: #0f172a;
+  --ascii-text: #e6edf3;
+  --on-dark: #ffffff;
+
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --cyan: #0284c7;
+  --red: #dc2626;
+  --orange: #d97706;
+  --green: #16a34a;
+
+  --blue-soft: #dbeafe;
+  --purple-soft: #ede9fe;
+  --cyan-soft: #e0f2fe;
+  --red-soft: #fee2e2;
+  --orange-soft: #fffbeb;
+  --green-soft: #dcfce7;
+
+  --zebra: #f8fafc;
+  --shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.dark {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --code-bg: #010409;
+  --code-text: #e6edf3;
+  --ascii-bg: #010409;
+
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --cyan: #79c0ff;
+  --red: #ff7b72;
+  --orange: #ffa657;
+  --green: #56d364;
+
+  --blue-soft: #1f2a3d;
+  --purple-soft: #2a1f3d;
+  --cyan-soft: #0c2d3a;
+  --red-soft: #3a1a1a;
+  --orange-soft: #3a2a10;
+  --green-soft: #0f2e1a;
+
+  --zebra: #1c2128;
+  --shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+
+/* ============================================================
+   基础
+   ============================================================ */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  transition: background .2s, color .2s;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace; font-size: 13px; background: var(--zebra); padding: 1px 5px; border-radius: 3px; color: var(--text); }
+
+#progress {
+  position: fixed; top: 0; left: 0;
+  height: 3px; width: 0%;
+  background: var(--blue);
+  z-index: 1000;
+  transition: width .1s;
+}
+
+#theme-toggle {
+  position: fixed; top: 16px; right: 16px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px; cursor: pointer;
+  z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+#theme-toggle:hover { background: var(--zebra); }
+
+#to-top {
+  position: fixed; right: 20px; bottom: 20px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--on-dark);
+  border: none; font-size: 20px; cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+  z-index: 998;
+}
+#to-top:hover { filter: brightness(1.1); }
+
+.mobile-bar {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  z-index: 997;
+  align-items: center;
+  padding: 0 12px; gap: 12px;
+}
+.mobile-bar .title { font-weight: 600; font-size: 15px; }
+.mobile-bar button {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 36px; height: 36px;
+  border-radius: 6px; font-size: 18px;
+  cursor: pointer;
+}
+
+#sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 260px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  overflow-y: auto;
+  z-index: 996;
+  transition: transform .25s;
+}
+#sidebar .brand {
+  font-size: 12px; font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .03em;
+  margin-bottom: 16px;
+  text-transform: none;
+}
+#sidebar .brand small { display: block; font-weight: 400; color: var(--text); font-size: 12.5px; margin-top: 4px; line-height: 1.4; }
+/* 提示词硬性规定：nav-topic 12.5px bold、nav-link 13.5px normal
+   父级靠字重区分角色，不能出现父级比子项小的情况 */
+.nav-topic {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 12px 8px 4px;
+  letter-spacing: .03em;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+.nav-topic:first-of-type { margin-top: 0; }
+.nav-topic:hover { background: var(--zebra); text-decoration: none; }
+.nav-topic.active { color: var(--blue); }
+.nav-link {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--muted);
+  padding: 5px 8px 5px 20px;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  margin: 1px 0;
+  line-height: 1.5;
+}
+.nav-link:hover { color: var(--text); text-decoration: none; }
+.nav-link.active {
+  color: var(--blue);
+  border-left-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+#overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 995;
+  display: none;
+}
+
+main {
+  margin-left: 260px;
+  min-height: 100vh;
+  padding: 40px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
+  transition: margin-left .3s, padding .3s;
+  max-width: 100%;
+}
+/* 不再限制主内容区直接子元素宽度，让阅读区随视口自适应 */
+h1 { font-size: 28px; margin: 0 0 8px; line-height: 1.3; }
+.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+.reading-time { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+
+.topic { margin-top: 48px; padding-top: 8px; scroll-margin-top: 24px; }
+.topic > h2 {
+  font-size: 22px;
+  margin: 0 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 14px 0;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  scroll-margin-top: 24px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 15px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+}
+.section-head:hover { background: var(--zebra); }
+.section-head .tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--on-dark);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.section-head .chevron {
+  margin-left: auto;
+  transition: transform .2s;
+  color: var(--muted);
+}
+.section.open .section-head .chevron { transform: rotate(180deg); }
+.section-body { display: none; padding: 4px 16px 16px; }
+.section.open .section-body { display: block; }
+
+/* 区块语义色 */
+.section.goal     .section-head .tag { background: var(--blue); }
+.section.concept  .section-head .tag { background: var(--purple); }
+.section.code     .section-head .tag { background: var(--cyan); }
+.section.mistake  .section-head .tag { background: var(--red); }
+.section.quiz     .section-head .tag { background: var(--orange); }
+
+.callout {
+  border-left: 3px solid var(--blue);
+  background: var(--blue-soft);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.callout.warn   { border-color: var(--orange); background: var(--orange-soft); }
+.callout.danger { border-color: var(--red);    background: var(--red-soft); }
+.callout.ok     { border-color: var(--green);  background: var(--green-soft); }
+.callout.tip    { border-color: var(--purple); background: var(--purple-soft); }
+
+p { margin: 8px 0; }
+ul, ol { margin: 8px 0; padding-left: 22px; }
+li { margin: 4px 0; }
+h3 { font-size: 16px; margin: 16px 0 8px; font-weight: 600; }
+
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  word-break: break-word;
+  font-size: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th { background: var(--zebra); font-weight: 600; }
+tr:nth-child(even) td { background: var(--zebra); }
+
+pre.ascii-diagram {
+  background: var(--ascii-bg);
+  color: var(--ascii-text);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.code-block { position: relative; margin: 12px 0; }
+.code-block pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+}
+.code-block .copy-btn {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.code-block .copy-btn:hover { background: rgba(255,255,255,.2); }
+
+.tk-kw  { color: #ff7b72; }
+.tk-str { color: #a5d6ff; }
+.tk-num { color: #79c0ff; }
+.tk-com { color: #8b949e; font-style: italic; }
+.tk-fn  { color: #d2a8ff; }
+.tk-cls { color: #ffa657; }
+.tk-tag { color: #7ee787; }
+
+.code-block .hl {
+  display: block;
+  border-left: 3px solid #f59e0b;
+  margin: 0 -16px;
+  padding: 0 16px 0 13px;
+  background: rgba(245,158,11,.10);
+}
+
+.mistake table th:first-child { background: var(--red); color: #fff; }
+.mistake table th:nth-child(2) { background: var(--green); color: #fff; }
+.mistake .err-tag { color: var(--red); font-weight: 600; }
+.mistake .ok-tag  { color: var(--green); font-weight: 600; }
+
+.quiz {
+  border: 1px solid var(--orange);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  background: var(--orange-soft);
+}
+.quiz .q-title { font-weight: 600; margin-bottom: 8px; }
+.quiz label {
+  display: block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 2px 0;
+  font-size: 14px;
+}
+.quiz label:hover { background: var(--blue-soft); }
+.quiz .quiz-actions { margin-top: 10px; display: flex; gap: 8px; }
+.quiz button {
+  padding: 4px 12px;
+  border: 1px solid var(--orange);
+  background: var(--card);
+  color: var(--orange);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+.quiz button:hover { background: var(--orange); color: var(--on-dark); }
+.quiz .feedback {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: none;
+  font-size: 14px;
+}
+.quiz .feedback.correct { background: var(--green-soft); color: var(--green); border-left: 3px solid var(--green); }
+.quiz .feedback.wrong   { background: var(--red-soft);   color: var(--red);   border-left: 3px solid var(--red); }
+
+#evidence {
+  margin-top: 60px;
+  padding: 20px;
+  background: var(--zebra);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+#evidence h2 { margin-top: 0; font-size: 18px; }
+#evidence .table-wrap { margin-top: 12px; }
+
+@media (max-width: 1024px) {
+  main { padding: 32px 24px 80px; }
+  #sidebar { width: 220px; }
+  .topic-section, .section { max-width: 100%; }
+}
+@media (max-width: 768px) {
+  .mobile-bar { display: flex; }
+  #sidebar { width: 260px; transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  main { margin-left: 0; padding: 70px 16px 80px; }
+  .code-block pre, pre.ascii-diagram { font-size: 11.5px; }
+}
+
+@media print {
+  #progress, #theme-toggle, #to-top, #sidebar, .mobile-bar, #overlay,
+  .quiz button, .quiz-actions, .code-block .copy-btn { display: none !important; }
+  .section-body { display: block !important; }
+  main { margin: 0; padding: 0; max-width: 100%; }
+  body { background: #fff; color: #000; }
+  .section { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+}
+
+/* Unified chapter navigation: clear targets, fewer misclicks */
+.chapter-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin: 0 0 28px !important;
+    padding: 14px !important;
+    border: 1px solid var(--border, #30363d) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(180deg, rgba(37, 99, 235, .08), rgba(37, 99, 235, .025)), var(--card, var(--surface, #161b22)) !important;
+    box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)) !important;
+    font-size: 14px !important;
+}
+.chapter-nav a,
+.chapter-nav span {
+    min-height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid transparent !important;
+    text-decoration: none !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+}
+.chapter-nav a {
+    color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .10) !important;
+    font-weight: 800 !important;
+}
+.chapter-nav a:hover {
+    transform: translateY(-1px) !important;
+    border-color: var(--accent, var(--blue, #58a6ff)) !important;
+    background: rgba(37, 99, 235, .18) !important;
+    text-decoration: none !important;
+}
+.chapter-nav .home {
+    justify-content: center !important;
+    min-width: 180px !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .24) !important;
+}
+.chapter-nav .next {
+    justify-content: flex-end !important;
+    text-align: right !important;
+}
+.chapter-nav .chapter-nav-disabled,
+.chapter-nav span:not(.home):not(.next) {
+    color: var(--muted, #8b949e) !important;
+    background: rgba(148, 163, 184, .10) !important;
+    cursor: not-allowed !important;
+    opacity: .72 !important;
+}
+.chapter-nav .chapter-nav-disabled.next,
+.chapter-nav span.next {
+    justify-content: flex-end !important;
+}
+@media (max-width: 768px) {
+    .chapter-nav {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+    .chapter-nav a,
+    .chapter-nav span,
+    .chapter-nav .home,
+    .chapter-nav .next {
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+        width: 100% !important;
+    }
+}
+/* ===== 章节总览与小节钩子 ===== */
+.chapter-overview { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent, #2563eb); border-radius: 10px; padding: 18px 22px; margin: 0 0 32px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.chapter-overview .overview-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.chapter-overview p { color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 12px; }
+.chapter-overview table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.chapter-overview th, .chapter-overview td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+.chapter-overview th { background: rgba(37,99,235,.08); font-weight: 700; }
+.topic-desc { color: var(--muted); font-style: italic; font-size: 14.5px; margin: 0 0 16px; line-height: 1.6; padding: 6px 0 6px 12px; border-left: 3px solid var(--accent, #2563eb); }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<button id="theme-toggle" title="切换主题">🌙</button>
+<button id="to-top" title="回到顶部">↑</button>
+
+<div class="mobile-bar">
+  <button id="menu-btn" title="目录">☰</button>
+  <div class="title">生产部署</div>
+</div>
+<div id="overlay"></div>
+
+<nav id="sidebar">
+  <div class="brand">生产部署<small>WSGI · 进程管理 · 安全与性能</small></div>
+
+  <a class="nav-topic" href="#s1">第一节 · WSGI 与 ASGI 服务器</a>
+  <a class="nav-link" href="#s1-goal">学习目标</a>
+  <a class="nav-link" href="#s1-concept">核心概念</a>
+  <a class="nav-link" href="#s1-code">代码示例</a>
+  <a class="nav-link" href="#s1-mistake">常见误区</a>
+  <a class="nav-link" href="#s1-quiz">自测题</a>
+
+  <a class="nav-topic" href="#s2">第二节 · 进程管理与环境配置</a>
+  <a class="nav-link" href="#s2-goal">学习目标</a>
+  <a class="nav-link" href="#s2-concept">核心概念</a>
+  <a class="nav-link" href="#s2-code">代码示例</a>
+  <a class="nav-link" href="#s2-mistake">常见误区</a>
+  <a class="nav-link" href="#s2-quiz">自测题</a>
+
+  <a class="nav-topic" href="#s3">第三节 · 安全与性能优化</a>
+  <a class="nav-link" href="#s3-goal">学习目标</a>
+  <a class="nav-link" href="#s3-concept">核心概念</a>
+  <a class="nav-link" href="#s3-code">代码示例</a>
+  <a class="nav-link" href="#s3-mistake">常见误区</a>
+  <a class="nav-link" href="#s3-quiz">自测题</a>
+</nav>
+
+<main>
+  <nav class="chapter-nav" aria-label="阶段章节导航"><a href="05-cicd.html">← 上一章：CI/CD 持续部署</a><a class="home" href="index.html">🏠 返回阶段总目录</a><a class="next" href="07-microservices.html">下一章：微服务 →</a></nav><h1>生产部署</h1>
+  <div class="subtitle">从 demo 脚本到生产环境的最后一公里：进程管理、配置分离、安全加固</div>
+  <div class="reading-time">⏱️ 预估阅读 30 分钟</div>
+
+  <!-- ==================== 📌 本章总览 ==================== -->
+  <div class="chapter-overview">
+  <div class="overview-title">📌 本章 · 为什么要学生产部署？</div>
+  <p>从 `python app.py` 到真正上线，中间还差一段路：得有正规的 WSGI/ASGI 服务器、有 systemd 守住进程、有环境变量分离配置，最后再加防火墙、连接池和缓存让服务稳稳跑住。本章把"上线最后一公里"拆成三步，让你能把 demo 级代码升级为生产级服务。</p>
+  <table>
+    <tr><th>章节</th><th>核心知识</th><th>后端关联度</th></tr>
+    <tr><td>WSGI 与 ASGI 服务器</td><td>WSGI vs ASGI · Gunicorn · Uvicorn · 多 worker</td><td>⭐⭐⭐</td></tr>
+    <tr><td>进程管理与环境配置</td><td>systemd · 后台守护 · 环境变量 · .env · 配置分离</td><td>⭐⭐⭐</td></tr>
+    <tr><td>安全与性能优化</td><td>防火墙 · SSH · 密钥 · 连接池 · 缓存 · 性能调优</td><td>⭐⭐⭐</td></tr>
+  </table>
+  </div>
+
+  <section class="topic" id="s1">
+    <h2>第一节 · WSGI 与 ASGI 服务器</h2>
+    <div class="topic-desc">Gunicorn 跑同步框架、Uvicorn 跑异步框架，这是 Python 上生产的标准前置。</div>
+
+    <section class="section goal open" id="s1-goal">
+      <button class="section-head" type="button">
+        <span class="tag">学习目标</span>
+        <span>理解 WSGI/ASGI 接口与生产服务器选型</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>理解 WSGI 同步接口与 ASGI 异步接口的差异</li>
+          <li>区分 Uvicorn / Gunicorn 各自定位与组合用法</li>
+          <li>掌握 <code>workers = 2 × CPU + 1</code> 公式</li>
+          <li>解释生产环境为什么禁用 <code>--reload</code></li>
+        </ul>
+        <div class="callout">与后端开发的关联：Flask/Django 同步项目配 Gunicorn（WSGI），FastAPI/Channels 异步项目配 Gunicorn + UvicornWorker（ASGI）；错配会让 WebSocket 不可用或性能浪费。</div>
+      </div>
+    </section>
+
+    <section class="section concept open" id="s1-concept">
+      <button class="section-head" type="button">
+        <span class="tag">核心概念</span>
+        <span>WSGI / ASGI / 进程模型 / Worker 公式</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <p><b>WSGI</b>（Web Server Gateway Interface，PEP 3333）是 Python 的同步 Web 接口：每个请求占一个线程/进程，不支持 WebSocket，代表是 Flask / Django（同步模式）。</p>
+        <p><b>ASGI</b>（Asynchronous Server Gateway Interface）是 WSGI 的异步继任者，由 Django Channels 团队提出，支持 <code>async def</code>、WebSocket、长连接、双向通信，代表是 FastAPI / Starlette。</p>
+
+        <h3>① 接口签名对比</h3>
+<pre class="ascii-diagram">WSGI（同步）                              ASGI（异步）
+─────────────────                         ─────────────────
+def app(environ,                         async def app(scope,
+            start_response):                       receive, send):
+    start_response(                         msg = await receive()
+        '200 OK',                           await send({
+        [('Content-Type',                     'type':  'http.response.start',
+         'text/plain')])                       'status': 200,
+    return [b'body']                          'headers': [...],
+})                                          })
+                                            await send({
+                                              'type': 'http.response.body',
+                                              'body': b'body'
+                                            })</pre>
+
+        <h3>② 关键差异表</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:25%">特性</th><th>WSGI</th><th>ASGI</th></tr></thead>
+            <tbody>
+              <tr><td>同步/异步</td><td>同步</td><td>异步</td></tr>
+              <tr><td>WebSocket</td><td>不支持</td><td>支持</td></tr>
+              <tr><td>适用框架</td><td>Flask / Django（同步）</td><td>FastAPI / Channels</td></tr>
+              <tr><td>典型服务器</td><td>Gunicorn</td><td>Uvicorn / Hypercorn</td></tr>
+              <tr><td>并发模型</td><td>多进程/多线程</td><td>事件循环 + 协程</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>③ 场景 → 服务器选型</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>场景</th><th>推荐方案</th></tr></thead>
+            <tbody>
+              <tr><td>FastAPI（异步）</td><td>Gunicorn + UvicornWorker</td></tr>
+              <tr><td>Flask / Django（同步）</td><td>Gunicorn（sync worker）</td></tr>
+              <tr><td>纯异步高性能</td><td>单独 Uvicorn（配合外部进程管理器）</td></tr>
+              <tr><td>容器化（K8s / Docker）</td><td>单 worker Uvicorn，由 K8s 管理进程</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>④ Gunicorn Master-Worker 架构</h3>
+<pre class="ascii-diagram">                    ┌──────────────────────┐
+                    │     Master Process   │
+                    │   （进程管理器）        │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+        ┌─────▼──────┐  ┌─────▼──────┐  ┌─────▼──────┐
+        │  Worker 1  │  │  Worker 2  │  │  Worker 3  │
+        │ (处理请求)  │  │ (处理请求)  │  │ (处理请求)  │
+        └────────────┘  └────────────┘  └────────────┘</pre>
+        <p>Master 负责：启停 worker、监控健康、崩溃自动重启、<code>HUP</code> 信号优雅重启（完成当前请求后重启，零停机）。</p>
+
+        <h3>⑤ Worker 数量公式</h3>
+        <p>经典公式：<code>workers = 2 × CPU 核数 + 1</code>。逻辑是 I/O 等待时 CPU 可切到其他 worker。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>应用类型</th><th>推荐 worker 数</th></tr></thead>
+            <tbody>
+              <tr><td>CPU 密集型（图像处理、计算）</td><td>≈ CPU 核数</td></tr>
+              <tr><td>I/O 密集型（绝大多数 Web）</td><td>2 × CPU + 1</td></tr>
+              <tr><td>异步 worker（UvicornWorker）</td><td>可适当减少</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout danger">生产环境禁用 <code>--reload</code>：1) 持续监控文件消耗 CPU/I/O；2) 单进程浪费多核；3) 文件变动即重启服务不稳定；4) 任意能写 <code>.py</code> 文件的位置都成为 RCE 入口。</div>
+      </div>
+    </section>
+
+    <section class="section code" id="s1-code">
+      <button class="section-head" type="button">
+        <span class="tag">代码示例</span>
+        <span>Uvicorn / Gunicorn 启动与配置</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <h3>① Uvicorn 直接启动（ASGI）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-com"># 开发环境（带热重载）</span>
+uvicorn app.main:app --reload --host <span class="tk-str">0.0.0.0</span> --port <span class="tk-num">8000</span>
+
+<span class="tk-com"># 生产环境（关闭 reload，开启多 worker）</span>
+uvicorn app.main:app --host <span class="tk-str">0.0.0.0</span> --port <span class="tk-num">8000</span> --workers <span class="tk-num">4</span></code></pre>
+        </div>
+
+        <h3>② Gunicorn 启动（WSGI）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-com"># Flask</span>
+gunicorn -w <span class="tk-num">4</span> -b <span class="tk-str">0.0.0.0:8000</span> app:app
+
+<span class="tk-com"># Django</span>
+gunicorn -w <span class="tk-num">4</span> -b <span class="tk-str">0.0.0.0:8000</span> myproject.wsgi:application</code></pre>
+        </div>
+
+        <h3>③ Gunicorn + Uvicorn Worker（推荐组合）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-com"># Gunicorn 管进程（崩溃重启、优雅升级），Uvicorn 处理异步请求</span>
+gunicorn app.main:app \
+    --workers <span class="tk-num">4</span> \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind <span class="tk-str">0.0.0.0:8000</span></code></pre>
+        </div>
+        <div class="callout tip">Gunicorn 负责成熟的进程管理，Uvicorn 负责高性能异步 IO，分工明确、各取所长。</div>
+
+        <h3>④ gunicorn_config.py 配置文件</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">import</span> multiprocessing
+
+bind = <span class="tk-str">"127.0.0.1:8000"</span>                 <span class="tk-com"># 仅 Nginx 反代能访问</span>
+workers = multiprocessing.cpu_count() * <span class="tk-num">2</span> + <span class="tk-num">1</span>
+worker_class = <span class="tk-str">"uvicorn.workers.UvicornWorker"</span>
+timeout = <span class="tk-num">120</span>                              <span class="tk-com"># 请求超时（秒）</span>
+graceful_timeout = <span class="tk-num">30</span>                        <span class="tk-com"># 优雅停止</span>
+keepalive = <span class="tk-num">5</span>                              <span class="tk-com"># Keep-Alive</span>
+max_requests = <span class="tk-num">1000</span>                         <span class="tk-com"># 防内存泄漏：处理 N 个请求后重启</span>
+max_requests_jitter = <span class="tk-num">50</span>                    <span class="tk-com"># 随机偏移，避免所有 worker 同时重启</span>
+preload_app = <span class="tk-kw">True</span>                            <span class="tk-com"># 节省内存，但热更新要全部重启</span>
+accesslog = <span class="tk-str">"/var/log/app/access.log"</span>
+errorlog  = <span class="tk-str">"/var/log/app/error.log"</span>
+loglevel  = <span class="tk-str">"info"</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section mistake" id="s1-mistake">
+      <button class="section-head" type="button">
+        <span class="tag">常见误区</span>
+        <span>服务器选型与配置常见错误</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:50%">❌ 误区</th><th>✅ 纠正</th></tr></thead>
+            <tbody>
+              <tr><td><span class="err-tag">生产环境使用 <code>--reload</code></span></td><td><span class="ok-tag">关掉 <code>--reload</code>，改用 <code>--workers N</code> 配合 Gunicorn 进程管理</span></td></tr>
+              <tr><td><span class="err-tag">忘记装 <code>uvicorn[standard]</code>，启动报 <code>ModuleNotFoundError: uvicorn.workers</code></span></td><td><span class="ok-tag"><code>pip install "uvicorn[standard]"</code></span></td></tr>
+              <tr><td><span class="err-tag">1 核 CPU 配 20 个 worker</span></td><td><span class="ok-tag">遵循公式 <code>workers = 2 × CPU + 1</code>，CPU 密集型等于核数</span></td></tr>
+              <tr><td><span class="err-tag"><code>timeout = 10</code>，但业务调用外部 API 耗时 30s</span></td><td><span class="ok-tag">按业务最长耗时设置，常见 30~120s</span></td></tr>
+              <tr><td><span class="err-tag">Gunicorn 绑定 <code>127.0.0.1</code>，外部访问 502</span></td><td><span class="ok-tag">应用层绑 <code>127.0.0.1</code>（由 Nginx 反代），公网入口用 Nginx 监听 80/443</span></td></tr>
+              <tr><td><span class="err-tag">日志写到 <code>/var/log/app/*.log</code> 报权限错误</span></td><td><span class="ok-tag">先 <code>mkdir -p /var/log/app &amp;&amp; chown www-data:www-data /var/log/app</code></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout danger">生产环境一旦开启 <code>--reload</code>，性能下降 + 单进程浪费多核 + 文件变更即重启不稳定；更危险的是攻击者只要能上传或修改 <code>.py</code> 文件，就能远程执行代码。</div>
+      </div>
+    </section>
+
+    <section class="section quiz" id="s1-quiz">
+      <button class="section-head" type="button">
+        <span class="tag">自测题</span>
+        <span>3 道单选 · 测一测服务器选型</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="quiz" data-answer="B">
+          <div class="q-title">Q1. FastAPI 项目生产环境的推荐组合是？</div>
+          <label><input type="radio" name="q1" value="A"> A. 直接 <code>flask run</code></label>
+          <label><input type="radio" name="q1" value="B"> B. Gunicorn + <code>uvicorn.workers.UvicornWorker</code></label>
+          <label><input type="radio" name="q1" value="C"> C. Uvicorn <code>--reload</code> 多开几个端口</label>
+          <label><input type="radio" name="q1" value="D"> D. Django 自带的 runserver</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="C">
+          <div class="q-title">Q2. 4 核 CPU 的 I/O 密集型 Web 应用，worker 数推荐？</div>
+          <label><input type="radio" name="q2" value="A"> A. 4</label>
+          <label><input type="radio" name="q2" value="B"> B. 8</label>
+          <label><input type="radio" name="q2" value="C"> C. 9（2×4+1）</label>
+          <label><input type="radio" name="q2" value="D"> D. 32</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="A">
+          <div class="q-title">Q3. 下列关于 ASGI 的说法<strong>错误</strong>的是？</div>
+          <label><input type="radio" name="q3" value="A"> A. ASGI 不支持 WebSocket，仅支持 HTTP</label>
+          <label><input type="radio" name="q3" value="B"> B. ASGI 接收 <code>scope, receive, send</code> 三个参数</label>
+          <label><input type="radio" name="q3" value="C"> C. FastAPI 使用 ASGI 接口</label>
+          <label><input type="radio" name="q3" value="D"> D. ASGI 是 WSGI 的异步继任者</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section class="topic" id="s2">
+    <h2>第二节 · 进程管理与环境配置</h2>
+    <div class="topic-desc">systemd 守住进程不挂、环境变量把配置和代码分离，这是上线前的最后一公里。</div>
+
+    <section class="section goal open" id="s2-goal">
+      <button class="section-head" type="button">
+        <span class="tag">学习目标</span>
+        <span>进程自愈 + 配置分离 + 日志</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>理解 systemd 在生产环境的核心价值（崩溃自启 / 开机自启）</li>
+          <li>写出规范的 <code>.service</code> 文件与安全加固字段</li>
+          <li>区分 <code>.env</code> / 系统环境变量 / 密钥管理服务三种方式</li>
+          <li>掌握配置分离与结构化日志（JSON）</li>
+        </ul>
+        <div class="callout">与后端开发的关联：服务进程在 SSH 断开、终端关闭、服务器重启后必须能自愈；systemd 是 Linux 发行版的事实标准。配置分离让一份代码同时跑开发 / 测试 / 生产。</div>
+      </div>
+    </section>
+
+    <section class="section concept open" id="s2-concept">
+      <button class="section-head" type="button">
+        <span class="tag">核心概念</span>
+        <span>systemd / .env / 配置分离 / Supervisor</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <p><b>进程管理器</b>（systemd / Supervisor）解决"服务挂了 / 服务器重启后谁拉起服务"的问题，同时收集日志、限制资源、优雅停机。</p>
+
+        <h3>① 有无进程管理的对比</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:35%">问题</th><th>没有进程管理</th><th>有进程管理</th></tr></thead>
+            <tbody>
+              <tr><td>进程崩溃</td><td>需人工介入</td><td>秒级自动重启</td></tr>
+              <tr><td>服务器重启</td><td>服务不启动</td><td>开机自启</td></tr>
+              <tr><td>日志管理</td><td>丢到终端</td><td>systemd journal 统一持久化</td></tr>
+              <tr><td>多实例</td><td>手动管理</td><td>模板统一</td></tr>
+              <tr><td>配置泄露</td><td>硬编码到代码</td><td><code>.env</code> 与代码分离</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>② 三种环境变量管理方式</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>方式</th><th>适用阶段</th><th>典型工具</th></tr></thead>
+            <tbody>
+              <tr><td><code>.env</code> 文件</td><td>开发环境</td><td>python-dotenv / pydantic-settings</td></tr>
+              <tr><td>系统环境变量</td><td>生产环境</td><td><code>/etc/environment</code> / systemd <code>EnvironmentFile</code></td></tr>
+              <tr><td>密钥管理服务</td><td>高级生产</td><td>HashiCorp Vault / AWS Secrets Manager</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>关键原则：<b>敏感信息永不进入代码与 git 仓库</b>。</p>
+
+        <h3>③ 多环境配置分离</h3>
+<pre class="ascii-diagram">开发环境（本地）             测试环境（CI/CD）           生产环境（服务器）
+─────────────────            ───────────────            ───────────────
+DB: localhost:5432           DB: test-db.internal       DB: prod-db.internal
+DEBUG: True                  DEBUG: False               DEBUG: False
+LOG: DEBUG                   LOG: INFO                  LOG: WARNING
+CORS: *                      CORS: *.test.com           CORS: myapp.com</pre>
+
+        <h3>④ systemd vs Supervisor 选型</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>特性</th><th>systemd</th><th>Supervisor</th></tr></thead>
+            <tbody>
+              <tr><td>系统集成</td><td>原生</td><td>第三方</td></tr>
+              <tr><td>开机启动</td><td>自动支持</td><td>需额外配置</td></tr>
+              <tr><td>日志</td><td>journal 统一</td><td>自管文件</td></tr>
+              <tr><td>资源限制</td><td>cgroups 精细</td><td>有限</td></tr>
+              <tr><td>配置</td><td>中等</td><td>简单</td></tr>
+              <tr><td>场景</td><td>生产服务器</td><td>容器、旧系统</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout tip">Docker 容器、旧版系统、不能装 systemd 的环境用 Supervisor 替代；现代 Linux 发行版一律用 systemd。</div>
+      </div>
+    </section>
+
+    <section class="section code" id="s2-code">
+      <button class="section-head" type="button">
+        <span class="tag">代码示例</span>
+        <span>systemd / .env / 配置类 / 结构化日志</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <h3>① 标准 <code>app.service</code> 模板</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>[Unit]
+Description=My FastAPI Application
+After=network.target
+Wants=postgresql.service
+
+[Service]
+<span class="tk-tag">User=www-data</span>           <span class="tk-com"># 不使用 root</span>
+<span class="tk-tag">Group=www-data</span>
+<span class="tk-tag">WorkingDirectory=/opt/myapp</span>
+<span class="tk-tag">EnvironmentFile=/opt/myapp/.env</span>   <span class="tk-com"># 关键：环境变量从此处读</span>
+<span class="tk-tag">ExecStart=/opt/myapp/venv/bin/gunicorn \</span>
+    -c /opt/myapp/gunicorn_config.py \
+    app.main:app
+<span class="tk-tag">Restart=always</span>          <span class="tk-com"># 崩溃总重启</span>
+<span class="tk-tag">RestartSec=5</span>            <span class="tk-com"># 避免重启风暴</span>
+<span class="tk-tag">TimeoutStopSec=30</span>
+<span class="tk-tag">PrivateTmp=true</span>
+<span class="tk-tag">ProtectSystem=strict</span>
+<span class="tk-tag">ProtectHome=true</span>
+<span class="tk-tag">NoNewPrivileges=true</span>
+<span class="tk-tag">StandardOutput=journal</span>
+<span class="tk-tag">StandardError=journal</span>
+
+[Install]
+<span class="tk-tag">WantedBy=multi-user.target</span></code></pre>
+        </div>
+
+        <h3>② 常用 systemctl 命令</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>sudo systemctl daemon-reload       <span class="tk-com"># 改了 .service 必须先执行</span>
+sudo systemctl start  myapp
+sudo systemctl stop   myapp
+sudo systemctl restart myapp
+sudo systemctl reload  myapp        <span class="tk-com"># 优雅重启（完成当前请求后重启）</span>
+sudo systemctl status  myapp
+sudo systemctl enable  myapp        <span class="tk-com"># 开机自启</span>
+sudo systemctl disable myapp
+
+sudo journalctl -u myapp -f              <span class="tk-com"># 实时跟踪日志</span>
+sudo journalctl -u myapp --since today
+sudo journalctl --vacuum-size=500M       <span class="tk-com"># 限制日志大小</span></code></pre>
+        </div>
+
+        <h3>③ python-dotenv 加载配置</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">from</span> dotenv <span class="tk-kw">import</span> load_dotenv
+<span class="tk-kw">import</span> os
+
+load_dotenv()  <span class="tk-com"># 默认加载当前目录 .env</span>
+
+database_url = os.getenv(<span class="tk-str">"DATABASE_URL"</span>)
+debug = os.getenv(<span class="tk-str">"DEBUG"</span>, <span class="tk-str">"false"</span>).lower() == <span class="tk-str">"true"</span></code></pre>
+        </div>
+
+        <h3>④ pydantic-settings（FastAPI 推荐）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">from</span> pydantic_settings <span class="tk-kw">import</span> BaseSettings
+
+<span class="tk-kw">class</span> <span class="tk-cls">Settings</span>(BaseSettings):
+    database_url: <span class="tk-fn">str</span>
+    secret_key: <span class="tk-fn">str</span>
+    debug: <span class="tk-fn">bool</span> = <span class="tk-kw">False</span>
+    log_level: <span class="tk-fn">str</span> = <span class="tk-str">"INFO"</span>
+
+    <span class="tk-kw">class</span> <span class="tk-cls">Config</span>:
+        env_file = <span class="tk-str">".env"</span>
+        env_file_encoding = <span class="tk-str">"utf-8"</span>
+
+settings = Settings()</code></pre>
+        </div>
+
+        <h3>⑤ 多环境配置类分层</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">import</span> os
+<span class="tk-kw">from</span> pydantic_settings <span class="tk-kw">import</span> BaseSettings
+
+<span class="tk-kw">class</span> <span class="tk-cls">BaseConfig</span>(BaseSettings):
+    app_name: <span class="tk-fn">str</span> = <span class="tk-str">"MyApp"</span>
+    api_prefix: <span class="tk-fn">str</span> = <span class="tk-str">"/api/v1"</span>
+    cors_origins: <span class="tk-fn">list</span>[<span class="tk-fn">str</span>] = []
+
+<span class="tk-kw">class</span> <span class="tk-cls">DevConfig</span>(BaseConfig):
+    debug: <span class="tk-fn">bool</span> = <span class="tk-kw">True</span>
+    log_level: <span class="tk-fn">str</span> = <span class="tk-str">"DEBUG"</span>
+    database_url: <span class="tk-fn">str</span> = <span class="tk-str">"sqlite:///./dev.db"</span>
+    cors_origins: <span class="tk-fn">list</span> = [<span class="tk-str">"*"</span>]
+
+<span class="tk-kw">class</span> <span class="tk-cls">ProdConfig</span>(BaseConfig):
+    debug: <span class="tk-fn">bool</span> = <span class="tk-kw">False</span>
+    log_level: <span class="tk-fn">str</span> = <span class="tk-str">"WARNING"</span>
+    database_url: <span class="tk-fn">str</span>      <span class="tk-com"># 必须从环境变量读取</span>
+    cors_origins: <span class="tk-fn">list</span> = [<span class="tk-str">"https://myapp.com"</span>]
+    <span class="tk-kw">class</span> <span class="tk-cls">Config</span>:
+        env_file = <span class="tk-str">".env"</span>
+
+<span class="tk-kw">def</span> <span class="tk-fn">get_settings</span>():
+    env = os.getenv(<span class="tk-str">"APP_ENV"</span>, <span class="tk-str">"dev"</span>)
+    <span class="tk-kw">return</span> {<span class="tk-str">"dev"</span>: DevConfig, <span class="tk-str">"test"</span>: DevConfig, <span class="tk-str">"prod"</span>: ProdConfig}[env]()</code></pre>
+        </div>
+
+        <h3>⑥ 结构化 JSON 日志</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">import</span> logging, json
+<span class="tk-kw">from</span> datetime <span class="tk-kw">import</span> datetime
+
+<span class="tk-kw">class</span> <span class="tk-cls">JSONFormatter</span>(logging.Formatter):
+    <span class="tk-kw">def</span> <span class="tk-fn">format</span>(self, record):
+        data = {
+            <span class="tk-str">"timestamp"</span>: datetime.utcnow().isoformat(),
+            <span class="tk-str">"level"</span>: record.levelname,
+            <span class="tk-str">"message"</span>: record.getMessage(),
+            <span class="tk-str">"module"</span>: record.module,
+        }
+        <span class="tk-kw">if</span> <span class="tk-fn">hasattr</span>(record, <span class="tk-str">"request_id"</span>):
+            data[<span class="tk-str">"request_id"</span>] = record.request_id
+        <span class="tk-kw">return</span> json.dumps(data, ensure_ascii=<span class="tk-kw">False</span>)
+
+logger = logging.getLogger(<span class="tk-str">"myapp"</span>)
+logger.setLevel(logging.INFO)
+h = logging.StreamHandler()
+h.setFormatter(JSONFormatter())
+logger.addHandler(h)
+
+logger.info(<span class="tk-str">"用户登录成功"</span>, extra={<span class="tk-str">"user_id"</span>: <span class="tk-num">123</span>})</code></pre>
+        </div>
+
+        <h3>⑦ .gitignore 必须包含</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>.env
+.env.local
+.env.production
+*.pem
+*.key
+secrets/</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section mistake" id="s2-mistake">
+      <button class="section-head" type="button">
+        <span class="tag">常见误区</span>
+        <span>systemd / 权限 / 环境变量常见错误</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:50%">❌ 误区</th><th>✅ 纠正</th></tr></thead>
+            <tbody>
+              <tr><td><span class="err-tag">改完 .service 直接 <code>systemctl restart</code></span></td><td><span class="ok-tag">先 <code>sudo systemctl daemon-reload</code> 再 <code>restart</code></span></td></tr>
+              <tr><td><span class="err-tag">用 <code>User=root</code> 跑应用</span></td><td><span class="ok-tag">使用专用用户 <code>User=www-data</code>，RCE 漏洞不会直达系统 root</span></td></tr>
+              <tr><td><span class="err-tag">.env 权限 <code>644</code>（所有人可读）</span></td><td><span class="ok-tag"><code>chmod 600 .env &amp;&amp; chown www-data:www-data .env</code></span></td></tr>
+              <tr><td><span class="err-tag">用系统 <code>/usr/bin/python</code> 启 Gunicorn</span></td><td><span class="ok-tag">用虚拟环境路径 <code>/opt/myapp/venv/bin/gunicorn</code></span></td></tr>
+              <tr><td><span class="err-tag">不写 <code>WorkingDirectory</code>，相对路径 import 失败</span></td><td><span class="ok-tag">显式 <code>WorkingDirectory=/opt/myapp</code></span></td></tr>
+              <tr><td><span class="err-tag">在 <code>~/.bashrc</code> 配环境变量，systemd 读不到</span></td><td><span class="ok-tag">用 <code>EnvironmentFile=/opt/myapp/.env</code> 显式指定</span></td></tr>
+              <tr><td><span class="err-tag">日志写到 <code>/var/log/myapp/app.log</code> 报 Permission denied</span></td><td><span class="ok-tag">先 <code>mkdir -p &amp;&amp; chown www-data:www-data /var/log/myapp</code></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout danger">root + RCE 漏洞 = 攻击者直接获得服务器最高权限，整个系统沦陷。.env 权限 644 = 任何能登录服务器的用户都能读到数据库密码。</div>
+      </div>
+    </section>
+
+    <section class="section quiz" id="s2-quiz">
+      <button class="section-head" type="button">
+        <span class="tag">自测题</span>
+        <span>3 道单选 · 测一测进程管理</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="quiz" data-answer="B">
+          <div class="q-title">Q1. 修改了 <code>/etc/systemd/system/myapp.service</code> 后要让配置生效，必须执行？</div>
+          <label><input type="radio" name="q4" value="A"> A. <code>systemctl restart myapp</code></label>
+          <label><input type="radio" name="q4" value="B"> B. <code>sudo systemctl daemon-reload</code> 再 <code>restart</code></label>
+          <label><input type="radio" name="q4" value="C"> C. 重启服务器</label>
+          <label><input type="radio" name="q4" value="D"> D. 重新安装 systemd</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="C">
+          <div class="q-title">Q2. 生产环境 <code>.env</code> 文件最安全的权限是？</div>
+          <label><input type="radio" name="q5" value="A"> A. <code>644</code></label>
+          <label><input type="radio" name="q5" value="B"> B. <code>755</code></label>
+          <label><input type="radio" name="q5" value="C"> C. <code>600</code></label>
+          <label><input type="radio" name="q5" value="D"> D. <code>777</code></label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="A">
+          <div class="q-title">Q3. 关于 systemd 的 <code>Restart=always</code> + <code>RestartSec=5</code>，下列说法正确的是？</div>
+          <label><input type="radio" name="q6" value="A"> A. 进程崩溃后等 5 秒再重启，防止重启风暴</label>
+          <label><input type="radio" name="q6" value="B"> B. 必须配合 root 用户运行</label>
+          <label><input type="radio" name="q6" value="C"> C. RestartSec=5 表示最多重启 5 次</label>
+          <label><input type="radio" name="q6" value="D"> D. RestartSec=5 表示进程最多跑 5 秒</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section class="topic" id="s3">
+    <h2>第三节 · 安全与性能优化</h2>
+    <div class="topic-desc">防火墙、密钥、连接池、缓存——线上服务比能跑更要紧的是"稳"与"快"。</div>
+
+    <section class="section goal open" id="s3-goal">
+      <button class="section-head" type="button">
+        <span class="tag">学习目标</span>
+        <span>端口最小暴露 + HTTPS + 性能调优 + 监控</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>掌握公网端口最小暴露原则（80/443 + 受限 SSH）</li>
+          <li>会用 UFW 限制入站规则，禁用 SSH 密码登录</li>
+          <li>会用 Certbot 一键 HTTPS 并强制 301 跳转</li>
+          <li>理解 Gunicorn 调优关键项与健康检查端点</li>
+        </ul>
+        <div class="callout">与后端开发的关联：服务上线第一周就会遭遇全网端口扫描，开放任何非必要端口都等于在攻击者面前亮明位置；性能调优让相同硬件支撑更高 QPS。</div>
+      </div>
+    </section>
+
+    <section class="section concept open" id="s3-concept">
+      <button class="section-head" type="button">
+        <span class="tag">核心概念</span>
+        <span>攻击面 / SSH 加固 / HTTPS / 性能 / 监控</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <h3>① 攻击者扫描的服务器攻击面</h3>
+<pre class="ascii-diagram">攻击者扫描服务器
+    │
+    ├── 22 端口（SSH）       ── 密码登录 → 暴破 → 控服
+    │                       ── 密钥登录 → 失败
+    │
+    ├── 80/443（HTTP/HTTPS） ── HTTP    → 中间人攻击 → 窃取数据
+    │                       ── HTTPS   → 加密传输 → 失败
+    │
+    ├── 5432（PostgreSQL）   ── 暴露    → 暴破 → 数据泄露
+    │                       ── localhost → 失败
+    │
+    └── 8000（应用）         ── 直接暴露 → 绕过 Nginx 防护
+                            ── localhost → 必须经 Nginx → 安全</pre>
+
+        <h3>② 安全清单：四道防线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>防线</th><th>关键措施</th></tr></thead>
+            <tbody>
+              <tr><td>网络层</td><td>UFW 防火墙只放 80/443，22 限制 IP；数据库监听 localhost</td></tr>
+              <tr><td>主机层</td><td>SSH 密钥登录、禁 root、禁密码登录、改默认端口</td></tr>
+              <tr><td>应用层</td><td>HTTPS 强制跳转、DEBUG=False、敏感信息走环境变量、专用用户</td></tr>
+              <tr><td>运行时</td><td>健康检查端点、Prometheus 指标、日志告警</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>③ 静态文件由 Nginx 托管</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>方式</th><th>性能</th><th>原因</th></tr></thead>
+            <tbody>
+              <tr><td>Python 返回静态文件</td><td>慢</td><td>需经过 Python 进程</td></tr>
+              <tr><td>Nginx 直接返回</td><td>快</td><td>零拷贝，专为静态文件优化</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>④ Gunicorn 调优关键项</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:35%">参数</th><th>作用</th></tr></thead>
+            <tbody>
+              <tr><td><code>workers</code></td><td>进程数 = 2 × CPU + 1</td></tr>
+              <tr><td><code>worker_class</code></td><td>FastAPI 用 <code>uvicorn.workers.UvicornWorker</code></td></tr>
+              <tr><td><code>timeout</code></td><td>按业务最长耗时设（30~120s）</td></tr>
+              <tr><td><code>max_requests</code></td><td>防内存泄漏，处理 N 个请求后重启</td></tr>
+              <tr><td><code>max_requests_jitter</code></td><td>随机偏移，避免所有 worker 同时重启</td></tr>
+              <tr><td><code>preload_app</code></td><td>节省内存，但热更新要全部重启</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>调优流程：<code>ab -n 1000 -c 10 http://localhost:8000/api/health</code> → 改 worker 数 → 对比 QPS / 延迟。</p>
+
+        <h3>⑤ 监控三件套</h3>
+        <ul>
+          <li><b>健康检查端点</b>（<code>/health</code>）：LB / 监控系统调用，失败则摘除节点</li>
+          <li><b>Prometheus 指标</b>（<code>/metrics</code>）：QPS / 延迟 / 错误率 / 在线 worker 数</li>
+          <li><b>告警</b>（cron + 邮件 / 钉钉 / Slack）：服务挂了 / 磁盘满 / 内存爆</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section code" id="s3-code">
+      <button class="section-head" type="button">
+        <span class="tag">代码示例</span>
+        <span>防火墙 / SSH / HTTPS / 调优 / 监控</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <h3>① UFW 防火墙（仅放行必要端口）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>sudo ufw default deny incoming     <span class="tk-com"># 默认拒绝所有入站</span>
+sudo ufw default allow outgoing
+sudo ufw allow ssh                 <span class="tk-com"># 22（生产建议限定 IP 段）</span>
+sudo ufw allow http                <span class="tk-com"># 80</span>
+sudo ufw allow https               <span class="tk-com"># 443</span>
+sudo ufw enable
+sudo ufw status</code></pre>
+        </div>
+
+        <h3>② SSH 加固（禁密码 / 禁 root / 改端口）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-com"># /etc/ssh/sshd_config</span>
+<span class="tk-tag">PasswordAuthentication no</span>     <span class="tk-com"># 禁用密码登录（必须先配好密钥）</span>
+<span class="tk-tag">PermitRootLogin no</span>            <span class="tk-com"># 禁用 root 登录</span>
+<span class="tk-tag">Port 2222</span>                     <span class="tk-com"># 修改默认端口（减少扫描）</span>
+<span class="tk-tag">AllowUsers deploy</span>             <span class="tk-com"># 限制登录用户</span>
+
+sudo systemctl restart sshd
+
+<span class="tk-com"># 本地生成密钥并部署</span>
+ssh-keygen -t ed25519 -C <span class="tk-str">"your_email@example.com"</span>
+ssh-copy-id -p <span class="tk-num">22</span> deploy@server-ip
+ssh -p <span class="tk-num">22</span> deploy@server-ip</code></pre>
+        </div>
+
+        <h3>③ PostgreSQL 只监听本地</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-com"># /etc/postgresql/14/main/postgresql.conf</span>
+<span class="tk-tag">listen_addresses = 'localhost'</span>     <span class="tk-com"># 绝不要写 '*'</span></code></pre>
+        </div>
+
+        <h3>④ Certbot 一键 HTTPS + 自动续期</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot renew --dry-run   <span class="tk-com"># 测试自动续期（证书 90 天过期）</span></code></pre>
+        </div>
+
+        <h3>⑤ Nginx 反代 + 静态文件 + 强制 HTTPS</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code>server {
+    listen 80;
+    server_name yourdomain.com;
+    <span class="tk-kw">return</span> <span class="tk-num">301</span> https://$server_name$request_uri;   <span class="tk-com"># 强制 HTTPS</span>
+}
+
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    <span class="tk-com"># 静态文件：Nginx 直接返回，零拷贝</span>
+    location /static/ {
+        alias /opt/myapp/static/;
+        expires 30d;
+        add_header Cache-Control <span class="tk-str">"public, immutable"</span>;
+    }
+
+    <span class="tk-com"># API 请求转发给 Gunicorn</span>
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+        </div>
+
+        <h3>⑥ Gunicorn 调优（生产配置）</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">import</span> multiprocessing
+
+<span class="tk-com"># 监听 127.0.0.1：仅 Nginx 反代能访问</span>
+bind = <span class="tk-str">"127.0.0.1:8000"</span>
+
+<span class="tk-com"># 2 × CPU + 1 公式</span>
+workers = multiprocessing.cpu_count() * <span class="tk-num">2</span> + <span class="tk-num">1</span>
+worker_class = <span class="tk-str">"uvicorn.workers.UvicornWorker"</span>
+
+<span class="tk-com"># 超时</span>
+timeout = <span class="tk-num">120</span>            <span class="tk-com"># 请求超时</span>
+graceful_timeout = <span class="tk-num">30</span>      <span class="tk-com"># 优雅停止</span>
+keepalive = <span class="tk-num">5</span>             <span class="tk-com"># Keep-Alive</span>
+
+<span class="tk-com"># 防内存泄漏</span>
+max_requests = <span class="tk-num">1000</span>
+max_requests_jitter = <span class="tk-num">50</span>   <span class="tk-com"># 随机偏移，避免所有 worker 同时重启</span>
+
+preload_app = <span class="tk-kw">True</span>          <span class="tk-com"># 节省内存，但热更新要全部重启</span></code></pre>
+        </div>
+
+        <h3>⑦ FastAPI 健康检查端点</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">from</span> fastapi <span class="tk-kw">import</span> APIRouter
+<span class="tk-kw">from</span> sqlalchemy <span class="tk-kw">import</span> text
+<span class="tk-kw">from</span> app.database <span class="tk-kw">import</span> engine
+
+router = APIRouter()
+
+@router.get(<span class="tk-str">"/health"</span>)
+<span class="tk-kw">async def</span> <span class="tk-fn">health_check</span>():
+    <span class="tk-kw">try</span>:
+        <span class="tk-kw">with</span> engine.connect() <span class="tk-kw">as</span> conn:
+            conn.execute(text(<span class="tk-str">"SELECT 1"</span>))
+        <span class="tk-kw">return</span> {<span class="tk-str">"status"</span>: <span class="tk-str">"healthy"</span>, <span class="tk-str">"database"</span>: <span class="tk-str">"connected"</span>}
+    <span class="tk-kw">except</span> Exception <span class="tk-kw">as</span> e:
+        <span class="tk-kw">return</span> {<span class="tk-str">"status"</span>: <span class="tk-str">"unhealthy"</span>, <span class="tk-str">"error"</span>: <span class="tk-fn">str</span>(e)}, <span class="tk-num">503</span></code></pre>
+        </div>
+
+        <h3>⑧ Prometheus 指标</h3>
+        <div class="code-block">
+<button class="copy-btn" data-copy>📋 复制</button>
+<pre><code><span class="tk-kw">from</span> prometheus_client <span class="tk-kw">import</span> Counter, Histogram, generate_latest
+<span class="tk-kw">import</span> time
+
+REQUEST_COUNT = Counter(<span class="tk-str">"http_requests_total"</span>, <span class="tk-str">"Total HTTP requests"</span>,
+                        [<span class="tk-str">"method"</span>, <span class="tk-str">"endpoint"</span>, <span class="tk-str">"status"</span>])
+REQUEST_DURATION = Histogram(<span class="tk-str">"http_request_duration_seconds"</span>, <span class="tk-str">"HTTP latency"</span>,
+                             [<span class="tk-str">"method"</span>, <span class="tk-str">"endpoint"</span>])
+
+@app.middleware(<span class="tk-str">"http"</span>)
+<span class="tk-kw">async def</span> <span class="tk-fn">metrics</span>(request, call_next):
+    start = time.time()
+    response = <span class="tk-kw">await</span> call_next(request)
+    REQUEST_COUNT.labels(request.method, request.url.path, response.status_code).inc()
+    REQUEST_DURATION.labels(request.method, request.url.path).observe(time.time() - start)
+    <span class="tk-kw">return</span> response
+
+@app.get(<span class="tk-str">"/metrics"</span>)
+<span class="tk-kw">async def</span> <span class="tk-fn">metrics</span>():
+    <span class="tk-kw">return</span> Response(content=generate_latest(), media_type=<span class="tk-str">"text/plain"</span>)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section mistake" id="s3-mistake">
+      <button class="section-head" type="button">
+        <span class="tag">常见误区</span>
+        <span>安全与性能常见错误</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:50%">❌ 误区</th><th>✅ 纠正</th></tr></thead>
+            <tbody>
+              <tr><td><span class="err-tag">PostgreSQL <code>listen_addresses = '*'</code></span></td><td><span class="ok-tag">改为 <code>'localhost'</code>，数据库不暴露公网</span></td></tr>
+              <tr><td><span class="err-tag">生产环境 <code>DEBUG = True</code></span></td><td><span class="ok-tag">生产必须 <code>False</code>，避免泄露源码与表结构</span></td></tr>
+              <tr><td><span class="err-tag">日志记录密码：<code>logger.info(f"pwd={password}")</code></span></td><td><span class="ok-tag">脱敏处理，只记 username</span></td></tr>
+              <tr><td><span class="err-tag">HTTP 和 HTTPS 都能访问，没做 301</span></td><td><span class="ok-tag"><code>return 301 https://$server_name$request_uri;</code></span></td></tr>
+              <tr><td><span class="err-tag">1 核 CPU 配 100 worker</span></td><td><span class="ok-tag"><code>workers = 2 * cpu_count() + 1</code></span></td></tr>
+              <tr><td><span class="err-tag">日志无限增长，磁盘耗尽</span></td><td><span class="ok-tag">用 journal 或 <code>RotatingFileHandler</code></span></td></tr>
+              <tr><td><span class="err-tag">服务崩溃但 LB 还在转发流量</span></td><td><span class="ok-tag">配 <code>/health</code> 端点 + 健康检查</span></td></tr>
+              <tr><td><span class="err-tag">Gunicorn 监听 <code>0.0.0.0:8000</code> 直接暴露公网</span></td><td><span class="ok-tag">绑 <code>127.0.0.1:8000</code>，公网入口用 Nginx</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout danger">DEBUG=True 的异常页面会暴露源代码、数据库表结构、环境变量——是公开的"渗透测试报告"。</div>
+      </div>
+    </section>
+
+    <section class="section quiz" id="s3-quiz">
+      <button class="section-head" type="button">
+        <span class="tag">自测题</span>
+        <span>3 道单选 · 测一测安全与性能</span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="section-body">
+        <div class="quiz" data-answer="D">
+          <div class="q-title">Q1. PostgreSQL 监听了 <code>listen_addresses = '*'</code> 的最大风险是？</div>
+          <label><input type="radio" name="q7" value="A"> A. 性能下降</label>
+          <label><input type="radio" name="q7" value="B"> B. 启动失败</label>
+          <label><input type="radio" name="q7" value="C"> C. 占用更多内存</label>
+          <label><input type="radio" name="q7" value="D"> D. 攻击者直接连库，暴力破解数据库</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="B">
+          <div class="q-title">Q2. 静态文件由 Nginx 直接返回的最大优势是？</div>
+          <label><input type="radio" name="q8" value="A"> A. 更安全</label>
+          <label><input type="radio" name="q8" value="B"> B. 性能高、零拷贝，不占 Python 进程</label>
+          <label><input type="radio" name="q8" value="C"> C. 支持 WebSocket</label>
+          <label><input type="radio" name="q8" value="D"> D. 自动 HTTPS</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+        <div class="quiz" data-answer="C">
+          <div class="q-title">Q3. 关于生产环境 <code>DEBUG=True</code> 描述正确的是？</div>
+          <label><input type="radio" name="q9" value="A"> A. 生产环境应开启方便排查</label>
+          <label><input type="radio" name="q9" value="B"> B. 可以让 API 响应更快</label>
+          <label><input type="radio" name="q9" value="C"> C. 异常页面会暴露源代码和数据库结构，生产必须关闭</label>
+          <label><input type="radio" name="q9" value="D"> D. DEBUG 与安全无关</label>
+          <div class="quiz-actions">
+            <button data-submit>提交</button>
+            <button data-reset>再次作答</button>
+          </div>
+          <div class="feedback"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section id="evidence">
+    <h2>📎 证据追溯</h2>
+    <p style="color:var(--muted); font-size:13px; margin-top:0;">以下列出本页每个核心结论的原始来源，确保可验证。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>结论摘要</th><th>来源文件</th><th>位置</th></tr></thead>
+        <tbody>
+          <tr><td>WSGI 同步、ASGI 异步，FastAPI 用 ASGI 接口</td><td><a href="../06_生产部署/1.WSGI与ASGI服务器.md">1.WSGI与ASGI服务器.md</a></td><td>§1 概念解释</td></tr>
+          <tr><td>workers = 2 × CPU + 1（I/O 密集型）</td><td><a href="../06_生产部署/1.WSGI与ASGI服务器.md">1.WSGI与ASGI服务器.md</a></td><td>§4.5 Worker 数量选择</td></tr>
+          <tr><td>生产环境禁止 <code>--reload</code></td><td><a href="../06_生产部署/1.WSGI与ASGI服务器.md">1.WSGI与ASGI服务器.md</a></td><td>§5</td></tr>
+          <tr><td>Gunicorn + UvicornWorker 最佳组合</td><td><a href="../06_生产部署/1.WSGI与ASGI服务器.md">1.WSGI与ASGI服务器.md</a></td><td>§4.3</td></tr>
+          <tr><td>systemd Restart=always + RestartSec 避免重启风暴</td><td><a href="../06_生产部署/2.进程管理与环境配置.md">2.进程管理与环境配置.md</a></td><td>§4.1</td></tr>
+          <tr><td>.env 权限 600、生产改用系统环境变量</td><td><a href="../06_生产部署/2.进程管理与环境配置.md">2.进程管理与环境配置.md</a></td><td>§4.2、§5.3</td></tr>
+          <tr><td>不应用 root 跑应用，NoNewPrivileges 加固</td><td><a href="../06_生产部署/2.进程管理与环境配置.md">2.进程管理与环境配置.md</a></td><td>§5.2</td></tr>
+          <tr><td>PostgreSQL <code>listen_addresses = 'localhost'</code></td><td><a href="../06_生产部署/3.安全与性能优化.md">3.安全与性能优化.md</a></td><td>§4.3</td></tr>
+          <tr><td>SSH 禁用密码 + root 登录、改端口</td><td><a href="../06_生产部署/3.安全与性能优化.md">3.安全与性能优化.md</a></td><td>§4.1</td></tr>
+          <tr><td>Nginx 托管静态文件、零拷贝优势</td><td><a href="../06_生产部署/3.安全与性能优化.md">3.安全与性能优化.md</a></td><td>§4.5</td></tr>
+          <tr><td>健康检查 + Prometheus 指标</td><td><a href="../06_生产部署/3.安全与性能优化.md">3.安全与性能优化.md</a></td><td>§4.6</td></tr>
+          <tr><td>DEBUG=True 暴露源码与表结构</td><td><a href="../06_生产部署/3.安全与性能优化.md">3.安全与性能优化.md</a></td><td>§5.2</td></tr>
+          <tr><td>workers / timeout / max_requests / max_requests_jitter 调优项</td><td><a href="../06_生产部署/demo/gunicorn_config.py">demo/gunicorn_config.py</a></td><td>全文件注释</td></tr>
+          <tr><td>systemd 服务模板：PrivateTmp / ProtectSystem / NoNewPrivileges</td><td>demo/app.service</td><td>安全加固段</td></tr>
+          <tr><td>SecurityChecker 14 项安全 checklist 与评分</td><td><a href="../06_生产部署/demo/3_security_check.py">demo/3_security_check.py</a></td><td>generate_report()</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  const bar = document.getElementById('progress');
+  function update(){
+    const h = document.documentElement;
+    const sc = h.scrollTop || document.body.scrollTop;
+    const sh = (h.scrollHeight - h.clientHeight) || 1;
+    bar.style.width = (sc / sh * 100).toFixed(1) + '%';
+  }
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+
+(function(){
+  const btn = document.getElementById('theme-toggle');
+  const KEY = 'pref-theme';
+  function apply(mode){
+    if(mode === 'dark'){ document.documentElement.classList.add('dark'); btn.textContent = '☀️'; }
+    else { document.documentElement.classList.remove('dark'); btn.textContent = '🌙'; }
+  }
+  const saved = localStorage.getItem(KEY);
+  if(saved) apply(saved);
+  else apply(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  btn.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    const mode = isDark ? 'dark' : 'light';
+    apply(mode);
+    localStorage.setItem(KEY, mode);
+  });
+})();
+
+document.querySelectorAll('.section').forEach(sec => {
+  sec.querySelector('.section-head').addEventListener('click', () => {
+    sec.classList.toggle('open');
+  });
+});
+
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const pre = btn.parentElement.querySelector('pre');
+    const text = pre.innerText;
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = '✅ 已复制';
+      setTimeout(() => btn.textContent = old, 1500);
+    } catch (err) {
+      btn.textContent = '❌ 失败';
+      setTimeout(() => btn.textContent = '📋 复制', 1500);
+    }
+  });
+});
+
+(function(){
+  const btn = document.getElementById('to-top');
+  window.addEventListener('scroll', () => {
+    btn.style.display = (window.scrollY > 300) ? 'flex' : 'none';
+  }, {passive:true});
+  btn.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+})();
+
+(function(){
+  const links  = Array.from(document.querySelectorAll('#sidebar .nav-link'));
+  const topics = Array.from(document.querySelectorAll('#sidebar .nav-topic'));
+  const targets = links
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+  function setActive(activeLink){
+    links.forEach(l => l.classList.remove('active'));
+    topics.forEach(t => t.classList.remove('active'));
+    if(!activeLink) return;
+    activeLink.classList.add('active');
+    let prev = activeLink.previousElementSibling;
+    while(prev && !prev.classList.contains('nav-topic')){
+      prev = prev.previousElementSibling;
+    }
+    if(prev && prev.classList.contains('nav-topic')) prev.classList.add('active');
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter(e => e.isIntersecting)
+      .sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if(visible.length){
+      const id = '#' + visible[0].target.id;
+      const link = links.find(l => l.getAttribute('href') === id);
+      if(link) setActive(link);
+    }
+  }, {rootMargin: '-20% 0px -70% 0px', threshold: 0});
+
+  targets.forEach(t => io.observe(t));
+})();
+
+(function(){
+  const btn = document.getElementById('menu-btn');
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('overlay');
+  function close(){ sb.classList.remove('open'); ov.style.display = 'none'; }
+  if(btn){
+    btn.addEventListener('click', () => {
+      sb.classList.add('open');
+      ov.style.display = 'block';
+    });
+    ov.addEventListener('click', close);
+    document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', close));
+  }
+})();
+
+document.querySelectorAll('.quiz').forEach(quiz => {
+  const correct  = quiz.dataset.answer;
+  const firstIn  = quiz.querySelector('input[type=radio]');
+  const name     = firstIn ? firstIn.name : null;
+  const feedback = quiz.querySelector('.feedback');
+
+  quiz.querySelector('[data-submit]').addEventListener('click', () => {
+    const checked = quiz.querySelector(`input[name="${name}"]:checked`);
+    if(!checked){
+      feedback.style.display = 'block';
+      feedback.className = 'feedback wrong';
+      feedback.textContent = '⚠️ 请先选择一个选项';
+      return;
+    }
+    feedback.style.display = 'block';
+    if(checked.value === correct){
+      feedback.className = 'feedback correct';
+      feedback.textContent = `✅ 回答正确！答案是 ${correct}。`;
+    } else {
+      feedback.className = 'feedback wrong';
+      feedback.textContent = `❌ 回答错误，正确答案是 ${correct}。`;
+    }
+  });
+
+  quiz.querySelector('[data-reset]').addEventListener('click', () => {
+    quiz.querySelectorAll('input[type=radio]').forEach(r => r.checked = false);
+    feedback.style.display = 'none';
+    feedback.textContent = '';
+  });
+});
+</script>
+</body>
+</html>
